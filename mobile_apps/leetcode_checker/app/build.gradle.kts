@@ -20,6 +20,18 @@ android {
     val geminiApiKey = localProperties.getProperty("GEMINI_API_KEY", "")
         .replace("\\", "\\\\")
         .replace("\"", "\\\"")
+    val githubToken = localProperties.getProperty("GITHUB_TOKEN", "")
+        .replace("\\", "\\\\")
+        .replace("\"", "\\\"")
+    val githubOwner = localProperties.getProperty("GITHUB_OWNER", "VigneshwaraChinnadurai")
+        .replace("\\", "\\\\")
+        .replace("\"", "\\\"")
+    val githubRepo = localProperties.getProperty("GITHUB_REPO", "Google_Prep")
+        .replace("\\", "\\\\")
+        .replace("\"", "\\\"")
+    val githubBranch = localProperties.getProperty("GITHUB_BRANCH", "main")
+        .replace("\\", "\\\\")
+        .replace("\"", "\\\"")
 
     namespace = "com.vignesh.leetcodechecker"
     compileSdk = 35
@@ -31,6 +43,10 @@ android {
         versionCode = 1
         versionName = "1.0"
         buildConfigField("String", "GEMINI_API_KEY", "\"$geminiApiKey\"")
+        buildConfigField("String", "GITHUB_TOKEN", "\"$githubToken\"")
+        buildConfigField("String", "GITHUB_OWNER", "\"$githubOwner\"")
+        buildConfigField("String", "GITHUB_REPO", "\"$githubRepo\"")
+        buildConfigField("String", "GITHUB_BRANCH", "\"$githubBranch\"")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {

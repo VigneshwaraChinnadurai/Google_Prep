@@ -1,7 +1,10 @@
 package com.vignesh.leetcodechecker.data
 
+import android.content.Context
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
+import com.vignesh.leetcodechecker.AppSettings
+import com.vignesh.leetcodechecker.AppSettingsStore
 import com.vignesh.leetcodechecker.BuildConfig
 import android.util.Log
 import kotlinx.coroutines.delay
@@ -53,14 +56,11 @@ class PipelineException(
 
 private const val PROMPT_NAME = "Prompt for Leetcode_solver"
 private const val TAG = "LeetCodeRepository"
-private val GEMINI_PRO_PREFERRED_MODELS = listOf("gemini-2.5-pro", "gemini-pro-latest")
-private const val MAX_MODEL_RETRIES = 3
-private const val MAX_INPUT_TOKENS = 1_048_576
-private const val MAX_OUTPUT_TOKENS = 65_535
-private const val MAX_THINKING_BUDGET = MAX_OUTPUT_TOKENS / 4
 private const val APPROX_CHARS_PER_TOKEN = 4
 
-class LeetCodeRepository {
+class LeetCodeRepository(
+    private val context: Context
+) {
     private val moshi: Moshi by lazy {
         Moshi.Builder()
             .add(KotlinJsonAdapterFactory())
@@ -98,13 +98,16 @@ class LeetCodeRepository {
     private val _liveDebugLog = MutableStateFlow("")
     val liveDebugLog: StateFlow<String> = _liveDebugLog.asStateFlow()
 
+    private fun loadSettings(): AppSettings = AppSettingsStore.load(context)
+
     private fun createHttpClient(): OkHttpClient {
+        val timeoutMinutes = loadSettings().networkTimeoutMinutes.coerceIn(1, 60).toLong()
         val builder = OkHttpClient.Builder()
             .retryOnConnectionFailure(true)
-            .connectTimeout(30, TimeUnit.SECONDS)
-            .readTimeout(90, TimeUnit.SECONDS)
-            .writeTimeout(90, TimeUnit.SECONDS)
-            .callTimeout(120, TimeUnit.SECONDS)
+            .connectTimeout(timeoutMinutes, TimeUnit.MINUTES)
+            .readTimeout(timeoutMinutes, TimeUnit.MINUTES)
+            .writeTimeout(timeoutMinutes, TimeUnit.MINUTES)
+            .callTimeout(timeoutMinutes, TimeUnit.MINUTES)
 
         if (!BuildConfig.DEBUG) {
             return builder.build()
@@ -214,15 +217,43 @@ class LeetCodeRepository {
         }
     }
 
-    suspend fun generateDetailedAnswer(challenge: DailyChallengeUiModel): Result<AiGenerationResult> {
+    suspend fun generateDetailedAnswer(
+        challenge: DailyChallengeUiModel,
+        forceRefresh: Boolean = false
+    ): Result<AiGenerationResult> {
         return runCatching {
+            val settings = loadSettings()
+            val maxModelRetries = settings.maxModelRetries.coerceIn(1, 10)
+            val maxInputTokens = settings.maxInputTokens.coerceIn(1_024, 2_000_000)
+            val maxOutputTokens = settings.maxOutputTokens.coerceIn(256, 65_535)
+            val thinkingDivisor = settings.thinkingBudgetDivisor.coerceIn(1, 64)
+            val maxThinkingBudget = (maxOutputTokens / thinkingDivisor).coerceAtLeast(1)
+            val promptName = settings.promptName.ifBlank { PROMPT_NAME }
+            val preferredModels = settings.preferredModelsCsv
+                .split(',')
+                .map { it.trim() }
+                .filter { it.isNotBlank() }
+                .ifEmpty { listOf("gemini-2.5-pro", "gemini-pro-latest") }
+
             val debug = StringBuilder()
             _liveDebugLog.value = ""
 
             val cacheKey = challenge.titleSlug
-            answerCache[cacheKey]?.let {
-                logDebug(debug, "Cache hit for ${challenge.titleSlug}")
-                return@runCatching it.copy(debugLog = mergeDebugLogs(it.debugLog, debug.toString()))
+            if (!forceRefresh) {
+                answerCache[cacheKey]?.let {
+                    logDebug(debug, "Cache hit for ${challenge.titleSlug}")
+                    return@runCatching it.copy(debugLog = mergeDebugLogs(it.debugLog, debug.toString()))
+                }
+            }
+
+            if (forceRefresh) {
+                answerCache.remove(cacheKey)
+            }
+
+            if (forceRefresh) {
+                logDebug(debug, "Forcing refresh for ${challenge.titleSlug}")
+            } else {
+                logDebug(debug, "No in-memory cache found. Fetching fresh response.")
             }
 
             logDebug(debug, "Starting AI pipeline for ${challenge.titleSlug}")
@@ -245,14 +276,14 @@ class LeetCodeRepository {
 
             logDebug(debug, "Available models count: ${availableModels.size}")
 
-            val selectedModel = GEMINI_PRO_PREFERRED_MODELS.firstOrNull { candidate ->
+            val selectedModel = preferredModels.firstOrNull { candidate ->
                 availableModels.any { it.equals(candidate, ignoreCase = true) }
-            } ?: GEMINI_PRO_PREFERRED_MODELS.first()
+            } ?: preferredModels.first()
 
             logDebug(debug, "Selected model: $selectedModel")
 
             val systemPrompt = """
-You are LC-Autonomous-Solver ($PROMPT_NAME).
+You are LC-Autonomous-Solver ($promptName).
 Return only these tags in order:
 <leetcode_python3_code>...</leetcode_python3_code>
 <testcase_validation>...</testcase_validation>
@@ -283,28 +314,37 @@ Testcases:
 ${challenge.exampleTestcases.ifBlank { "Not provided" }}
 """.trimIndent()
 
-            val boundedSystemPrompt = truncateToApproxTokenLimit(systemPrompt, MAX_INPUT_TOKENS)
-            val remainingInputBudget = (MAX_INPUT_TOKENS - estimateApproxTokens(boundedSystemPrompt))
+            val boundedSystemPrompt = truncateToApproxTokenLimit(systemPrompt, maxInputTokens)
+            val remainingInputBudget = (maxInputTokens - estimateApproxTokens(boundedSystemPrompt))
                 .coerceAtLeast(1024)
             val boundedUserPrompt = truncateToApproxTokenLimit(userPrompt, remainingInputBudget)
 
             if (boundedSystemPrompt != systemPrompt) {
-                logDebug(debug, "System prompt truncated to fit max input token budget: $MAX_INPUT_TOKENS")
+                logDebug(debug, "System prompt truncated to fit max input token budget: $maxInputTokens")
             }
             if (boundedUserPrompt != userPrompt) {
-                logDebug(debug, "User prompt truncated to fit max input token budget: $MAX_INPUT_TOKENS")
+                logDebug(debug, "User prompt truncated to fit max input token budget: $maxInputTokens")
             }
 
             logDebug(
                 debug,
-                "Configured token limits: maxInputTokens=$MAX_INPUT_TOKENS, maxOutputTokens=$MAX_OUTPUT_TOKENS, thinkingBudget=$MAX_THINKING_BUDGET"
+                "Configured token limits: maxInputTokens=$maxInputTokens, maxOutputTokens=$maxOutputTokens, thinkingBudget=$maxThinkingBudget"
             )
 
             logDebug(debug, "Using model: $selectedModel")
             logDebug(debug, "System prompt: $boundedSystemPrompt")
             logDebug(debug, "User prompt: $boundedUserPrompt")
             val generatedText = try {
-                generateWithRetry(selectedModel, apiKey, boundedSystemPrompt, boundedUserPrompt, debug)
+                generateWithRetry(
+                    model = selectedModel,
+                    apiKey = apiKey,
+                    systemPrompt = boundedSystemPrompt,
+                    userPrompt = boundedUserPrompt,
+                    maxModelRetries = maxModelRetries,
+                    maxOutputTokens = maxOutputTokens,
+                    thinkingBudget = maxThinkingBudget,
+                    debug = debug
+                )
             } catch (error: Throwable) {
                 logDebug(debug, "Model failed: $selectedModel -> ${error.message}")
                 throw PipelineException(
@@ -343,9 +383,12 @@ ${challenge.exampleTestcases.ifBlank { "Not provided" }}
         apiKey: String,
         systemPrompt: String,
         userPrompt: String,
+        maxModelRetries: Int,
+        maxOutputTokens: Int,
+        thinkingBudget: Int,
         debug: StringBuilder
     ): String {
-        repeat(MAX_MODEL_RETRIES) { index ->
+        repeat(maxModelRetries) { index ->
             val attempt = index + 1
             try {
                 logDebug(debug, "$model attempt $attempt")
@@ -353,8 +396,8 @@ ${challenge.exampleTestcases.ifBlank { "Not provided" }}
                     systemInstruction = GeminiContent(parts = listOf(GeminiPart(text = systemPrompt))),
                     contents = listOf(GeminiContent(parts = listOf(GeminiPart(text = userPrompt)))),
                     generationConfig = GeminiGenerationConfig(
-                        maxOutputTokens = MAX_OUTPUT_TOKENS,
-                        thinkingConfig = GeminiThinkingConfig(thinkingBudget = MAX_THINKING_BUDGET)
+                        maxOutputTokens = maxOutputTokens,
+                        thinkingConfig = GeminiThinkingConfig(thinkingBudget = thinkingBudget)
                     )
                 )
                 val requestJson = geminiRequestAdapter.toJson(request)
@@ -404,7 +447,7 @@ ${challenge.exampleTestcases.ifBlank { "Not provided" }}
                     }
                     if (finishReason.equals("MAX_TOKENS", ignoreCase = true)) {
                         logDebug(debug, "$model exhausted output budget before returning visible text")
-                        if (attempt < MAX_MODEL_RETRIES) {
+                        if (attempt < maxModelRetries) {
                             val retryDelayMs = (1_500L * attempt).coerceAtMost(6_000L)
                             logDebug(debug, "$model retrying after MAX_TOKENS in ${retryDelayMs}ms")
                             delay(retryDelayMs)
@@ -458,7 +501,7 @@ ${challenge.exampleTestcases.ifBlank { "Not provided" }}
                             ?: (5L * attempt).coerceAtMost(45L)
                         logDebug(debug, "$model rate limited. Retry after $retryAfterSeconds seconds")
                         geminiCooldownUntilMillis = System.currentTimeMillis() + retryAfterSeconds * 1000L
-                        if (attempt < MAX_MODEL_RETRIES) {
+                        if (attempt < maxModelRetries) {
                             delay(retryAfterSeconds * 1000L)
                         }
                     }
@@ -466,38 +509,38 @@ ${challenge.exampleTestcases.ifBlank { "Not provided" }}
                     503 -> {
                         val retrySeconds = (3L * attempt).coerceAtMost(30L)
                         logDebug(debug, "$model service unavailable (503). Retry after $retrySeconds seconds")
-                        if (attempt < MAX_MODEL_RETRIES) {
+                        if (attempt < maxModelRetries) {
                             delay(retrySeconds * 1000L)
                         }
                     }
 
                     else -> {
                         logDebug(debug, "$model transient HTTP ${error.code()}, retrying")
-                        if (attempt < MAX_MODEL_RETRIES) {
+                        if (attempt < maxModelRetries) {
                             delay((2_000L * attempt).coerceAtMost(15_000L))
                         }
                     }
                 }
             } catch (error: UnknownHostException) {
                 logDebug(debug, "$model DNS/network error: ${error.message}")
-                if (attempt < MAX_MODEL_RETRIES) {
+                if (attempt < maxModelRetries) {
                     delay((2_000L * attempt).coerceAtMost(15_000L))
                 }
             } catch (error: IOException) {
                 logDebug(debug, "$model IO/network error: ${error.message}")
-                if (attempt < MAX_MODEL_RETRIES) {
+                if (attempt < maxModelRetries) {
                     delay((2_000L * attempt).coerceAtMost(15_000L))
                 }
             } catch (error: Throwable) {
                 logDebug(debug, "$model attempt $attempt failed with ${error::class.java.simpleName}: ${error.message}")
-                if (attempt < MAX_MODEL_RETRIES) {
+                if (attempt < maxModelRetries) {
                     delay((2_000L * attempt).coerceAtMost(15_000L))
                 }
             }
         }
 
         throw PipelineException(
-            "Failed after $MAX_MODEL_RETRIES retries for model '$model'. This can be caused by repeated rate limits (429), service issues (503), or unstable network/DNS.",
+            "Failed after $maxModelRetries retries for model '$model'. This can be caused by repeated rate limits (429), service issues (503), or unstable network/DNS.",
             debug.toString().trim()
         )
     }

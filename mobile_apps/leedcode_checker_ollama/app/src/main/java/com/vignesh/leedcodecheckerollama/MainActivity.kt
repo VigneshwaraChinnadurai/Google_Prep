@@ -25,7 +25,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.LaunchedEffect
@@ -61,6 +66,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun LeetCodeCheckerScreen(
     viewModel: LeetCodeViewModel = viewModel(),
@@ -74,6 +80,7 @@ private fun LeetCodeCheckerScreen(
     var showExplanation by rememberSaveable { mutableStateOf(true) }
     var showConcepts by rememberSaveable { mutableStateOf(true) }
     var handledChallengeUrl by rememberSaveable { mutableStateOf<String?>(null) }
+    var modelMenuExpanded by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(state.challenge?.url) {
         val challenge = state.challenge ?: return@LaunchedEffect
@@ -124,9 +131,63 @@ private fun LeetCodeCheckerScreen(
 
             Button(
                 onClick = { viewModel.fetchDailyChallenge() },
+                enabled = !state.selectedModel.isNullOrBlank(),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("LeetCode")
+            }
+
+            Button(
+                onClick = { viewModel.refreshAvailableModels() },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Refresh Local Ollama Models")
+            }
+
+            if (state.isModelLoading) {
+                CircularProgressIndicator()
+            }
+
+            ExposedDropdownMenuBox(
+                expanded = modelMenuExpanded,
+                onExpandedChange = {
+                    if (state.availableModels.isNotEmpty()) {
+                        modelMenuExpanded = !modelMenuExpanded
+                    }
+                }
+            ) {
+                OutlinedTextField(
+                    value = state.selectedModel.orEmpty(),
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Selected Ollama Model") },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = modelMenuExpanded) },
+                    modifier = Modifier
+                        .menuAnchor()
+                        .fillMaxWidth()
+                )
+
+                ExposedDropdownMenu(
+                    expanded = modelMenuExpanded,
+                    onDismissRequest = { modelMenuExpanded = false }
+                ) {
+                    state.availableModels.forEach { model ->
+                        DropdownMenuItem(
+                            text = { Text(model) },
+                            onClick = {
+                                viewModel.selectModel(model)
+                                modelMenuExpanded = false
+                            }
+                        )
+                    }
+                }
+            }
+
+            if (state.availableModels.isEmpty()) {
+                Text(
+                    text = "No local Ollama models listed yet. Refresh after your phone-side Ollama runtime pulls a model.",
+                    style = MaterialTheme.typography.bodySmall
+                )
             }
 
             if (state.isLoading) {

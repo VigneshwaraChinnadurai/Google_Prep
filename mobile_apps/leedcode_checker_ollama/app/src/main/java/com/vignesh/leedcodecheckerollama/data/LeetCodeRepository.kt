@@ -98,6 +98,21 @@ class LeetCodeRepository {
             .build()
     }
 
+    fun defaultConfiguredModel(): String {
+        return BuildConfig.OLLAMA_MODEL.trim().ifBlank { "qwen2.5:3b" }
+    }
+
+    suspend fun listAvailableModels(): Result<List<String>> {
+        return runCatching {
+            ollamaApi.listTags().models.orEmpty()
+                .mapNotNull { it.name }
+                .map { it.trim() }
+                .filter { it.isNotBlank() }
+                .distinct()
+                .sorted()
+        }
+    }
+
     suspend fun fetchDailyChallenge(): Result<DailyChallengeUiModel> {
         return runCatching {
             val dailyQuery = """
@@ -183,7 +198,10 @@ class LeetCodeRepository {
         }
     }
 
-    suspend fun generateDetailedAnswer(challenge: DailyChallengeUiModel): Result<AiGenerationResult> {
+    suspend fun generateDetailedAnswer(
+        challenge: DailyChallengeUiModel,
+        selectedModel: String?
+    ): Result<AiGenerationResult> {
         return runCatching {
             val debug = StringBuilder()
             _liveDebugLog.value = ""
@@ -198,8 +216,10 @@ class LeetCodeRepository {
             logDebug(debug, "Configured token limits: maxInputTokens=$MAX_INPUT_TOKENS, maxOutputTokens=$MAX_OUTPUT_TOKENS")
             logDebug(debug, "Ollama base URL: ${BuildConfig.OLLAMA_BASE_URL}")
 
-            val model = BuildConfig.OLLAMA_MODEL.trim().ifBlank { "qwen2.5:3b" }
+            val model = selectedModel?.trim().takeUnless { it.isNullOrBlank() } ?: defaultConfiguredModel()
             logDebug(debug, "Using model: $model")
+
+            ensureModelAvailable(model, debug)
 
             val systemPrompt = """
 You are LC-Ollama-Solver.
@@ -367,6 +387,65 @@ ${challenge.exampleTestcases.ifBlank { "Not provided" }}
         )
     }
 
+    private suspend fun ensureModelAvailable(model: String, debug: StringBuilder) {
+        val normalizedTarget = normalizeModelName(model)
+        logDebug(debug, "Checking local Ollama model availability for $normalizedTarget")
+
+        val tags = runCatching { ollamaApi.listTags() }
+            .getOrElse { error ->
+                throw PipelineException(
+                    "Unable to query local Ollama tags. Ensure Ollama daemon is running on the phone (${BuildConfig.OLLAMA_BASE_URL}). ${error.message}",
+                    debug.toString().trim()
+                )
+            }
+
+        val localNames = tags.models.orEmpty()
+            .mapNotNull { it.name }
+            .map { normalizeModelName(it) }
+
+        logDebug(debug, "Local Ollama model count: ${localNames.size}")
+
+        if (localNames.any { it == normalizedTarget }) {
+            logDebug(debug, "Model already present on device: $normalizedTarget")
+            return
+        }
+
+        logDebug(debug, "Model not present. Starting on-device download via /api/pull: $normalizedTarget")
+        val pullResponse = runCatching {
+            ollamaApi.pullModel(OllamaPullRequest(model = model, stream = false))
+        }.getOrElse { error ->
+            throw PipelineException(
+                "Failed to start model pull for '$model'. ${error.message}",
+                debug.toString().trim()
+            )
+        }
+
+        if (!pullResponse.error.isNullOrBlank()) {
+            throw PipelineException(
+                "Ollama pull failed for '$model': ${pullResponse.error}",
+                debug.toString().trim()
+            )
+        }
+
+        logDebug(debug, "Ollama pull status: ${pullResponse.status.orEmpty().ifBlank { "unknown" }}")
+
+        val tagsAfterPull = runCatching { ollamaApi.listTags() }
+            .getOrDefault(OllamaTagResponse(models = emptyList()))
+        val namesAfterPull = tagsAfterPull.models.orEmpty()
+            .mapNotNull { it.name }
+            .map { normalizeModelName(it) }
+
+        if (namesAfterPull.any { it == normalizedTarget }) {
+            logDebug(debug, "Model downloaded and stored on device: $normalizedTarget")
+            return
+        }
+
+        throw PipelineException(
+            "Model '$model' is still unavailable after pull. Verify storage space and Ollama runtime health on phone.",
+            debug.toString().trim()
+        )
+    }
+
     private fun extractTaggedSection(text: String, tag: String): String {
         val startTag = "<$tag>"
         val endTag = "</$tag>"
@@ -405,5 +484,9 @@ ${challenge.exampleTestcases.ifBlank { "Not provided" }}
     private fun ensureTrailingSlash(url: String): String {
         if (url.isBlank()) return "http://127.0.0.1:11434/"
         return if (url.endsWith("/")) url else "$url/"
+    }
+
+    private fun normalizeModelName(model: String): String {
+        return model.trim().lowercase().removePrefix("models/")
     }
 }

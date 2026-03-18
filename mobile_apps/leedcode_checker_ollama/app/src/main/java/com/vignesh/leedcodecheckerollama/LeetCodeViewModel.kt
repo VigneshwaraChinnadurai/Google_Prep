@@ -14,6 +14,9 @@ import kotlinx.coroutines.launch
 
 data class LeetCodeUiState(
     val isLoading: Boolean = false,
+    val isModelLoading: Boolean = false,
+    val availableModels: List<String> = emptyList(),
+    val selectedModel: String? = null,
     val challenge: DailyChallengeUiModel? = null,
     val aiCode: String? = null,
     val aiTestcaseValidation: String? = null,
@@ -29,7 +32,9 @@ class LeetCodeViewModel(
     private val repository: LeetCodeRepository = LeetCodeRepository()
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(LeetCodeUiState())
+    private val _uiState = MutableStateFlow(
+        LeetCodeUiState(selectedModel = repository.defaultConfiguredModel())
+    )
     val uiState: StateFlow<LeetCodeUiState> = _uiState.asStateFlow()
 
     private var pendingRunRequested = false
@@ -43,9 +48,57 @@ class LeetCodeViewModel(
                 }
             }
         }
+
+        refreshAvailableModels()
+    }
+
+    fun refreshAvailableModels() {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isModelLoading = true)
+            repository.listAvailableModels()
+                .onSuccess { models ->
+                    val currentSelected = _uiState.value.selectedModel
+                    val defaultModel = repository.defaultConfiguredModel()
+                    val nextSelected = when {
+                        !currentSelected.isNullOrBlank() && models.contains(currentSelected) -> currentSelected
+                        models.contains(defaultModel) -> defaultModel
+                        models.isNotEmpty() -> models.first()
+                        else -> currentSelected ?: defaultModel
+                    }
+
+                    _uiState.value = _uiState.value.copy(
+                        isModelLoading = false,
+                        availableModels = models,
+                        selectedModel = nextSelected,
+                        infoMessage = if (models.isEmpty()) {
+                            "No Ollama models found yet. Pull one on your phone-side Ollama runtime."
+                        } else {
+                            "Loaded ${models.size} local Ollama model(s)."
+                        }
+                    )
+                }
+                .onFailure { throwable ->
+                    _uiState.value = _uiState.value.copy(
+                        isModelLoading = false,
+                        infoMessage = throwable.message ?: "Failed to load Ollama model list."
+                    )
+                }
+        }
+    }
+
+    fun selectModel(model: String) {
+        if (model.isBlank()) return
+        _uiState.value = _uiState.value.copy(selectedModel = model)
     }
 
     fun fetchDailyChallenge() {
+        if (_uiState.value.selectedModel.isNullOrBlank()) {
+            _uiState.value = _uiState.value.copy(
+                infoMessage = "Select an Ollama model before running the pipeline."
+            )
+            return
+        }
+
         val now = System.currentTimeMillis()
         if (now < nextAllowedRunAtMillis) {
             val waitSeconds = ((nextAllowedRunAtMillis - now) / 1000).coerceAtLeast(1)
@@ -67,19 +120,34 @@ class LeetCodeViewModel(
     }
 
     private fun startPipelineRun() {
-        _uiState.value = LeetCodeUiState(isLoading = true)
+        _uiState.value = _uiState.value.copy(
+            isLoading = true,
+            challenge = null,
+            aiCode = null,
+            aiTestcaseValidation = null,
+            aiExplanation = null,
+            isAiLoading = false,
+            error = null,
+            aiError = null,
+            aiDebugLog = null,
+            infoMessage = null
+        )
 
         viewModelScope.launch {
             repository.fetchDailyChallenge()
                 .onSuccess { challenge ->
-                    _uiState.value = LeetCodeUiState(
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
                         challenge = challenge,
-                        isAiLoading = true
+                        isAiLoading = true,
+                        error = null,
+                        aiError = null
                     )
                     fetchAiAnswer(challenge)
                 }
                 .onFailure { throwable ->
-                    _uiState.value = LeetCodeUiState(
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
                         error = throwable.message ?: "Could not fetch LeetCode daily challenge"
                     )
 
@@ -95,7 +163,7 @@ class LeetCodeViewModel(
     }
 
     private suspend fun fetchAiAnswer(challenge: DailyChallengeUiModel) {
-        repository.generateDetailedAnswer(challenge)
+        repository.generateDetailedAnswer(challenge, _uiState.value.selectedModel)
             .onSuccess { answer ->
                 applyAiResult(answer)
 

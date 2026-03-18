@@ -10,7 +10,9 @@ This app fetches the LeetCode daily problem and generates Python3 solution outpu
 
 - Calls LeetCode GraphQL API to fetch the daily challenge and statement.
 - Calls Ollama `POST /api/generate` for code + explanation generation.
+- Calls Ollama `GET /api/tags` + `POST /api/pull` to ensure the configured model is downloaded and stored in the phone-side Ollama runtime.
 - Shows code, explanation, validation text, and full pipeline logs with timestamps.
+- Lets user refresh and select the exact Ollama model from local tags before running.
 
 ## Configure Ollama endpoint
 
@@ -25,6 +27,7 @@ Notes:
 
 - `127.0.0.1` works when Ollama server runs on the same phone/device.
 - On Android emulator targeting host machine Ollama, use `http://10.0.2.2:11434/`.
+- This app is an Ollama client. The Ollama daemon/runtime must be running on the phone for true on-device model storage.
 
 ## Build and run
 

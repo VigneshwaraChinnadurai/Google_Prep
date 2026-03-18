@@ -1,15 +1,21 @@
 package com.vignesh.leetcodechecker
 
+import android.Manifest
+import android.content.ContentValues
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.net.Uri
 import android.os.Bundle
+import android.provider.CalendarContract
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.selection.SelectionContainer
@@ -22,10 +28,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.LaunchedEffect
@@ -37,17 +45,21 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.vignesh.leetcodechecker.data.DailyChallengeUiModel
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import java.util.Calendar
+import java.util.TimeZone
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        ConsistencyReminderScheduler.ensureHourlyReminder(this)
         setContent {
             MaterialTheme {
                 LeetCodeCheckerScreen(
@@ -61,6 +73,12 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+private enum class AppScreen {
+    Landing,
+    ConsistencyChecker,
+    Settings
+}
+
 @Composable
 private fun LeetCodeCheckerScreen(
     viewModel: LeetCodeViewModel = viewModel(),
@@ -68,12 +86,54 @@ private fun LeetCodeCheckerScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
-    var markedCompleted by rememberSaveable { mutableStateOf(false) }
+    var currentScreen by rememberSaveable { mutableStateOf(AppScreen.Landing) }
     var showPipelineLog by rememberSaveable { mutableStateOf(false) }
     var showPythonFile by rememberSaveable { mutableStateOf(true) }
     var showExplanation by rememberSaveable { mutableStateOf(true) }
     var showConcepts by rememberSaveable { mutableStateOf(true) }
     var handledChallengeUrl by rememberSaveable { mutableStateOf<String?>(null) }
+    var showLlmConfirmation by rememberSaveable { mutableStateOf(false) }
+    var showPushConfirmation by rememberSaveable { mutableStateOf(false) }
+    var pendingCalendarCompletion by rememberSaveable { mutableStateOf(false) }
+
+    var settingsLandingTitle by rememberSaveable { mutableStateOf(state.settings.landingTitle) }
+    var settingsCheckerTitle by rememberSaveable { mutableStateOf(state.settings.checkerTitle) }
+    var settingsButtonLabel by rememberSaveable { mutableStateOf(state.settings.consistencyButtonLabel) }
+    var settingsPromptName by rememberSaveable { mutableStateOf(state.settings.promptName) }
+    var settingsModelsCsv by rememberSaveable { mutableStateOf(state.settings.preferredModelsCsv) }
+    var settingsMaxRetries by rememberSaveable { mutableStateOf(state.settings.maxModelRetries.toString()) }
+    var settingsMaxInput by rememberSaveable { mutableStateOf(state.settings.maxInputTokens.toString()) }
+    var settingsMaxOutput by rememberSaveable { mutableStateOf(state.settings.maxOutputTokens.toString()) }
+    var settingsThinkingDivisor by rememberSaveable { mutableStateOf(state.settings.thinkingBudgetDivisor.toString()) }
+    var settingsTimeoutMinutes by rememberSaveable { mutableStateOf(state.settings.networkTimeoutMinutes.toString()) }
+    var settingsReminderStart by rememberSaveable { mutableStateOf(state.settings.reminderStartHourIst.toString()) }
+    var settingsReminderEnd by rememberSaveable { mutableStateOf(state.settings.reminderEndHourIst.toString()) }
+    var settingsReminderInterval by rememberSaveable { mutableStateOf(state.settings.reminderIntervalHours.toString()) }
+    var settingsRevisionFolder by rememberSaveable { mutableStateOf(state.settings.revisionFolderName) }
+    var settingsGithubOwner by rememberSaveable { mutableStateOf(state.settings.githubOwnerOverride) }
+    var settingsGithubRepo by rememberSaveable { mutableStateOf(state.settings.githubRepoOverride) }
+    var settingsGithubBranch by rememberSaveable { mutableStateOf(state.settings.githubBranchOverride) }
+
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { }
+
+    val calendarPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { grantMap ->
+        val granted = grantMap.values.all { it }
+        if (granted && pendingCalendarCompletion) {
+            pendingCalendarCompletion = false
+            viewModel.markCompletedToday()
+            val inserted = insertCompletionCalendarEvent(context, state.challenge)
+            val message = if (inserted) {
+                "Marked completed and calendar entry created."
+            } else {
+                "Marked completed, but calendar entry could not be created."
+            }
+            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+        }
+    }
 
     LaunchedEffect(state.challenge?.url) {
         val challenge = state.challenge ?: return@LaunchedEffect
@@ -81,11 +141,10 @@ private fun LeetCodeCheckerScreen(
 
         Toast.makeText(
             context,
-            "Fetched daily problem. Generating detailed Python solution automatically...",
+            "Daily problem loaded. Use refresh buttons manually for API and LLM.",
             Toast.LENGTH_SHORT
         ).show()
         handledChallengeUrl = challenge.url
-        markedCompleted = false
         showPipelineLog = false
         showPythonFile = true
         showExplanation = true
@@ -98,6 +157,39 @@ private fun LeetCodeCheckerScreen(
         viewModel.clearInfoMessage()
     }
 
+    LaunchedEffect(state.settings) {
+        settingsLandingTitle = state.settings.landingTitle
+        settingsCheckerTitle = state.settings.checkerTitle
+        settingsButtonLabel = state.settings.consistencyButtonLabel
+        settingsPromptName = state.settings.promptName
+        settingsModelsCsv = state.settings.preferredModelsCsv
+        settingsMaxRetries = state.settings.maxModelRetries.toString()
+        settingsMaxInput = state.settings.maxInputTokens.toString()
+        settingsMaxOutput = state.settings.maxOutputTokens.toString()
+        settingsThinkingDivisor = state.settings.thinkingBudgetDivisor.toString()
+        settingsTimeoutMinutes = state.settings.networkTimeoutMinutes.toString()
+        settingsReminderStart = state.settings.reminderStartHourIst.toString()
+        settingsReminderEnd = state.settings.reminderEndHourIst.toString()
+        settingsReminderInterval = state.settings.reminderIntervalHours.toString()
+        settingsRevisionFolder = state.settings.revisionFolderName
+        settingsGithubOwner = state.settings.githubOwnerOverride
+        settingsGithubRepo = state.settings.githubRepoOverride
+        settingsGithubBranch = state.settings.githubBranchOverride
+    }
+
+    LaunchedEffect(currentScreen) {
+        if (currentScreen != AppScreen.ConsistencyChecker) return@LaunchedEffect
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val granted = ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) == PackageManager.PERMISSION_GRANTED
+            if (!granted) {
+                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
+    }
+
     Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
         Column(
             modifier = Modifier
@@ -107,29 +199,280 @@ private fun LeetCodeCheckerScreen(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            if (currentScreen == AppScreen.Landing) {
+                Text(
+                    text = state.settings.landingTitle,
+                    style = MaterialTheme.typography.headlineSmall
+                )
+
+                Button(
+                    onClick = { currentScreen = AppScreen.ConsistencyChecker },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.leetcode_logo),
+                            contentDescription = "LeetCode Logo",
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Text(state.settings.consistencyButtonLabel)
+                    }
+                }
+
+                Button(
+                    onClick = { currentScreen = AppScreen.Settings },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Settings")
+                }
+
+                Text(
+                    text = "Use this to track daily LeetCode consistency with manual API/LLM refresh and reminders.",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            } else {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                Image(
-                    painter = painterResource(id = R.drawable.leetcode_logo),
-                    contentDescription = "LeetCode Logo",
-                    modifier = Modifier.size(42.dp)
-                )
+                Button(onClick = { currentScreen = AppScreen.Landing }) {
+                    Text("Back")
+                }
                 Text(
-                    text = "LeetCode Daily Checker",
-                    style = MaterialTheme.typography.headlineSmall
+                    text = if (currentScreen == AppScreen.Settings) "Settings" else state.settings.checkerTitle,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.SemiBold
                 )
+                Button(onClick = { currentScreen = AppScreen.Settings }) {
+                    Text("Settings")
+                }
+            }
+
+            if (currentScreen == AppScreen.Settings) {
+                OutlinedTextField(
+                    value = settingsLandingTitle,
+                    onValueChange = { settingsLandingTitle = it },
+                    label = { Text("Landing Title") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = settingsCheckerTitle,
+                    onValueChange = { settingsCheckerTitle = it },
+                    label = { Text("Checker Title") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = settingsButtonLabel,
+                    onValueChange = { settingsButtonLabel = it },
+                    label = { Text("Consistency Button Label") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = settingsPromptName,
+                    onValueChange = { settingsPromptName = it },
+                    label = { Text("Prompt Name") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = settingsModelsCsv,
+                    onValueChange = { settingsModelsCsv = it },
+                    label = { Text("Preferred Models CSV") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = settingsMaxRetries,
+                    onValueChange = { settingsMaxRetries = it },
+                    label = { Text("Max Model Retries") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = settingsMaxInput,
+                    onValueChange = { settingsMaxInput = it },
+                    label = { Text("Max Input Tokens") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = settingsMaxOutput,
+                    onValueChange = { settingsMaxOutput = it },
+                    label = { Text("Max Output Tokens") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = settingsThinkingDivisor,
+                    onValueChange = { settingsThinkingDivisor = it },
+                    label = { Text("Thinking Budget Divisor") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = settingsTimeoutMinutes,
+                    onValueChange = { settingsTimeoutMinutes = it },
+                    label = { Text("Network Timeout Minutes") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = settingsReminderStart,
+                    onValueChange = { settingsReminderStart = it },
+                    label = { Text("Reminder Start Hour IST") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = settingsReminderEnd,
+                    onValueChange = { settingsReminderEnd = it },
+                    label = { Text("Reminder End Hour IST") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = settingsReminderInterval,
+                    onValueChange = { settingsReminderInterval = it },
+                    label = { Text("Reminder Interval Hours") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = settingsRevisionFolder,
+                    onValueChange = { settingsRevisionFolder = it },
+                    label = { Text("Revision Root Folder") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = settingsGithubOwner,
+                    onValueChange = { settingsGithubOwner = it },
+                    label = { Text("GitHub Owner Override") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = settingsGithubRepo,
+                    onValueChange = { settingsGithubRepo = it },
+                    label = { Text("GitHub Repo Override") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = settingsGithubBranch,
+                    onValueChange = { settingsGithubBranch = it },
+                    label = { Text("GitHub Branch Override") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Button(
+                    onClick = {
+                        viewModel.saveSettings(
+                            AppSettings(
+                                landingTitle = settingsLandingTitle,
+                                checkerTitle = settingsCheckerTitle,
+                                consistencyButtonLabel = settingsButtonLabel,
+                                promptName = settingsPromptName,
+                                preferredModelsCsv = settingsModelsCsv,
+                                maxModelRetries = settingsMaxRetries.toIntOrNull() ?: state.settings.maxModelRetries,
+                                maxInputTokens = settingsMaxInput.toIntOrNull() ?: state.settings.maxInputTokens,
+                                maxOutputTokens = settingsMaxOutput.toIntOrNull() ?: state.settings.maxOutputTokens,
+                                thinkingBudgetDivisor = settingsThinkingDivisor.toIntOrNull() ?: state.settings.thinkingBudgetDivisor,
+                                networkTimeoutMinutes = settingsTimeoutMinutes.toIntOrNull() ?: state.settings.networkTimeoutMinutes,
+                                reminderStartHourIst = settingsReminderStart.toIntOrNull() ?: state.settings.reminderStartHourIst,
+                                reminderEndHourIst = settingsReminderEnd.toIntOrNull() ?: state.settings.reminderEndHourIst,
+                                reminderIntervalHours = settingsReminderInterval.toIntOrNull() ?: state.settings.reminderIntervalHours,
+                                revisionFolderName = settingsRevisionFolder,
+                                githubOwnerOverride = settingsGithubOwner,
+                                githubRepoOverride = settingsGithubRepo,
+                                githubBranchOverride = settingsGithubBranch
+                            )
+                        )
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Save Settings")
+                }
+            } else {
+
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(
+                    modifier = Modifier.padding(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text("Pipeline")
+                    Text("1. Refresh API content (manual)")
+                    Text("2. Review challenge content")
+                    Text("3. Refresh LLM output (manual confirmation)")
+                    Text("4. Mark completed to stop reminders for today")
+                }
             }
 
             Button(
-                onClick = { viewModel.fetchDailyChallenge() },
+                onClick = { viewModel.refreshApiChallenge() },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("LeetCode")
+                Text("Refresh LeetCode API")
             }
 
-            if (state.isLoading) {
+            Button(
+                onClick = { showLlmConfirmation = true },
+                enabled = state.challenge != null,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Refresh LLM Answer")
+            }
+
+            Button(
+                onClick = { showPushConfirmation = true },
+                enabled = state.challenge != null && !state.aiCode.isNullOrBlank() && !state.isPushLoading,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(if (state.isPushLoading) "Pushing To GitHub..." else "Push QA Revision To GitHub")
+            }
+
+            state.localRevisionPath?.let { localPath ->
+                Text(
+                    text = "Local revision folder: $localPath",
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+
+            if (showLlmConfirmation) {
+                AlertDialog(
+                    onDismissRequest = { showLlmConfirmation = false },
+                    title = { Text("Confirm LLM Call") },
+                    text = { Text("This will trigger a paid LLM request. Continue?") },
+                    confirmButton = {
+                        Button(onClick = {
+                            showLlmConfirmation = false
+                            viewModel.refreshLlmAnswer()
+                        }) {
+                            Text("Confirm")
+                        }
+                    },
+                    dismissButton = {
+                        Button(onClick = { showLlmConfirmation = false }) {
+                            Text("Cancel")
+                        }
+                    }
+                )
+            }
+
+            if (showPushConfirmation) {
+                AlertDialog(
+                    onDismissRequest = { showPushConfirmation = false },
+                    title = { Text("Confirm GitHub Push") },
+                    text = {
+                        Text("This will create/update question.txt, answer.py, and explanation.txt under ${state.settings.revisionFolderName}/<date> in the configured GitHub repo. Continue?")
+                    },
+                    confirmButton = {
+                        Button(onClick = {
+                            showPushConfirmation = false
+                            viewModel.pushRevisionFilesToGitHub()
+                        }) {
+                            Text("Push")
+                        }
+                    },
+                    dismissButton = {
+                        Button(onClick = { showPushConfirmation = false }) {
+                            Text("Cancel")
+                        }
+                    }
+                )
+            }
+
+            if (state.isLoading || state.isAiLoading) {
                 CircularProgressIndicator()
             }
 
@@ -178,10 +521,6 @@ private fun LeetCodeCheckerScreen(
                         }
 
                         Spacer(modifier = Modifier.size(4.dp))
-                        if (state.isAiLoading) {
-                            Text("Generating detailed answer with Gemini... waiting through rate limits if needed.")
-                            CircularProgressIndicator()
-                        }
 
                         state.aiError?.let { aiError ->
                             Text(
@@ -309,24 +648,110 @@ private fun LeetCodeCheckerScreen(
                         )
 
                         Button(
-                            onClick = { markedCompleted = !markedCompleted },
+                            onClick = {
+                                val hasWrite = ContextCompat.checkSelfPermission(
+                                    context,
+                                    Manifest.permission.WRITE_CALENDAR
+                                ) == PackageManager.PERMISSION_GRANTED
+                                val hasRead = ContextCompat.checkSelfPermission(
+                                    context,
+                                    Manifest.permission.READ_CALENDAR
+                                ) == PackageManager.PERMISSION_GRANTED
+
+                                if (hasWrite && hasRead) {
+                                    viewModel.markCompletedToday()
+                                    val inserted = insertCompletionCalendarEvent(context, challenge)
+                                    val message = if (inserted) {
+                                        "Marked completed and calendar entry created."
+                                    } else {
+                                        "Marked completed, but calendar entry could not be created."
+                                    }
+                                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                                } else {
+                                    pendingCalendarCompletion = true
+                                    calendarPermissionLauncher.launch(
+                                        arrayOf(
+                                            Manifest.permission.READ_CALENDAR,
+                                            Manifest.permission.WRITE_CALENDAR
+                                        )
+                                    )
+                                }
+                            },
+                            enabled = !state.isCompletedToday,
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text(if (markedCompleted) "Marked Completed" else "Mark as Completed")
+                            Text(if (state.isCompletedToday) "Marked Completed" else "Mark as Completed")
                         }
 
-                        if (markedCompleted) {
+                        if (state.isCompletedToday) {
                             Text(
                                 text = "Status: Completed",
-                                color = MaterialTheme.colorScheme.primary,
+                                color = MaterialTheme.colorScheme.tertiary,
                                 style = MaterialTheme.typography.bodyMedium
                             )
                         }
                     }
                 }
             }
+            }
         }
     }
+}
+}
+
+private fun insertCompletionCalendarEvent(context: Context, challenge: DailyChallengeUiModel?): Boolean {
+    return runCatching {
+        val projection = arrayOf(
+            CalendarContract.Calendars._ID,
+            CalendarContract.Calendars.VISIBLE
+        )
+        val selection = "${CalendarContract.Calendars.VISIBLE}=1"
+        val cursor = context.contentResolver.query(
+            CalendarContract.Calendars.CONTENT_URI,
+            projection,
+            selection,
+            null,
+            null
+        ) ?: return false
+
+        var calendarId: Long? = null
+        cursor.use {
+            if (it.moveToFirst()) {
+                calendarId = it.getLong(0)
+            }
+        }
+        val selectedCalendarId = calendarId ?: return false
+
+        val timezone = TimeZone.getTimeZone("Asia/Kolkata")
+        val start = Calendar.getInstance(timezone).apply {
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        val end = (start.clone() as Calendar).apply {
+            add(Calendar.DAY_OF_MONTH, 1)
+        }
+
+        val title = if (challenge != null) {
+            "LeetCode Completed: ${challenge.title}"
+        } else {
+            "LeetCode Completed"
+        }
+
+        val values = ContentValues().apply {
+            put(CalendarContract.Events.CALENDAR_ID, selectedCalendarId)
+            put(CalendarContract.Events.TITLE, title)
+            put(CalendarContract.Events.DESCRIPTION, "Marked completed from LeetCode Consistency Checker")
+            put(CalendarContract.Events.DTSTART, start.timeInMillis)
+            put(CalendarContract.Events.DTEND, end.timeInMillis)
+            put(CalendarContract.Events.ALL_DAY, 1)
+            put(CalendarContract.Events.EVENT_TIMEZONE, timezone.id)
+            put(CalendarContract.Events.EVENT_COLOR, 0xFF2E7D32.toInt())
+        }
+
+        context.contentResolver.insert(CalendarContract.Events.CONTENT_URI, values) != null
+    }.getOrDefault(false)
 }
 
 private fun extractDsaConcepts(explanation: String, tags: List<String>): List<String> {
