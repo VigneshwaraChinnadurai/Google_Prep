@@ -205,3 +205,12 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Local IDE and execution artifacts
+.idea/
+local_executions/
+
+# Android signing secrets
+mobile_apps/leetcode_checker/keystore.properties
+mobile_apps/leetcode_checker/*.jks
+mobile_apps/leetcode_checker/*.keystore
