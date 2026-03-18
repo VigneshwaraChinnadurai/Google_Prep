@@ -8,7 +8,7 @@ This app is the feature-parity version of LeetCode Consistency Checker using Oll
 
 ## What this app does
 
-- Landing + Checker + Settings screens.
+- Landing + Checker + Flow Diagram + Settings screens.
 - Manual API refresh and manual-confirmed LLM refresh.
 - LeetCode GraphQL fetch for daily challenge and details.
 - Ollama generation (`/api/generate`) with retry + timestamped pipeline logs.
@@ -16,6 +16,8 @@ This app is the feature-parity version of LeetCode Consistency Checker using Oll
 - Local cache for challenge + AI output.
 - Completion tracking with reminders and optional calendar event.
 - Revision export (`question.txt`, `answer.py`, `explanation.txt`) and optional GitHub push.
+- Password-protected settings update.
+- Mermaid runtime flow image viewer with pinch zoom, pan, and reset.
 
 ## Configure Ollama endpoint
 
@@ -28,6 +30,7 @@ GITHUB_TOKEN=
 GITHUB_OWNER=VigneshwaraChinnadurai
 GITHUB_REPO=Google_Prep
 GITHUB_BRANCH=main
+SETTINGS_UPDATE_PASSWORD=replace_with_strong_value
 ```
 
 Notes:
@@ -35,6 +38,7 @@ Notes:
 - `127.0.0.1` works when Ollama server runs on the same phone/device.
 - On Android emulator targeting host machine Ollama, use `http://10.0.2.2:11434/`.
 - This app is an Ollama client. The Ollama daemon/runtime must be running on the phone for true on-device model storage.
+- If `SETTINGS_UPDATE_PASSWORD` is missing, the app falls back to `1234`.
 
 ## Build and run
 

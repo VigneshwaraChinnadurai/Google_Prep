@@ -35,6 +35,9 @@ android {
     val githubBranch = localProperties.getProperty("GITHUB_BRANCH", "main")
         .replace("\\", "\\\\")
         .replace("\"", "\\\"")
+    val settingsUpdatePassword = localProperties.getProperty("SETTINGS_UPDATE_PASSWORD", "1234")
+        .replace("\\", "\\\\")
+        .replace("\"", "\\\"")
 
     namespace = "com.vignesh.leedcodecheckerollama"
     compileSdk = 35
@@ -51,6 +54,7 @@ android {
         buildConfigField("String", "GITHUB_OWNER", "\"$githubOwner\"")
         buildConfigField("String", "GITHUB_REPO", "\"$githubRepo\"")
         buildConfigField("String", "GITHUB_BRANCH", "\"$githubBranch\"")
+        buildConfigField("String", "SETTINGS_UPDATE_PASSWORD", "\"$settingsUpdatePassword\"")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {

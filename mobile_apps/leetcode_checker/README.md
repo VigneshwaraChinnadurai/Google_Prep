@@ -1,48 +1,58 @@
 # LeetCode Checker (Android)
 
-This app has a single button (`LeetCode`) that fetches and displays the current LeetCode Daily Challenge.
-
-## How it works
-
-- It calls LeetCode GraphQL endpoint: `https://leetcode.com/graphql`
-- It uses `activeDailyCodingChallengeQuestion`, so the date changes automatically based on LeetCode's current daily challenge.
-- It then fetches question content using `titleSlug` and shows a short preview.
+This app is a LeetCode daily consistency tracker with a Gemini-based generation pipeline.
 
 ## Project location
 
 `mobile_apps/leetcode_checker`
 
-## Open and run
+## What this app does
 
-1. Open Android Studio.
-2. Select **Open** and choose `mobile_apps/leetcode_checker`.
-3. Let Gradle sync complete.
-4. Run the app on an emulator or physical device.
+- Landing + Checker + Flow Diagram + Settings screens.
+- Manual API refresh and manual-confirmed LLM refresh.
+- LeetCode GraphQL fetch for daily challenge and details.
+- Gemini generation with retry + timestamped pipeline logs.
+- Local cache for challenge + AI output.
+- Completion tracking with reminders and calendar event insertion.
+- Revision export (`question.txt`, `answer.py`, `explanation.txt`) and optional GitHub push.
+- Password-protected settings update.
+- Mermaid runtime flow image viewer with pinch zoom, pan, and reset.
 
-## Build APK From Terminal
+## Configure local.properties
+
+Create `local.properties` in this project root (same folder as `settings.gradle.kts`) and add:
+
+```properties
+GEMINI_API_KEY=
+GITHUB_TOKEN=
+GITHUB_OWNER=VigneshwaraChinnadurai
+GITHUB_REPO=Google_Prep
+GITHUB_BRANCH=main
+SETTINGS_UPDATE_PASSWORD=replace_with_strong_value
+```
+
+Notes:
+
+- If `SETTINGS_UPDATE_PASSWORD` is missing, the app falls back to `1234`.
+- Use a strong password in development and rotate it if shared.
+
+## Build and run
 
 From `mobile_apps/leetcode_checker`:
 
-1. Debug APK:
+```powershell
+.\gradlew :app:assembleDebug
+```
 
-	```powershell
-	.\build_apk.ps1 -Variant debug
-	```
+APK path:
 
-2. Release APK:
+- `app/build/outputs/apk/debug/app-debug.apk`
 
-	- Copy `keystore.properties.example` to `keystore.properties`
-	- Fill in your keystore values
-	- Run:
+For release signing:
 
-	```powershell
-	.\build_apk.ps1 -Variant release
-	```
-
-APK output paths:
-
-- Debug: `app/build/outputs/apk/debug/app-debug.apk`
-- Release: `app/build/outputs/apk/release/app-release.apk`
+1. Copy `keystore.properties.example` to `keystore.properties`.
+2. Fill real keystore values.
+3. Build with your preferred release command/script.
 
 ## Main files
 
@@ -50,13 +60,9 @@ APK output paths:
 - `app/src/main/java/com/vignesh/leetcodechecker/LeetCodeViewModel.kt`
 - `app/src/main/java/com/vignesh/leetcodechecker/data/LeetCodeRepository.kt`
 - `app/src/main/java/com/vignesh/leetcodechecker/data/LeetCodeApi.kt`
-- `app/src/main/AndroidManifest.xml`
+- `app/src/main/java/com/vignesh/leetcodechecker/data/GeminiApi.kt`
 
-## Notes
+## Detailed documentation
 
-- Internet permission is included in manifest.
-- The app opens the daily problem URL in browser via an "Open in Browser" button.
-
-## Detailed Documentation
-
-- See `DETAILED_DOCUMENTATION.md` for a full architecture and runtime-flow guide.
+- See `DETAILED_DOCUMENTATION.md` for full feature and architecture details.
+- Mermaid source and rendered image are in `docs/runtime_flow.mmd` and `docs/runtime_flow.png`.

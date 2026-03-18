@@ -18,10 +18,12 @@ import androidx.activity.compose.setContent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -46,14 +48,21 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.text.KeyboardOptions
 import com.vignesh.leetcodechecker.data.DailyChallengeUiModel
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -104,6 +113,7 @@ class MainActivity : ComponentActivity() {
 private enum class AppScreen {
     Landing,
     ConsistencyChecker,
+    FlowDiagram,
     Settings
 }
 
@@ -125,6 +135,9 @@ private fun LeetCodeCheckerScreen(
     var showLlmConfirmation by rememberSaveable { mutableStateOf(false) }
     var showPushConfirmation by rememberSaveable { mutableStateOf(false) }
     var pendingCalendarCompletion by rememberSaveable { mutableStateOf(false) }
+    var showSettingsPasswordDialog by rememberSaveable { mutableStateOf(false) }
+    var settingsPasswordInput by rememberSaveable { mutableStateOf("") }
+    val expectedSettingsPassword = BuildConfig.SETTINGS_UPDATE_PASSWORD.ifBlank { "1234" }
 
     var settingsModelsCsv by rememberSaveable { mutableStateOf(state.settings.preferredModelsCsv) }
     var settingsMaxRetries by rememberSaveable { mutableStateOf(state.settings.maxModelRetries.toString()) }
@@ -264,6 +277,13 @@ private fun LeetCodeCheckerScreen(
                 }
 
                 Button(
+                    onClick = { currentScreen = AppScreen.FlowDiagram },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Mermaid Flow Diagram")
+                }
+
+                Button(
                     onClick = { currentScreen = AppScreen.Settings },
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -283,7 +303,11 @@ private fun LeetCodeCheckerScreen(
                     Text("Back")
                 }
                 Text(
-                    text = if (currentScreen == AppScreen.Settings) "Settings" else state.settings.checkerTitle,
+                    text = when (currentScreen) {
+                        AppScreen.Settings -> "Settings"
+                        AppScreen.FlowDiagram -> "Mermaid Flow Diagram"
+                        else -> state.settings.checkerTitle
+                    },
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.SemiBold
                 )
@@ -365,31 +389,86 @@ private fun LeetCodeCheckerScreen(
 
                 Button(
                     onClick = {
-                        viewModel.saveSettings(
-                            AppSettings(
-                                landingTitle = state.settings.landingTitle,
-                                checkerTitle = state.settings.checkerTitle,
-                                consistencyButtonLabel = state.settings.consistencyButtonLabel,
-                                promptName = state.settings.promptName,
-                                preferredModelsCsv = settingsModelsCsv,
-                                maxModelRetries = settingsMaxRetries.toIntOrNull() ?: state.settings.maxModelRetries,
-                                maxInputTokens = settingsMaxInput.toIntOrNull() ?: state.settings.maxInputTokens,
-                                maxOutputTokens = settingsMaxOutput.toIntOrNull() ?: state.settings.maxOutputTokens,
-                                thinkingBudgetDivisor = settingsThinkingDivisor.toIntOrNull() ?: state.settings.thinkingBudgetDivisor,
-                                networkTimeoutMinutes = settingsTimeoutMinutes.toIntOrNull() ?: state.settings.networkTimeoutMinutes,
-                                reminderStartHourIst = settingsReminderStart.toIntOrNull() ?: state.settings.reminderStartHourIst,
-                                reminderEndHourIst = settingsReminderEnd.toIntOrNull() ?: state.settings.reminderEndHourIst,
-                                reminderIntervalHours = settingsReminderInterval.toIntOrNull() ?: state.settings.reminderIntervalHours,
-                                revisionFolderName = state.settings.revisionFolderName,
-                                githubOwnerOverride = settingsGithubOwner,
-                                githubRepoOverride = settingsGithubRepo,
-                                githubBranchOverride = settingsGithubBranch
-                            )
-                        )
+                        showSettingsPasswordDialog = true
                     },
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text("Save Settings")
+                }
+
+                if (showSettingsPasswordDialog) {
+                    AlertDialog(
+                        onDismissRequest = {
+                            showSettingsPasswordDialog = false
+                            settingsPasswordInput = ""
+                        },
+                        title = { Text("Settings Password") },
+                        text = {
+                            OutlinedTextField(
+                                value = settingsPasswordInput,
+                                onValueChange = { settingsPasswordInput = it },
+                                label = { Text("Enter password") },
+                                singleLine = true,
+                                visualTransformation = PasswordVisualTransformation(),
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        },
+                        confirmButton = {
+                            Button(onClick = {
+                                if (settingsPasswordInput == expectedSettingsPassword) {
+                                    showSettingsPasswordDialog = false
+                                    settingsPasswordInput = ""
+                                    viewModel.saveSettings(
+                                        AppSettings(
+                                            landingTitle = state.settings.landingTitle,
+                                            checkerTitle = state.settings.checkerTitle,
+                                            consistencyButtonLabel = state.settings.consistencyButtonLabel,
+                                            promptName = state.settings.promptName,
+                                            preferredModelsCsv = settingsModelsCsv,
+                                            maxModelRetries = settingsMaxRetries.toIntOrNull() ?: state.settings.maxModelRetries,
+                                            maxInputTokens = settingsMaxInput.toIntOrNull() ?: state.settings.maxInputTokens,
+                                            maxOutputTokens = settingsMaxOutput.toIntOrNull() ?: state.settings.maxOutputTokens,
+                                            thinkingBudgetDivisor = settingsThinkingDivisor.toIntOrNull() ?: state.settings.thinkingBudgetDivisor,
+                                            networkTimeoutMinutes = settingsTimeoutMinutes.toIntOrNull() ?: state.settings.networkTimeoutMinutes,
+                                            reminderStartHourIst = settingsReminderStart.toIntOrNull() ?: state.settings.reminderStartHourIst,
+                                            reminderEndHourIst = settingsReminderEnd.toIntOrNull() ?: state.settings.reminderEndHourIst,
+                                            reminderIntervalHours = settingsReminderInterval.toIntOrNull() ?: state.settings.reminderIntervalHours,
+                                            revisionFolderName = state.settings.revisionFolderName,
+                                            githubOwnerOverride = settingsGithubOwner,
+                                            githubRepoOverride = settingsGithubRepo,
+                                            githubBranchOverride = settingsGithubBranch
+                                        )
+                                    )
+                                } else {
+                                    Toast.makeText(context, "Incorrect settings password.", Toast.LENGTH_SHORT).show()
+                                }
+                            }) {
+                                Text("Unlock & Save")
+                            }
+                        },
+                        dismissButton = {
+                            Button(onClick = {
+                                showSettingsPasswordDialog = false
+                                settingsPasswordInput = ""
+                            }) {
+                                Text("Cancel")
+                            }
+                        }
+                    )
+                }
+            } else if (currentScreen == AppScreen.FlowDiagram) {
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    Column(
+                        modifier = Modifier.padding(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = "Pinch to zoom and drag to pan the diagram.",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                        ZoomableFlowDiagramImage()
+                    }
                 }
             } else {
 
@@ -720,15 +799,26 @@ private fun insertCompletionCalendarEvent(context: Context, challenge: DailyChal
     return runCatching {
         val projection = arrayOf(
             CalendarContract.Calendars._ID,
-            CalendarContract.Calendars.VISIBLE
+            CalendarContract.Calendars.IS_PRIMARY,
+            CalendarContract.Calendars.CALENDAR_ACCESS_LEVEL,
+            CalendarContract.Calendars.CALENDAR_DISPLAY_NAME
         )
-        val selection = "${CalendarContract.Calendars.VISIBLE}=1"
+        val selection = (
+            "${CalendarContract.Calendars.VISIBLE}=1 AND " +
+                "${CalendarContract.Calendars.SYNC_EVENTS}=1 AND " +
+                "${CalendarContract.Calendars.CALENDAR_ACCESS_LEVEL}>=?"
+            )
+        val selectionArgs = arrayOf(CalendarContract.Calendars.CAL_ACCESS_CONTRIBUTOR.toString())
+        val sortOrder = (
+            "${CalendarContract.Calendars.IS_PRIMARY} DESC, " +
+                "${CalendarContract.Calendars.CALENDAR_ACCESS_LEVEL} DESC"
+            )
         val cursor = context.contentResolver.query(
             CalendarContract.Calendars.CONTENT_URI,
             projection,
             selection,
-            null,
-            null
+            selectionArgs,
+            sortOrder
         ) ?: return false
 
         var calendarId: Long? = null
@@ -764,11 +854,77 @@ private fun insertCompletionCalendarEvent(context: Context, challenge: DailyChal
             put(CalendarContract.Events.DTEND, end.timeInMillis)
             put(CalendarContract.Events.ALL_DAY, 1)
             put(CalendarContract.Events.EVENT_TIMEZONE, timezone.id)
+            put(CalendarContract.Events.HAS_ALARM, 1)
+            put(CalendarContract.Events.AVAILABILITY, CalendarContract.Events.AVAILABILITY_BUSY)
             put(CalendarContract.Events.EVENT_COLOR, 0xFF2E7D32.toInt())
         }
 
-        context.contentResolver.insert(CalendarContract.Events.CONTENT_URI, values) != null
+        val eventUri = context.contentResolver.insert(CalendarContract.Events.CONTENT_URI, values)
+            ?: return false
+
+        val eventId = eventUri.lastPathSegment?.toLongOrNull() ?: return true
+        val reminderValues = ContentValues().apply {
+            put(CalendarContract.Reminders.EVENT_ID, eventId)
+            put(CalendarContract.Reminders.MINUTES, 0)
+            put(CalendarContract.Reminders.METHOD, CalendarContract.Reminders.METHOD_ALERT)
+        }
+        context.contentResolver.insert(CalendarContract.Reminders.CONTENT_URI, reminderValues)
+        true
     }.getOrDefault(false)
+}
+
+@Composable
+private fun ZoomableFlowDiagramImage() {
+    var scale by rememberSaveable { mutableStateOf(1f) }
+    var offsetX by rememberSaveable { mutableStateOf(0f) }
+    var offsetY by rememberSaveable { mutableStateOf(0f) }
+
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clipToBounds()
+        ) {
+            Image(
+                painter = painterResource(id = R.drawable.runtime_flow_diagram),
+                contentDescription = "Mermaid runtime flow diagram",
+                contentScale = ContentScale.Fit,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .pointerInput(Unit) {
+                        detectTransformGestures { _, pan, zoom, _ ->
+                            val updatedScale = (scale * zoom).coerceIn(1f, 5f)
+                            val scaleChanged = updatedScale != scale
+                            scale = updatedScale
+                            if (scale > 1f || scaleChanged) {
+                                offsetX += pan.x
+                                offsetY += pan.y
+                            }
+                            if (scale <= 1f) {
+                                offsetX = 0f
+                                offsetY = 0f
+                            }
+                        }
+                    }
+                    .graphicsLayer(
+                        scaleX = scale,
+                        scaleY = scale,
+                        translationX = offsetX,
+                        translationY = offsetY
+                    )
+            )
+        }
+
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+            Button(onClick = {
+                scale = 1f
+                offsetX = 0f
+                offsetY = 0f
+            }) {
+                Text("Reset Zoom")
+            }
+        }
+    }
 }
 
 private fun extractDsaConcepts(explanation: String, tags: List<String>): List<String> {

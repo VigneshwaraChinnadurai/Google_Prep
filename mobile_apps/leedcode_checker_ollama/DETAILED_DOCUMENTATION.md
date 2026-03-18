@@ -1,98 +1,128 @@
-﻿# LeedCode Checker Ollama: Detailed Technical Documentation
+# LeedCode Checker Ollama: Detailed Technical Documentation
 
 ## 1. Purpose
 
-LeedCode Checker Ollama is the feature-parity variant of the LeetCode Consistency Checker that keeps the same app workflow but uses Ollama for LLM generation.
+LeedCode Checker Ollama is the feature-parity variant of the LeetCode consistency app that uses Ollama instead of Gemini for generation.
 
 Core goals:
 1. Fetch the LeetCode daily challenge and cache it locally.
 2. Generate Python solution, testcase validation, and explanation via Ollama.
-3. Track daily completion with reminders and calendar marking.
-4. Export revision files locally and push to GitHub.
+3. Track daily completion with reminders and calendar insertion.
+4. Export revision files locally and optionally push to GitHub.
 
 ## 2. Architecture
 
-1. UI layer: Compose multi-screen flow (Landing, Checker, Settings).
-2. ViewModel layer: app orchestration, state management, settings persistence, push orchestration.
+1. UI layer: Compose multi-screen flow.
+2. ViewModel layer: orchestration, persistence, reminders, push flow.
 3. Data layer: LeetCode GraphQL + Ollama APIs + GitHub contents API.
 
 ## 3. Main Features
 
 ### 3.1 App flow
 
-1. Landing screen with primary consistency CTA.
-2. Checker screen for API refresh, LLM refresh, copy/push/complete operations.
-3. Settings screen for model/runtime/reminder/GitHub overrides.
+1. Landing screen actions:
+- Open Consistency Checker.
+- Open Calendar app.
+- Open Mermaid Flow Diagram viewer.
+- Open Settings.
+2. Checker screen handles API refresh, Ollama refresh, copy/export/push, completion.
+3. Settings screen manages model/runtime/reminder/GitHub overrides.
 
-### 3.2 Data refresh model
+### 3.2 Settings update protection
 
-1. Refresh LeetCode API loads latest daily challenge only.
-2. Refresh LLM Answer is a separate user-confirmed action.
-3. This split avoids accidental repeated LLM calls.
+1. Save Settings requires password confirmation.
+2. Password comes from BuildConfig key `SETTINGS_UPDATE_PASSWORD`.
+3. If key is missing/blank, fallback is `1234`.
 
-### 3.3 Ollama generation behavior
+### 3.3 Data refresh model
+
+1. Refresh LeetCode API is manual.
+2. Refresh Ollama Answer is manual and confirmation-gated.
+3. This split prevents accidental repeated generation calls.
+
+### 3.4 Ollama generation behavior
 
 1. Uses preferred model CSV from settings.
-2. Picks first preferred model available in local `/api/tags`; falls back to first preferred value.
-3. Ensures model availability via `/api/pull` if missing.
-4. Uses tagged response contract:
-1. `<leetcode_python3_code>`
-2. `<testcase_validation>`
-3. `<explanation>`
-5. Applies retry logic and logs request/response details with timestamps.
+2. Resolves model using `/api/tags`.
+3. Pulls model via `/api/pull` if not available.
+4. Calls `/api/generate` with retry and settings-driven runtime controls.
+5. Parses tagged contract:
+- `<leetcode_python3_code>`
+- `<testcase_validation>`
+- `<explanation>`
+6. Logs timestamped pipeline events for troubleshooting.
 
-### 3.4 Local persistence
+### 3.5 Local persistence
 
 1. Challenge and AI output are cached in SharedPreferences.
-2. Today completion flag is persisted by IST date.
-3. App reload restores previous challenge/answer state.
+2. Completion is persisted by IST date.
+3. App restores cached data on relaunch.
 
-### 3.5 Reminders and completion
+### 3.6 Reminders and completion
 
-1. Repeating alarm schedules reminder receiver.
-2. Reminder only fires within configured IST hour window.
-3. Reminder is skipped once today is marked completed.
-4. Mark Completed can create an all-day calendar event.
+1. Repeating alarm drives reminder receiver.
+2. Reminder only fires within configured IST window.
+3. Reminder is suppressed once today is marked completed.
+4. Mark Completed attempts to insert an all-day calendar event + reminder row.
 
-### 3.6 QA revision export and GitHub push
+### 3.7 QA revision export and GitHub push
 
 1. Generates `question.txt`, `answer.py`, `explanation.txt`.
-2. Saves files under revision root/date in app external files.
+2. Saves files under revision root/date in app external storage.
 3. Pushes same files to GitHub via contents upsert API.
 4. Supports owner/repo/branch overrides from settings.
 
-### 3.7 UI content controls
+### 3.8 Runtime flow diagram viewer
 
-1. Show/hide generated code.
-2. Show/hide testcase validation.
-3. Show/hide concepts extracted from explanation.
-4. Show/hide full explanation.
-5. Show/hide pipeline debug logs.
+1. Landing screen has `Mermaid Flow Diagram` option.
+2. Viewer shows packaged image `runtime_flow_diagram.png`.
+3. Supports pinch zoom, drag pan, and Reset Zoom.
 
-### 3.8 Theme behavior
+### 3.9 Theme behavior
 
-1. Follows phone system dark/light mode via `isSystemInDarkTheme()`.
-2. Uses explicit dark/light Material3 color schemes.
+1. Follows system dark/light mode (`isSystemInDarkTheme()`).
+2. Uses explicit Material3 dark/light color schemes.
 
 ## 4. Configuration
 
-From `local.properties`:
+Configure `local.properties` in `mobile_apps/leedcode_checker_ollama`:
+
 1. `OLLAMA_BASE_URL`
 2. `OLLAMA_MODEL`
 3. `GITHUB_TOKEN`
 4. `GITHUB_OWNER`
 5. `GITHUB_REPO`
 6. `GITHUB_BRANCH`
+7. `SETTINGS_UPDATE_PASSWORD`
+
+Example:
+
+```properties
+OLLAMA_BASE_URL=http://127.0.0.1:11434/
+OLLAMA_MODEL=qwen2.5:3b
+GITHUB_TOKEN=
+GITHUB_OWNER=VigneshwaraChinnadurai
+GITHUB_REPO=Google_Prep
+GITHUB_BRANCH=main
+SETTINGS_UPDATE_PASSWORD=replace_with_strong_value
+```
+
+Notes:
+
+1. Use `http://10.0.2.2:11434/` on Android emulator when Ollama runs on host machine.
+2. Use `http://127.0.0.1:11434/` when Ollama runs on the same device.
 
 ## 5. Build
 
 From `mobile_apps/leedcode_checker_ollama`:
-1. `.\gradlew :app:assembleDebug`
+
+1. `./gradlew :app:assembleDebug`
 
 APK output:
+
 1. `app/build/outputs/apk/debug/app-debug.apk`
 
-## 6. Mermaid Flow Diagram
+## 6. Mermaid Runtime Flow Diagram
 
 Rendered image:
 
@@ -104,54 +134,56 @@ Source file:
 
 ```mermaid
 flowchart TD
-	A[App Launch] --> B[Schedule reminder alarm]
-	B --> C[Load cached challenge and cached AI output]
-	C --> D[Open Landing page]
-	D --> E{User action}
+    A[App Launch] --> B[Schedule reminder alarm]
+    B --> C[Load cached challenge and AI output]
+    C --> D[Landing Screen]
+    D --> E{User action}
 
-	E --> F[Go to Settings]
-	F --> G[Edit model CSV, retries, tokens, timeout, reminder window, GitHub overrides]
-	G --> H[Save settings]
-	H --> D
+    E --> F[Open Calendar App]
+    F --> D
 
-	E --> I[Go to Consistency Checker]
-	I --> J[Refresh LeetCode API]
-	J --> K[Fetch daily challenge metadata from GraphQL]
-	K --> L[Fetch question details by titleSlug]
-	L --> M[Store challenge locally]
-	M --> N[Render challenge card]
+    E --> G[Open Mermaid Flow Diagram]
+    G --> H[View image with zoom/pan/reset]
+    H --> D
 
-	N --> O[Refresh LLM Answer with confirmation]
-	O --> P[Choose model from preferredModelsCsv]
-	P --> Q[Check /api/tags]
-	Q --> R{Model available?}
-	R -- No --> S[Call /api/pull then recheck]
-	S --> T{Model available after pull?}
-	T -- No --> U[Show pipeline error and logs]
-	T -- Yes --> V[Call /api/generate]
-	R -- Yes --> V
+    E --> I[Open Settings]
+    I --> J[Edit model, retries, tokens, timeout, reminder window, GitHub overrides]
+    J --> K[Save Settings]
+    K --> L{Password valid?}
+    L -- No --> I
+    L -- Yes --> D
 
-	V --> W{Generation success?}
-	W -- No --> X[Retry up to maxModelRetries]
-	X --> W
-	W -- Still no --> U
-	W -- Yes --> Y[Parse code, testcase_validation, explanation]
+    E --> M[Open Consistency Checker]
+    M --> N[Refresh LeetCode API]
+    N --> O[Fetch daily metadata from GraphQL]
+    O --> P[Fetch question details by titleSlug]
+    P --> Q[Store challenge locally]
+    Q --> R[Render challenge card]
 
-	Y --> Z[Store AI output locally]
-	Z --> AA[Render code, testcases, concepts, explanation, logs]
-	AA --> AB[Copy Python code]
-	AA --> AC[Open Problem URL or Editor URL]
+    R --> S[Refresh Ollama Answer with confirmation]
+    S --> T[Resolve preferred model via /api/tags]
+    T --> U{Model available?}
+    U -- No --> V[/api/pull model and recheck]
+    V --> U
+    U -- Yes --> W[Call /api/generate]
+    W --> X{Generation success?}
+    X -- No --> Y[Retry up to maxModelRetries]
+    Y --> X
+    X -- Yes --> Z[Parse code, testcase_validation, explanation]
 
-	AA --> AD{Push QA revision?}
-	AD -- Yes --> AE[Write question.txt, answer.py, explanation.txt locally]
-	AE --> AF[Push files to GitHub contents API]
-	AF --> AG[Show local path and push status]
-	AD -- No --> AG
+    Z --> AA[Store AI output locally]
+    AA --> AB[Render code/testcases/concepts/explanation/logs]
+    AB --> AC[Copy Python code]
 
-	AG --> AH{Mark completed?}
-	AH -- Yes --> AI[Save completed-today flag]
-	AI --> AJ[Insert calendar all-day event]
-	AJ --> AK[Reminder receiver suppresses notifications for today]
-	AH -- No --> AK
+    AB --> AD{Push QA revision?}
+    AD -- Yes --> AE[Write question.txt, answer.py, explanation.txt]
+    AE --> AF[Push files to GitHub]
+    AD -- No --> AG[Continue]
+    AF --> AG
+
+    AG --> AH{Mark completed?}
+    AH -- Yes --> AI[Save completed-today flag]
+    AI --> AJ[Insert calendar all-day event + reminder]
+    AJ --> AK[Reminder receiver suppresses notifications for today]
+    AH -- No --> AK
 ```
-
