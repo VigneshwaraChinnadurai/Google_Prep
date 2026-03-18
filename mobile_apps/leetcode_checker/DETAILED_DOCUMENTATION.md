@@ -307,3 +307,58 @@ If you want to extend this app, recommended next additions:
 9. Mark completed.
 
 This is the current implemented autonomous workflow boundary for the application.
+
+## 15. Mermaid Flow Diagram
+
+Rendered image:
+
+![LeetCode Checker Runtime Flow](docs/runtime_flow.png)
+
+Source file:
+
+`docs/runtime_flow.mmd`
+
+```mermaid
+flowchart TD
+	A[App Launch] --> B[Schedule reminder alarm]
+	B --> C[Load cached challenge and cached AI output]
+	C --> D[Open Landing page]
+	D --> E{User action}
+
+	E --> F[Go to Settings]
+	F --> G[Edit Gemini models CSV, retries, tokens, timeout, reminder window, GitHub overrides]
+	G --> H[Save settings]
+	H --> D
+
+	E --> I[Go to Consistency Checker]
+	I --> J[Refresh LeetCode API]
+	J --> K[Fetch daily challenge metadata from GraphQL]
+	K --> L[Fetch question details by titleSlug]
+	L --> M[Store challenge locally]
+	M --> N[Render challenge card]
+
+	N --> O[Refresh LLM Answer with confirmation]
+	O --> P[Pick first available Gemini model from preferred list]
+	P --> Q[Call generateContent]
+	Q --> R{Generation success?}
+	R -- No --> S[Retry up to maxModelRetries with cooldown handling]
+	S --> R
+	R -- Yes --> T[Parse code, testcase_validation, explanation]
+
+	T --> U[Store AI output locally]
+	U --> V[Render code, testcases, concepts, explanation, logs]
+	V --> W[Copy Python code]
+	V --> X[Open Problem URL or Editor URL]
+
+	V --> Y{Push QA revision?}
+	Y -- Yes --> Z[Write question.txt, answer.py, explanation.txt locally]
+	Z --> AA[Push files to GitHub contents API]
+	AA --> AB[Show local path and push status]
+	Y -- No --> AB
+
+	AB --> AC{Mark completed?}
+	AC -- Yes --> AD[Save completed-today flag]
+	AD --> AE[Insert calendar all-day event]
+	AE --> AF[Reminder receiver suppresses notifications for today]
+	AC -- No --> AF
+```

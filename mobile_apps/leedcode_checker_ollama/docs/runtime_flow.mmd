@@ -1,0 +1,50 @@
+flowchart TD
+    A[App Launch] --> B[Schedule reminder alarm]
+    B --> C[Load cached challenge and cached AI output]
+    C --> D[Open Landing page]
+    D --> E{User action}
+
+    E --> F[Go to Settings]
+    F --> G[Edit model CSV, retries, tokens, timeout, reminder window, GitHub overrides]
+    G --> H[Save settings]
+    H --> D
+
+    E --> I[Go to Consistency Checker]
+    I --> J[Refresh LeetCode API]
+    J --> K[Fetch daily challenge metadata from GraphQL]
+    K --> L[Fetch question details by titleSlug]
+    L --> M[Store challenge locally]
+    M --> N[Render challenge card]
+
+    N --> O[Refresh LLM Answer with confirmation]
+    O --> P[Choose model from preferredModelsCsv]
+    P --> Q[Check /api/tags]
+    Q --> R{Model available?}
+    R -- No --> S[Call /api/pull then recheck]
+    S --> T{Model available after pull?}
+    T -- No --> U[Show pipeline error and logs]
+    T -- Yes --> V[Call /api/generate]
+    R -- Yes --> V
+
+    V --> W{Generation success?}
+    W -- No --> X[Retry up to maxModelRetries]
+    X --> W
+    W -- Still no --> U
+    W -- Yes --> Y[Parse code, testcase_validation, explanation]
+
+    Y --> Z[Store AI output locally]
+    Z --> AA[Render code, testcases, concepts, explanation, logs]
+    AA --> AB[Copy Python code]
+    AA --> AC[Open Problem URL or Editor URL]
+
+    AA --> AD{Push QA revision?}
+    AD -- Yes --> AE[Write question.txt, answer.py, explanation.txt locally]
+    AE --> AF[Push files to GitHub contents API]
+    AF --> AG[Show local path and push status]
+    AD -- No --> AG
+
+    AG --> AH{Mark completed?}
+    AH -- Yes --> AI[Save completed-today flag]
+    AI --> AJ[Insert calendar all-day event]
+    AJ --> AK[Reminder receiver suppresses notifications for today]
+    AH -- No --> AK

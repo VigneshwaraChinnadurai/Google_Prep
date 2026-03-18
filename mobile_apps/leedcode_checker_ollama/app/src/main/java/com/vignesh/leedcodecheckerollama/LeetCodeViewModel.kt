@@ -1,22 +1,23 @@
-﻿package com.vignesh.leedcodecheckerollama
+package com.vignesh.leedcodecheckerollama
 
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.vignesh.leedcodecheckerollama.BuildConfig
 import com.vignesh.leedcodecheckerollama.data.AiGenerationResult
 import com.vignesh.leedcodecheckerollama.data.DailyChallengeUiModel
 import com.vignesh.leedcodecheckerollama.data.LeetCodeRepository
 import com.vignesh.leedcodecheckerollama.data.PipelineException
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 data class LeetCodeUiState(
     val isLoading: Boolean = false,
-    val isModelLoading: Boolean = false,
-    val availableModels: List<String> = emptyList(),
-    val selectedModel: String? = null,
     val challenge: DailyChallengeUiModel? = null,
     val aiCode: String? = null,
     val aiTestcaseValidation: String? = null,
@@ -25,22 +26,43 @@ data class LeetCodeUiState(
     val error: String? = null,
     val aiError: String? = null,
     val aiDebugLog: String? = null,
-    val infoMessage: String? = null
+    val infoMessage: String? = null,
+    val isCompletedToday: Boolean = false,
+    val isPushLoading: Boolean = false,
+    val localRevisionPath: String? = null,
+    val settings: AppSettings = AppSettings()
 )
 
 class LeetCodeViewModel(
-    private val repository: LeetCodeRepository = LeetCodeRepository()
-) : ViewModel() {
+    application: Application,
+    private val repository: LeetCodeRepository = LeetCodeRepository(application.applicationContext)
+) : AndroidViewModel(application) {
 
+    companion object {
+        fun factory(application: Application): ViewModelProvider.Factory =
+            object : ViewModelProvider.Factory {
+                override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                    if (modelClass.isAssignableFrom(LeetCodeViewModel::class.java)) {
+                        @Suppress("UNCHECKED_CAST")
+                        return LeetCodeViewModel(application) as T
+                    }
+                    throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
+                }
+            }
+    }
+
+    private val appContext = application.applicationContext
+    private val initialSettings = AppSettingsStore.load(appContext)
     private val _uiState = MutableStateFlow(
-        LeetCodeUiState(selectedModel = repository.defaultConfiguredModel())
+        LeetCodeUiState(
+            isCompletedToday = ConsistencyStorage.isCompletedToday(appContext),
+            settings = initialSettings
+        )
     )
     val uiState: StateFlow<LeetCodeUiState> = _uiState.asStateFlow()
 
-    private var pendingRunRequested = false
-    private var nextAllowedRunAtMillis = 0L
-
     init {
+        loadFromLocalStorage()
         viewModelScope.launch {
             repository.liveDebugLog.collectLatest { logText ->
                 if (logText.isNotBlank()) {
@@ -48,149 +70,142 @@ class LeetCodeViewModel(
                 }
             }
         }
-
-        refreshAvailableModels()
     }
 
-    fun refreshAvailableModels() {
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isModelLoading = true)
-            repository.listAvailableModels()
-                .onSuccess { models ->
-                    val currentSelected = _uiState.value.selectedModel
-                    val defaultModel = repository.defaultConfiguredModel()
-                    val nextSelected = when {
-                        !currentSelected.isNullOrBlank() && models.contains(currentSelected) -> currentSelected
-                        models.contains(defaultModel) -> defaultModel
-                        models.isNotEmpty() -> models.first()
-                        else -> currentSelected ?: defaultModel
-                    }
+    private fun loadFromLocalStorage() {
+        val cachedChallenge = ConsistencyStorage.loadChallenge(appContext)
+        val cachedAi = ConsistencyStorage.loadAi(appContext)
 
-                    _uiState.value = _uiState.value.copy(
-                        isModelLoading = false,
-                        availableModels = models,
-                        selectedModel = nextSelected,
-                        infoMessage = if (models.isEmpty()) {
-                            "No Ollama models found yet. Pull one on your phone-side Ollama runtime."
-                        } else {
-                            "Loaded ${models.size} local Ollama model(s)."
-                        }
-                    )
-                }
-                .onFailure { throwable ->
-                    _uiState.value = _uiState.value.copy(
-                        isModelLoading = false,
-                        infoMessage = throwable.message ?: "Failed to load Ollama model list."
-                    )
-                }
-        }
+        _uiState.value = _uiState.value.copy(
+            challenge = cachedChallenge,
+            aiCode = cachedAi?.leetcodePythonCode,
+            aiTestcaseValidation = cachedAi?.testcaseValidation,
+            aiExplanation = cachedAi?.explanation,
+            aiDebugLog = cachedAi?.debugLog,
+            isCompletedToday = ConsistencyStorage.isCompletedToday(appContext),
+            settings = AppSettingsStore.load(appContext)
+        )
     }
 
-    fun selectModel(model: String) {
-        if (model.isBlank()) return
-        _uiState.value = _uiState.value.copy(selectedModel = model)
+    fun saveSettings(settings: AppSettings) {
+        val sanitized = settings.copy(
+            maxModelRetries = settings.maxModelRetries.coerceIn(1, 10),
+            maxInputTokens = settings.maxInputTokens.coerceIn(1_024, 2_000_000),
+            maxOutputTokens = settings.maxOutputTokens.coerceIn(256, 65_535),
+            thinkingBudgetDivisor = settings.thinkingBudgetDivisor.coerceIn(1, 64),
+            networkTimeoutMinutes = settings.networkTimeoutMinutes.coerceIn(1, 60),
+            reminderStartHourIst = settings.reminderStartHourIst.coerceIn(0, 23),
+            reminderEndHourIst = settings.reminderEndHourIst.coerceIn(0, 23),
+            reminderIntervalHours = settings.reminderIntervalHours.coerceIn(1, 12)
+        )
+        AppSettingsStore.save(appContext, sanitized)
+        ConsistencyReminderScheduler.ensureHourlyReminder(appContext)
+        _uiState.value = _uiState.value.copy(
+            settings = sanitized,
+            infoMessage = "Settings saved successfully."
+        )
     }
 
-    fun fetchDailyChallenge() {
-        if (_uiState.value.selectedModel.isNullOrBlank()) {
-            _uiState.value = _uiState.value.copy(
-                infoMessage = "Select an Ollama model before running the pipeline."
-            )
-            return
-        }
-
-        val now = System.currentTimeMillis()
-        if (now < nextAllowedRunAtMillis) {
-            val waitSeconds = ((nextAllowedRunAtMillis - now) / 1000).coerceAtLeast(1)
-            _uiState.value = _uiState.value.copy(
-                infoMessage = "Recent successful run detected. Retry after about $waitSeconds seconds."
-            )
-            return
-        }
-
+    fun refreshApiChallenge() {
         if (_uiState.value.isLoading || _uiState.value.isAiLoading) {
-            pendingRunRequested = true
-            _uiState.value = _uiState.value.copy(
-                infoMessage = "Flow is already running. Waiting for current run to finish."
-            )
+            _uiState.value = _uiState.value.copy(infoMessage = "A request is already running.")
             return
         }
 
-        startPipelineRun()
-    }
-
-    private fun startPipelineRun() {
         _uiState.value = _uiState.value.copy(
             isLoading = true,
-            challenge = null,
-            aiCode = null,
-            aiTestcaseValidation = null,
-            aiExplanation = null,
-            isAiLoading = false,
             error = null,
-            aiError = null,
-            aiDebugLog = null,
-            infoMessage = null
+            infoMessage = "Refreshing LeetCode daily challenge..."
         )
 
         viewModelScope.launch {
             repository.fetchDailyChallenge()
                 .onSuccess { challenge ->
+                    ConsistencyStorage.saveChallenge(appContext, challenge)
+                    // API refresh should not auto refresh LLM response.
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         challenge = challenge,
-                        isAiLoading = true,
+                        infoMessage = "LeetCode API content refreshed and stored locally.",
                         error = null,
-                        aiError = null
+                        isCompletedToday = ConsistencyStorage.isCompletedToday(appContext)
                     )
-                    fetchAiAnswer(challenge)
+
+                    val aiCode = _uiState.value.aiCode
+                    val aiExplanation = _uiState.value.aiExplanation
+                    val aiValidation = _uiState.value.aiTestcaseValidation
+                    if (!aiCode.isNullOrBlank() && !aiExplanation.isNullOrBlank()) {
+                        saveRevisionFilesLocally(
+                            challenge = challenge,
+                            aiCode = aiCode,
+                            aiExplanation = aiExplanation,
+                            aiValidation = aiValidation.orEmpty()
+                        )
+                    }
                 }
                 .onFailure { throwable ->
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        error = throwable.message ?: "Could not fetch LeetCode daily challenge"
+                        error = throwable.message ?: "Could not refresh LeetCode daily challenge",
+                        infoMessage = null
                     )
-
-                    if (pendingRunRequested) {
-                        pendingRunRequested = false
-                        _uiState.value = _uiState.value.copy(
-                            infoMessage = "Previous run failed. Executing queued retry now."
-                        )
-                        startPipelineRun()
-                    }
                 }
         }
     }
 
-    private suspend fun fetchAiAnswer(challenge: DailyChallengeUiModel) {
-        repository.generateDetailedAnswer(challenge, _uiState.value.selectedModel)
-            .onSuccess { answer ->
-                applyAiResult(answer)
+    fun refreshLlmAnswer() {
+        val challenge = _uiState.value.challenge
+        if (challenge == null) {
+            _uiState.value = _uiState.value.copy(
+                infoMessage = "Refresh API first to load daily challenge content."
+            )
+            return
+        }
 
-                if (pendingRunRequested) {
-                    pendingRunRequested = false
-                    nextAllowedRunAtMillis = System.currentTimeMillis() + 60_000L
+        if (_uiState.value.isLoading || _uiState.value.isAiLoading) {
+            _uiState.value = _uiState.value.copy(infoMessage = "A request is already running.")
+            return
+        }
+
+        _uiState.value = _uiState.value.copy(
+            isAiLoading = true,
+            aiError = null,
+            infoMessage = "Refreshing Ollama answer (manual confirmation accepted)."
+        )
+
+        viewModelScope.launch {
+            repository.generateDetailedAnswer(challenge, forceRefresh = true)
+                .onSuccess { answer ->
+                    applyAiResult(answer)
+                    ConsistencyStorage.saveAi(appContext, answer)
+                    saveRevisionFilesLocally(
+                        challenge = challenge,
+                        aiCode = answer.leetcodePythonCode,
+                        aiExplanation = answer.explanation,
+                        aiValidation = answer.testcaseValidation
+                    )
                     _uiState.value = _uiState.value.copy(
-                        infoMessage = "Flow completed successfully. Queued runs canceled. Retry after one minute."
+                        infoMessage = "Ollama response refreshed and stored locally."
                     )
                 }
-            }
-            .onFailure { throwable ->
-                val pipelineError = throwable as? PipelineException
-                _uiState.value = _uiState.value.copy(
-                    isAiLoading = false,
-                    aiError = throwable.message ?: "Could not generate AI answer",
-                    aiDebugLog = pipelineError?.debugLog ?: _uiState.value.aiDebugLog
-                )
-
-                if (pendingRunRequested) {
-                    pendingRunRequested = false
+                .onFailure { throwable ->
+                    val pipelineError = throwable as? PipelineException
                     _uiState.value = _uiState.value.copy(
-                        infoMessage = "Previous run failed. Executing queued retry now."
+                        isAiLoading = false,
+                        aiError = throwable.message ?: "Could not refresh Ollama answer",
+                        aiDebugLog = pipelineError?.debugLog ?: _uiState.value.aiDebugLog,
+                        infoMessage = null
                     )
-                    startPipelineRun()
                 }
-            }
+        }
+    }
+
+    fun markCompletedToday() {
+        ConsistencyStorage.markCompletedToday(appContext)
+        _uiState.value = _uiState.value.copy(
+            isCompletedToday = true,
+            infoMessage = "Marked completed for today."
+        )
     }
 
     private fun applyAiResult(result: AiGenerationResult) {
@@ -204,8 +219,125 @@ class LeetCodeViewModel(
         )
     }
 
+    fun pushRevisionFilesToGitHub() {
+        val snapshot = _uiState.value
+        val challenge = snapshot.challenge
+        val aiCode = snapshot.aiCode
+        val aiExplanation = snapshot.aiExplanation
+        val aiValidation = snapshot.aiTestcaseValidation.orEmpty()
+
+        if (challenge == null || aiCode.isNullOrBlank() || aiExplanation.isNullOrBlank()) {
+            _uiState.value = snapshot.copy(
+                infoMessage = "Refresh API and Ollama answer first. Then push revision files to GitHub."
+            )
+            return
+        }
+
+        if (snapshot.isPushLoading) {
+            _uiState.value = snapshot.copy(infoMessage = "GitHub push is already in progress.")
+            return
+        }
+
+        _uiState.value = snapshot.copy(
+            isPushLoading = true,
+            infoMessage = "Preparing revision files for GitHub push..."
+        )
+
+        viewModelScope.launch {
+            runCatching {
+                val settings = _uiState.value.settings
+                val ownerInput = settings.githubOwnerOverride.ifBlank { BuildConfig.GITHUB_OWNER }
+                val repoInput = settings.githubRepoOverride.ifBlank { BuildConfig.GITHUB_REPO }
+                val owner = normalizeGitHubOwner(ownerInput, repoInput)
+                val repo = normalizeGitHubRepo(repoInput)
+                val branch = settings.githubBranchOverride.ifBlank { BuildConfig.GITHUB_BRANCH }
+                val revisionFolder = settings.revisionFolderName.ifBlank { "Leetcode_QA_Revision" }
+
+                val files = RevisionExportManager.buildRevisionFiles(
+                    challenge = challenge,
+                    aiCode = aiCode,
+                    aiExplanation = aiExplanation,
+                    aiValidation = aiValidation
+                )
+
+                val localPath = RevisionExportManager.writeLocalRevisionFiles(appContext, files)
+                RevisionExportManager.pushToGitHub(
+                    files = files,
+                    token = BuildConfig.GITHUB_TOKEN,
+                    owner = owner,
+                    repo = repo,
+                    branch = branch,
+                    revisionRootFolder = revisionFolder
+                )
+
+                localPath
+            }.onSuccess { localPath ->
+                _uiState.value = _uiState.value.copy(
+                    isPushLoading = false,
+                    localRevisionPath = localPath,
+                    infoMessage = "Pushed question.txt, answer.py, explanation.txt to GitHub successfully."
+                )
+            }.onFailure { error ->
+                _uiState.value = _uiState.value.copy(
+                    isPushLoading = false,
+                    infoMessage = "GitHub push failed: ${error.message}"
+                )
+            }
+        }
+    }
+
+    private suspend fun saveRevisionFilesLocally(
+        challenge: DailyChallengeUiModel,
+        aiCode: String,
+        aiExplanation: String,
+        aiValidation: String
+    ) {
+        runCatching {
+            val files = RevisionExportManager.buildRevisionFiles(
+                challenge = challenge,
+                aiCode = aiCode,
+                aiExplanation = aiExplanation,
+                aiValidation = aiValidation
+            )
+            RevisionExportManager.writeLocalRevisionFiles(appContext, files)
+        }.onSuccess { localPath ->
+            _uiState.value = _uiState.value.copy(localRevisionPath = localPath)
+        }
+    }
+
     fun clearInfoMessage() {
         _uiState.value = _uiState.value.copy(infoMessage = null)
+    }
+
+    private fun normalizeGitHubRepo(repoInput: String): String {
+        val trimmed = repoInput.trim()
+        if (trimmed.contains("github.com/")) {
+            val path = trimmed.substringAfter("github.com/")
+            val parts = path.split('/').filter { it.isNotBlank() }
+            if (parts.size >= 2) {
+                return parts[1]
+            }
+        }
+        return trimmed.substringAfterLast('/').ifBlank { trimmed }
+    }
+
+    private fun normalizeGitHubOwner(ownerInput: String, repoInput: String): String {
+        val ownerTrimmed = ownerInput.trim()
+        val repoTrimmed = repoInput.trim()
+
+        if (repoTrimmed.contains("github.com/")) {
+            val path = repoTrimmed.substringAfter("github.com/")
+            val parts = path.split('/').filter { it.isNotBlank() }
+            if (parts.size >= 2) {
+                return parts[0]
+            }
+        }
+
+        if (ownerTrimmed.contains('@')) {
+            return ownerTrimmed.substringBefore('@').ifBlank { ownerTrimmed }
+        }
+
+        return ownerTrimmed.substringAfterLast('/').ifBlank { ownerTrimmed }
     }
 }
 

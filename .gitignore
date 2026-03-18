@@ -208,6 +208,7 @@ __marimo__/
 
 # Local IDE and execution artifacts
 .idea/
+.vscode/
 local_executions/
 
 # Android signing secrets

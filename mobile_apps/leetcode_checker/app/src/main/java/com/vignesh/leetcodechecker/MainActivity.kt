@@ -1,6 +1,7 @@
 package com.vignesh.leetcodechecker
 
 import android.Manifest
+import android.app.Application
 import android.content.ContentValues
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -36,14 +37,18 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.platform.LocalContext
@@ -56,12 +61,35 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import java.util.Calendar
 import java.util.TimeZone
 
+private val AppDarkColors = darkColorScheme(
+    primary = Color(0xFF9FC8FF),
+    onPrimary = Color(0xFF003259),
+    secondary = Color(0xFF9AD0C0),
+    onSecondary = Color(0xFF07372E),
+    background = Color(0xFF0F1115),
+    onBackground = Color(0xFFE5E9F0),
+    surface = Color(0xFF171A20),
+    onSurface = Color(0xFFE5E9F0)
+)
+
+private val AppLightColors = lightColorScheme(
+    primary = Color(0xFF245FA8),
+    onPrimary = Color(0xFFFFFFFF),
+    secondary = Color(0xFF2B7A64),
+    onSecondary = Color(0xFFFFFFFF),
+    background = Color(0xFFF7F9FC),
+    onBackground = Color(0xFF121417),
+    surface = Color(0xFFFFFFFF),
+    onSurface = Color(0xFF121417)
+)
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         ConsistencyReminderScheduler.ensureHourlyReminder(this)
         setContent {
-            MaterialTheme {
+            val darkTheme = isSystemInDarkTheme()
+            MaterialTheme(colorScheme = if (darkTheme) AppDarkColors else AppLightColors) {
                 LeetCodeCheckerScreen(
                     onOpenLink = { url ->
                         val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
@@ -81,14 +109,16 @@ private enum class AppScreen {
 
 @Composable
 private fun LeetCodeCheckerScreen(
-    viewModel: LeetCodeViewModel = viewModel(),
     onOpenLink: (String) -> Unit
 ) {
-    val state by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val application = context.applicationContext as Application
+    val viewModel: LeetCodeViewModel = viewModel(factory = LeetCodeViewModel.factory(application))
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
     var currentScreen by rememberSaveable { mutableStateOf(AppScreen.Landing) }
     var showPipelineLog by rememberSaveable { mutableStateOf(false) }
     var showPythonFile by rememberSaveable { mutableStateOf(true) }
+    var showTestcases by rememberSaveable { mutableStateOf(true) }
     var showExplanation by rememberSaveable { mutableStateOf(true) }
     var showConcepts by rememberSaveable { mutableStateOf(true) }
     var handledChallengeUrl by rememberSaveable { mutableStateOf<String?>(null) }
@@ -96,10 +126,6 @@ private fun LeetCodeCheckerScreen(
     var showPushConfirmation by rememberSaveable { mutableStateOf(false) }
     var pendingCalendarCompletion by rememberSaveable { mutableStateOf(false) }
 
-    var settingsLandingTitle by rememberSaveable { mutableStateOf(state.settings.landingTitle) }
-    var settingsCheckerTitle by rememberSaveable { mutableStateOf(state.settings.checkerTitle) }
-    var settingsButtonLabel by rememberSaveable { mutableStateOf(state.settings.consistencyButtonLabel) }
-    var settingsPromptName by rememberSaveable { mutableStateOf(state.settings.promptName) }
     var settingsModelsCsv by rememberSaveable { mutableStateOf(state.settings.preferredModelsCsv) }
     var settingsMaxRetries by rememberSaveable { mutableStateOf(state.settings.maxModelRetries.toString()) }
     var settingsMaxInput by rememberSaveable { mutableStateOf(state.settings.maxInputTokens.toString()) }
@@ -109,7 +135,6 @@ private fun LeetCodeCheckerScreen(
     var settingsReminderStart by rememberSaveable { mutableStateOf(state.settings.reminderStartHourIst.toString()) }
     var settingsReminderEnd by rememberSaveable { mutableStateOf(state.settings.reminderEndHourIst.toString()) }
     var settingsReminderInterval by rememberSaveable { mutableStateOf(state.settings.reminderIntervalHours.toString()) }
-    var settingsRevisionFolder by rememberSaveable { mutableStateOf(state.settings.revisionFolderName) }
     var settingsGithubOwner by rememberSaveable { mutableStateOf(state.settings.githubOwnerOverride) }
     var settingsGithubRepo by rememberSaveable { mutableStateOf(state.settings.githubRepoOverride) }
     var settingsGithubBranch by rememberSaveable { mutableStateOf(state.settings.githubBranchOverride) }
@@ -147,6 +172,7 @@ private fun LeetCodeCheckerScreen(
         handledChallengeUrl = challenge.url
         showPipelineLog = false
         showPythonFile = true
+        showTestcases = true
         showExplanation = true
         showConcepts = true
     }
@@ -158,10 +184,6 @@ private fun LeetCodeCheckerScreen(
     }
 
     LaunchedEffect(state.settings) {
-        settingsLandingTitle = state.settings.landingTitle
-        settingsCheckerTitle = state.settings.checkerTitle
-        settingsButtonLabel = state.settings.consistencyButtonLabel
-        settingsPromptName = state.settings.promptName
         settingsModelsCsv = state.settings.preferredModelsCsv
         settingsMaxRetries = state.settings.maxModelRetries.toString()
         settingsMaxInput = state.settings.maxInputTokens.toString()
@@ -171,7 +193,6 @@ private fun LeetCodeCheckerScreen(
         settingsReminderStart = state.settings.reminderStartHourIst.toString()
         settingsReminderEnd = state.settings.reminderEndHourIst.toString()
         settingsReminderInterval = state.settings.reminderIntervalHours.toString()
-        settingsRevisionFolder = state.settings.revisionFolderName
         settingsGithubOwner = state.settings.githubOwnerOverride
         settingsGithubRepo = state.settings.githubRepoOverride
         settingsGithubBranch = state.settings.githubBranchOverride
@@ -223,6 +244,26 @@ private fun LeetCodeCheckerScreen(
                 }
 
                 Button(
+                    onClick = {
+                        val primaryIntent = Intent(Intent.ACTION_MAIN).apply {
+                            addCategory(Intent.CATEGORY_APP_CALENDAR)
+                        }
+                        val fallbackIntent = Intent(Intent.ACTION_VIEW, CalendarContract.CONTENT_URI)
+
+                        runCatching { context.startActivity(primaryIntent) }
+                            .onFailure {
+                                runCatching { context.startActivity(fallbackIntent) }
+                                    .onFailure {
+                                        Toast.makeText(context, "No calendar app found.", Toast.LENGTH_SHORT).show()
+                                    }
+                            }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Calendar")
+                }
+
+                Button(
                     onClick = { currentScreen = AppScreen.Settings },
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -246,36 +287,9 @@ private fun LeetCodeCheckerScreen(
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.SemiBold
                 )
-                Button(onClick = { currentScreen = AppScreen.Settings }) {
-                    Text("Settings")
-                }
             }
 
             if (currentScreen == AppScreen.Settings) {
-                OutlinedTextField(
-                    value = settingsLandingTitle,
-                    onValueChange = { settingsLandingTitle = it },
-                    label = { Text("Landing Title") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                OutlinedTextField(
-                    value = settingsCheckerTitle,
-                    onValueChange = { settingsCheckerTitle = it },
-                    label = { Text("Checker Title") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                OutlinedTextField(
-                    value = settingsButtonLabel,
-                    onValueChange = { settingsButtonLabel = it },
-                    label = { Text("Consistency Button Label") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                OutlinedTextField(
-                    value = settingsPromptName,
-                    onValueChange = { settingsPromptName = it },
-                    label = { Text("Prompt Name") },
-                    modifier = Modifier.fillMaxWidth()
-                )
                 OutlinedTextField(
                     value = settingsModelsCsv,
                     onValueChange = { settingsModelsCsv = it },
@@ -331,12 +345,6 @@ private fun LeetCodeCheckerScreen(
                     modifier = Modifier.fillMaxWidth()
                 )
                 OutlinedTextField(
-                    value = settingsRevisionFolder,
-                    onValueChange = { settingsRevisionFolder = it },
-                    label = { Text("Revision Root Folder") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                OutlinedTextField(
                     value = settingsGithubOwner,
                     onValueChange = { settingsGithubOwner = it },
                     label = { Text("GitHub Owner Override") },
@@ -359,10 +367,10 @@ private fun LeetCodeCheckerScreen(
                     onClick = {
                         viewModel.saveSettings(
                             AppSettings(
-                                landingTitle = settingsLandingTitle,
-                                checkerTitle = settingsCheckerTitle,
-                                consistencyButtonLabel = settingsButtonLabel,
-                                promptName = settingsPromptName,
+                                landingTitle = state.settings.landingTitle,
+                                checkerTitle = state.settings.checkerTitle,
+                                consistencyButtonLabel = state.settings.consistencyButtonLabel,
+                                promptName = state.settings.promptName,
                                 preferredModelsCsv = settingsModelsCsv,
                                 maxModelRetries = settingsMaxRetries.toIntOrNull() ?: state.settings.maxModelRetries,
                                 maxInputTokens = settingsMaxInput.toIntOrNull() ?: state.settings.maxInputTokens,
@@ -372,7 +380,7 @@ private fun LeetCodeCheckerScreen(
                                 reminderStartHourIst = settingsReminderStart.toIntOrNull() ?: state.settings.reminderStartHourIst,
                                 reminderEndHourIst = settingsReminderEnd.toIntOrNull() ?: state.settings.reminderEndHourIst,
                                 reminderIntervalHours = settingsReminderInterval.toIntOrNull() ?: state.settings.reminderIntervalHours,
-                                revisionFolderName = settingsRevisionFolder,
+                                revisionFolderName = state.settings.revisionFolderName,
                                 githubOwnerOverride = settingsGithubOwner,
                                 githubRepoOverride = settingsGithubRepo,
                                 githubBranchOverride = settingsGithubBranch
@@ -513,7 +521,7 @@ private fun LeetCodeCheckerScreen(
                         }
 
                         Button(onClick = { onOpenLink(challenge.url) }) {
-                            Text("Open Problem")
+                            Text("Open Problem in leetcode site")
                         }
 
                         Button(onClick = { onOpenLink(challenge.url) }) {
@@ -568,14 +576,23 @@ private fun LeetCodeCheckerScreen(
                         }
 
                         state.aiTestcaseValidation?.takeIf { it.isNotBlank() }?.let { validation ->
-                            Text(
-                                text = "Testcase Validation",
-                                style = MaterialTheme.typography.titleMedium
-                            )
-                            Text(
-                                text = validation,
-                                style = MaterialTheme.typography.bodySmall
-                            )
+                            Button(
+                                onClick = { showTestcases = !showTestcases },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(if (showTestcases) "Hide Testcases" else "Show Testcases")
+                            }
+
+                            if (showTestcases) {
+                                Text(
+                                    text = "Testcase Validation",
+                                    style = MaterialTheme.typography.titleMedium
+                                )
+                                Text(
+                                    text = validation,
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
                         }
 
                         state.aiExplanation?.takeIf { it.isNotBlank() }?.let { explanation ->

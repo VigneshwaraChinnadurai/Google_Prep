@@ -2,6 +2,8 @@ package com.vignesh.leetcodechecker
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.vignesh.leetcodechecker.BuildConfig
 import com.vignesh.leetcodechecker.data.AiGenerationResult
@@ -35,6 +37,19 @@ class LeetCodeViewModel(
     application: Application,
     private val repository: LeetCodeRepository = LeetCodeRepository(application.applicationContext)
 ) : AndroidViewModel(application) {
+
+    companion object {
+        fun factory(application: Application): ViewModelProvider.Factory =
+            object : ViewModelProvider.Factory {
+                override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                    if (modelClass.isAssignableFrom(LeetCodeViewModel::class.java)) {
+                        @Suppress("UNCHECKED_CAST")
+                        return LeetCodeViewModel(application) as T
+                    }
+                    throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
+                }
+            }
+    }
 
     private val appContext = application.applicationContext
     private val initialSettings = AppSettingsStore.load(appContext)

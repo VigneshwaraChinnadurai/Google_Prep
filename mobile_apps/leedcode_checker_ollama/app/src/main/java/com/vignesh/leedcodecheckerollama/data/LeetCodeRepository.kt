@@ -1,8 +1,11 @@
 package com.vignesh.leedcodecheckerollama.data
 
+import android.content.Context
 import android.util.Log
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
+import com.vignesh.leedcodecheckerollama.AppSettings
+import com.vignesh.leedcodecheckerollama.AppSettingsStore
 import com.vignesh.leedcodecheckerollama.BuildConfig
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -45,13 +48,13 @@ class PipelineException(
     val debugLog: String
 ) : Exception(message)
 
+private const val PROMPT_NAME = "Prompt for Leetcode_solver"
 private const val TAG = "LeedCodeRepository"
-private const val MAX_MODEL_RETRIES = 3
-private const val MAX_INPUT_TOKENS = 1_048_576
-private const val MAX_OUTPUT_TOKENS = 65_535
 private const val APPROX_CHARS_PER_TOKEN = 4
 
-class LeetCodeRepository {
+class LeetCodeRepository(
+    private val context: Context
+) {
     private val moshi: Moshi by lazy {
         Moshi.Builder()
             .add(KotlinJsonAdapterFactory())
@@ -88,13 +91,16 @@ class LeetCodeRepository {
     private val _liveDebugLog = MutableStateFlow("")
     val liveDebugLog: StateFlow<String> = _liveDebugLog.asStateFlow()
 
+    private fun loadSettings(): AppSettings = AppSettingsStore.load(context)
+
     private fun createHttpClient(): OkHttpClient {
+        val timeoutMinutes = loadSettings().networkTimeoutMinutes.coerceIn(1, 60).toLong()
         return OkHttpClient.Builder()
             .retryOnConnectionFailure(true)
-            .connectTimeout(30, TimeUnit.SECONDS)
-            .readTimeout(120, TimeUnit.SECONDS)
-            .writeTimeout(120, TimeUnit.SECONDS)
-            .callTimeout(150, TimeUnit.SECONDS)
+            .connectTimeout(timeoutMinutes, TimeUnit.MINUTES)
+            .readTimeout(timeoutMinutes, TimeUnit.MINUTES)
+            .writeTimeout(timeoutMinutes, TimeUnit.MINUTES)
+            .callTimeout(timeoutMinutes, TimeUnit.MINUTES)
             .build()
     }
 
@@ -200,29 +206,56 @@ class LeetCodeRepository {
 
     suspend fun generateDetailedAnswer(
         challenge: DailyChallengeUiModel,
-        selectedModel: String?
+        forceRefresh: Boolean = false
     ): Result<AiGenerationResult> {
         return runCatching {
+            val settings = loadSettings()
+            val maxModelRetries = settings.maxModelRetries.coerceIn(1, 10)
+            val maxInputTokens = settings.maxInputTokens.coerceIn(1_024, 2_000_000)
+            val maxOutputTokens = settings.maxOutputTokens.coerceIn(256, 65_535)
+            val promptName = settings.promptName.ifBlank { PROMPT_NAME }
+            val preferredModels = settings.preferredModelsCsv
+                .split(',')
+                .map { it.trim() }
+                .filter { it.isNotBlank() }
+                .ifEmpty { listOf(defaultConfiguredModel()) }
+
             val debug = StringBuilder()
             _liveDebugLog.value = ""
 
             val cacheKey = challenge.titleSlug
-            answerCache[cacheKey]?.let {
-                logDebug(debug, "Cache hit for ${challenge.titleSlug}")
-                return@runCatching it.copy(debugLog = mergeDebugLogs(it.debugLog, debug.toString()))
+            if (!forceRefresh) {
+                answerCache[cacheKey]?.let {
+                    logDebug(debug, "Cache hit for ${challenge.titleSlug}")
+                    return@runCatching it.copy(debugLog = mergeDebugLogs(it.debugLog, debug.toString()))
+                }
+            }
+
+            if (forceRefresh) {
+                answerCache.remove(cacheKey)
+                logDebug(debug, "Forcing refresh for ${challenge.titleSlug}")
             }
 
             logDebug(debug, "Starting Ollama pipeline for ${challenge.titleSlug}")
-            logDebug(debug, "Configured token limits: maxInputTokens=$MAX_INPUT_TOKENS, maxOutputTokens=$MAX_OUTPUT_TOKENS")
+            logDebug(debug, "Configured token limits: maxInputTokens=$maxInputTokens, maxOutputTokens=$maxOutputTokens")
             logDebug(debug, "Ollama base URL: ${BuildConfig.OLLAMA_BASE_URL}")
 
-            val model = selectedModel?.trim().takeUnless { it.isNullOrBlank() } ?: defaultConfiguredModel()
-            logDebug(debug, "Using model: $model")
+            val availableModels = runCatching {
+                ollamaApi.listTags().models.orEmpty()
+                    .mapNotNull { it.name?.trim() }
+                    .filter { it.isNotBlank() }
+            }.getOrDefault(emptyList())
 
-            ensureModelAvailable(model, debug)
+            val selectedModel = preferredModels.firstOrNull { preferred ->
+                availableModels.any { it.equals(preferred, ignoreCase = true) }
+            } ?: preferredModels.first()
+
+            logDebug(debug, "Selected model: $selectedModel")
+
+            ensureModelAvailable(selectedModel, debug)
 
             val systemPrompt = """
-You are LC-Ollama-Solver.
+You are LC-Ollama-Solver ($promptName).
 Return only these tags in order:
 <leetcode_python3_code>...</leetcode_python3_code>
 <testcase_validation>...</testcase_validation>
@@ -253,16 +286,23 @@ Testcases:
 ${challenge.exampleTestcases.ifBlank { "Not provided" }}
 """.trimIndent()
 
-            val boundedSystemPrompt = truncateToApproxTokenLimit(systemPrompt, MAX_INPUT_TOKENS / 2)
-            val boundedUserPrompt = truncateToApproxTokenLimit(userPrompt, MAX_INPUT_TOKENS / 2)
+            val boundedSystemPrompt = truncateToApproxTokenLimit(systemPrompt, maxInputTokens / 2)
+            val boundedUserPrompt = truncateToApproxTokenLimit(userPrompt, maxInputTokens / 2)
 
             logDebug(debug, "System prompt: $boundedSystemPrompt")
             logDebug(debug, "User prompt: $boundedUserPrompt")
 
             val generatedText = try {
-                generateWithRetry(model, boundedSystemPrompt, boundedUserPrompt, debug)
+                generateWithRetry(
+                    model = selectedModel,
+                    systemPrompt = boundedSystemPrompt,
+                    userPrompt = boundedUserPrompt,
+                    maxModelRetries = maxModelRetries,
+                    maxOutputTokens = maxOutputTokens,
+                    debug = debug
+                )
             } catch (error: Throwable) {
-                logDebug(debug, "Model failed: $model -> ${error.message}")
+                logDebug(debug, "Model failed: $selectedModel -> ${error.message}")
                 throw PipelineException(
                     message = error.message ?: "Ollama generation failed.",
                     debugLog = debug.toString().trim()
@@ -298,9 +338,11 @@ ${challenge.exampleTestcases.ifBlank { "Not provided" }}
         model: String,
         systemPrompt: String,
         userPrompt: String,
+        maxModelRetries: Int,
+        maxOutputTokens: Int,
         debug: StringBuilder
     ): String {
-        repeat(MAX_MODEL_RETRIES) { index ->
+        repeat(maxModelRetries) { index ->
             val attempt = index + 1
             try {
                 val request = OllamaGenerateRequest(
@@ -310,7 +352,7 @@ ${challenge.exampleTestcases.ifBlank { "Not provided" }}
                     stream = false,
                     options = OllamaOptions(
                         temperature = 0.2,
-                        numPredict = MAX_OUTPUT_TOKENS
+                        numPredict = maxOutputTokens
                     )
                 )
 
@@ -349,7 +391,7 @@ ${challenge.exampleTestcases.ifBlank { "Not provided" }}
                     logDebug(debug, "$model done reason: $doneReason")
                 }
 
-                if (attempt < MAX_MODEL_RETRIES) {
+                if (attempt < maxModelRetries) {
                     delay((1_500L * attempt).coerceAtMost(6_000L))
                     return@repeat
                 }
@@ -365,24 +407,24 @@ ${challenge.exampleTestcases.ifBlank { "Not provided" }}
                 if (errorBody.isNotBlank()) {
                     logDebug(debug, "$model HTTP ${error.code()} error body: $errorBody")
                 }
-                if (attempt < MAX_MODEL_RETRIES) {
+                if (attempt < maxModelRetries) {
                     delay((2_000L * attempt).coerceAtMost(8_000L))
                 }
             } catch (error: IOException) {
                 logDebug(debug, "$model network error: ${error.message}")
-                if (attempt < MAX_MODEL_RETRIES) {
+                if (attempt < maxModelRetries) {
                     delay((2_000L * attempt).coerceAtMost(8_000L))
                 }
             } catch (error: Throwable) {
                 logDebug(debug, "$model attempt $attempt failed with ${error::class.java.simpleName}: ${error.message}")
-                if (attempt < MAX_MODEL_RETRIES) {
+                if (attempt < maxModelRetries) {
                     delay((2_000L * attempt).coerceAtMost(8_000L))
                 }
             }
         }
 
         throw PipelineException(
-            "Failed after $MAX_MODEL_RETRIES retries for model '$model'. Verify Ollama service is running on the configured base URL.",
+            "Failed after $maxModelRetries retries for model '$model'. Verify Ollama service is running on the configured base URL.",
             debug.toString().trim()
         )
     }
@@ -394,7 +436,7 @@ ${challenge.exampleTestcases.ifBlank { "Not provided" }}
         val tags = runCatching { ollamaApi.listTags() }
             .getOrElse { error ->
                 throw PipelineException(
-                    "Unable to query local Ollama tags. Ensure Ollama daemon is running on the phone (${BuildConfig.OLLAMA_BASE_URL}). ${error.message}",
+                    "Unable to query local Ollama tags. Ensure Ollama daemon is running (${BuildConfig.OLLAMA_BASE_URL}). ${error.message}",
                     debug.toString().trim()
                 )
             }
