@@ -5,6 +5,7 @@ import retrofit2.http.POST
 import retrofit2.http.Path
 import retrofit2.http.Query
 import retrofit2.http.GET
+import okhttp3.ResponseBody
 
 data class GeminiGenerateRequest(
     val systemInstruction: GeminiContent,
@@ -14,7 +15,13 @@ data class GeminiGenerateRequest(
 
 data class GeminiGenerationConfig(
     val temperature: Double = 0.2,
-    val maxOutputTokens: Int = 4096
+    val maxOutputTokens: Int = 65535,
+    val responseMimeType: String = "text/plain",
+    val thinkingConfig: GeminiThinkingConfig? = null
+)
+
+data class GeminiThinkingConfig(
+    val thinkingBudget: Int
 )
 
 data class GeminiContent(
@@ -22,7 +29,7 @@ data class GeminiContent(
 )
 
 data class GeminiPart(
-    val text: String
+    val text: String?
 )
 
 data class GeminiGenerateResponse(
@@ -31,7 +38,8 @@ data class GeminiGenerateResponse(
 )
 
 data class GeminiCandidate(
-    val content: GeminiContent?
+    val content: GeminiContent?,
+    val finishReason: String?
 )
 
 data class GeminiPromptFeedback(
@@ -59,4 +67,11 @@ interface GeminiApi {
         @Query("key") apiKey: String,
         @Body body: GeminiGenerateRequest
     ): GeminiGenerateResponse
+
+    @POST("v1beta/models/{model}:generateContent")
+    suspend fun generateContentRaw(
+        @Path("model") model: String,
+        @Query("key") apiKey: String,
+        @Body body: GeminiGenerateRequest
+    ): ResponseBody
 }

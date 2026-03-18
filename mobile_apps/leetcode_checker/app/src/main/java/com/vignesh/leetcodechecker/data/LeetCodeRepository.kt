@@ -16,6 +16,9 @@ import java.security.SecureRandom
 import java.security.cert.X509Certificate
 import java.net.UnknownHostException
 import java.io.IOException
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import java.util.concurrent.TimeUnit
 import javax.net.ssl.SSLContext
 import javax.net.ssl.TrustManager
@@ -52,6 +55,10 @@ private const val PROMPT_NAME = "Prompt for Leetcode_solver"
 private const val TAG = "LeetCodeRepository"
 private val GEMINI_PRO_PREFERRED_MODELS = listOf("gemini-2.5-pro", "gemini-pro-latest")
 private const val MAX_MODEL_RETRIES = 3
+private const val MAX_INPUT_TOKENS = 1_048_576
+private const val MAX_OUTPUT_TOKENS = 65_535
+private const val MAX_THINKING_BUDGET = MAX_OUTPUT_TOKENS / 4
+private const val APPROX_CHARS_PER_TOKEN = 4
 
 class LeetCodeRepository {
     private val moshi: Moshi by lazy {
@@ -76,6 +83,14 @@ class LeetCodeRepository {
             .addConverterFactory(MoshiConverterFactory.create(moshi))
             .build()
             .create(GeminiApi::class.java)
+    }
+
+    private val geminiResponseAdapter by lazy {
+        moshi.adapter(GeminiGenerateResponse::class.java)
+    }
+
+    private val geminiRequestAdapter by lazy {
+        moshi.adapter(GeminiGenerateRequest::class.java)
     }
 
     private val answerCache = mutableMapOf<String, AiGenerationResult>()
@@ -268,9 +283,28 @@ Testcases:
 ${challenge.exampleTestcases.ifBlank { "Not provided" }}
 """.trimIndent()
 
+            val boundedSystemPrompt = truncateToApproxTokenLimit(systemPrompt, MAX_INPUT_TOKENS)
+            val remainingInputBudget = (MAX_INPUT_TOKENS - estimateApproxTokens(boundedSystemPrompt))
+                .coerceAtLeast(1024)
+            val boundedUserPrompt = truncateToApproxTokenLimit(userPrompt, remainingInputBudget)
+
+            if (boundedSystemPrompt != systemPrompt) {
+                logDebug(debug, "System prompt truncated to fit max input token budget: $MAX_INPUT_TOKENS")
+            }
+            if (boundedUserPrompt != userPrompt) {
+                logDebug(debug, "User prompt truncated to fit max input token budget: $MAX_INPUT_TOKENS")
+            }
+
+            logDebug(
+                debug,
+                "Configured token limits: maxInputTokens=$MAX_INPUT_TOKENS, maxOutputTokens=$MAX_OUTPUT_TOKENS, thinkingBudget=$MAX_THINKING_BUDGET"
+            )
+
             logDebug(debug, "Using model: $selectedModel")
+            logDebug(debug, "System prompt: $boundedSystemPrompt")
+            logDebug(debug, "User prompt: $boundedUserPrompt")
             val generatedText = try {
-                generateWithRetry(selectedModel, apiKey, systemPrompt, userPrompt, debug)
+                generateWithRetry(selectedModel, apiKey, boundedSystemPrompt, boundedUserPrompt, debug)
             } catch (error: Throwable) {
                 logDebug(debug, "Model failed: $selectedModel -> ${error.message}")
                 throw PipelineException(
@@ -315,15 +349,34 @@ ${challenge.exampleTestcases.ifBlank { "Not provided" }}
             val attempt = index + 1
             try {
                 logDebug(debug, "$model attempt $attempt")
-                val response = geminiApi.generateContent(
-                    model = model,
-                    apiKey = apiKey,
-                    body = GeminiGenerateRequest(
-                        systemInstruction = GeminiContent(parts = listOf(GeminiPart(text = systemPrompt))),
-                        contents = listOf(GeminiContent(parts = listOf(GeminiPart(text = userPrompt)))),
-                        generationConfig = GeminiGenerationConfig()
+                val request = GeminiGenerateRequest(
+                    systemInstruction = GeminiContent(parts = listOf(GeminiPart(text = systemPrompt))),
+                    contents = listOf(GeminiContent(parts = listOf(GeminiPart(text = userPrompt)))),
+                    generationConfig = GeminiGenerationConfig(
+                        maxOutputTokens = MAX_OUTPUT_TOKENS,
+                        thinkingConfig = GeminiThinkingConfig(thinkingBudget = MAX_THINKING_BUDGET)
                     )
                 )
+                val requestJson = geminiRequestAdapter.toJson(request)
+                logDebug(debug, "$model request payload: $requestJson")
+
+                val startedAt = System.currentTimeMillis()
+                val rawResponse = geminiApi.generateContentRaw(
+                    model = model,
+                    apiKey = apiKey,
+                    body = request
+                )
+                val finishedAt = System.currentTimeMillis()
+                logDebug(debug, "$model response received in ${finishedAt - startedAt} ms")
+
+                val responseJson = rawResponse.string()
+                logDebug(debug, "$model raw response: $responseJson")
+
+                val response = geminiResponseAdapter.fromJson(responseJson)
+                    ?: throw PipelineException(
+                        "Gemini returned an unreadable empty JSON response.",
+                        debug.toString().trim()
+                    )
 
                 response.promptFeedback?.let { feedback ->
                     if (!feedback.blockReason.isNullOrBlank()) {
@@ -334,6 +387,10 @@ ${challenge.exampleTestcases.ifBlank { "Not provided" }}
                 }
 
                 val firstCandidate = response.candidates?.firstOrNull()
+                val finishReason = firstCandidate?.finishReason.orEmpty()
+                if (finishReason.isNotBlank()) {
+                    logDebug(debug, "$model finishReason: $finishReason")
+                }
                 val parts = firstCandidate?.content?.parts.orEmpty()
                 val textParts = parts.mapNotNull { it.text?.takeIf { t -> t.isNotBlank() } }
 
@@ -345,16 +402,42 @@ ${challenge.exampleTestcases.ifBlank { "Not provided" }}
                             debug.toString().trim()
                         )
                     }
+                    if (finishReason.equals("MAX_TOKENS", ignoreCase = true)) {
+                        logDebug(debug, "$model exhausted output budget before returning visible text")
+                        if (attempt < MAX_MODEL_RETRIES) {
+                            val retryDelayMs = (1_500L * attempt).coerceAtMost(6_000L)
+                            logDebug(debug, "$model retrying after MAX_TOKENS in ${retryDelayMs}ms")
+                            delay(retryDelayMs)
+                            return@repeat
+                        }
+                        throw PipelineException(
+                            "Gemini hit MAX_TOKENS without returning output text. Try again; the next run may succeed.",
+                            debug.toString().trim()
+                        )
+                    }
                     logDebug(debug, "$model returned no text parts in candidate content")
                     return ""
                 }
 
-                return textParts.joinToString("\n").trim()
+                val combinedText = textParts.joinToString("\n").trim()
+                logDebug(debug, "$model parsed output text: $combinedText")
+                return combinedText
             } catch (error: PipelineException) {
                 throw error
             } catch (error: HttpException) {
+                val errorBody = error.response()?.errorBody()?.string().orEmpty()
+                if (errorBody.isNotBlank()) {
+                    logDebug(debug, "$model HTTP ${error.code()} error body: $errorBody")
+                }
                 logDebug(debug, "$model attempt $attempt failed with HTTP ${error.code()}")
                 when (error.code()) {
+                    400 -> {
+                        throw PipelineException(
+                            "HTTP 400 from Gemini (invalid request). Check the logged HTTP 400 error body for the exact field-level reason.",
+                            debug.toString().trim()
+                        )
+                    }
+
                     403 -> {
                         throw PipelineException(
                             "HTTP 403 from Gemini. Check API key validity, quota/billing, and Generative Language API access.",
@@ -429,15 +512,32 @@ ${challenge.exampleTestcases.ifBlank { "Not provided" }}
     }
 
     private fun logDebug(debug: StringBuilder, message: String) {
-        val line = "[${System.currentTimeMillis()}] $message"
+        val line = "[${formatTimestamp(System.currentTimeMillis())}] $message"
         debug.appendLine(line)
         Log.d(TAG, line)
         _liveDebugLog.value = debug.toString().trim()
+    }
+
+    private fun formatTimestamp(millis: Long): String {
+        val formatter = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.US)
+        return formatter.format(Date(millis))
     }
 
     private fun mergeDebugLogs(existing: String, additional: String): String {
         if (existing.isBlank()) return additional
         if (additional.isBlank()) return existing
         return "$existing\n$additional"
+    }
+
+    private fun estimateApproxTokens(text: String): Int {
+        return ((text.length + APPROX_CHARS_PER_TOKEN - 1) / APPROX_CHARS_PER_TOKEN).coerceAtLeast(1)
+    }
+
+    private fun truncateToApproxTokenLimit(text: String, maxTokens: Int): String {
+        if (maxTokens <= 0) return ""
+        val maxChars = (maxTokens.toLong() * APPROX_CHARS_PER_TOKEN)
+            .coerceAtMost(Int.MAX_VALUE.toLong())
+            .toInt()
+        return if (text.length <= maxChars) text else text.take(maxChars)
     }
 }
