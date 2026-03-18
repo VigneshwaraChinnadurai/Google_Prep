@@ -214,3 +214,7 @@ local_executions/
 mobile_apps/leetcode_checker/keystore.properties
 mobile_apps/leetcode_checker/*.jks
 mobile_apps/leetcode_checker/*.keystore
+
+# Android local/generated files
+mobile_apps/leetcode_checker/.gradle/
+mobile_apps/leetcode_checker/local.properties
