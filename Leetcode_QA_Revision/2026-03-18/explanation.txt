@@ -1,0 +1,84 @@
+Date: 2026-03-18
+Title: Count Submatrices with Top-Left Element and Sum Less Than k
+URL: https://leetcode.com/problems/count-submatrices-with-top-left-element-and-sum-less-than-k/
+
+LLM Explanation:
+The user wants to solve the "Count Submatrices with Top-Left Element and Sum Less Than k" problem.
+
+### Method Explanation
+
+The problem asks for the number of submatrices that start at the top-left corner `(0,0)` and have a sum less than or equal to `k`. Any such submatrix is uniquely defined by its bottom-right corner `(r, c)`. The task is therefore equivalent to finding the number of pairs `(r, c)` for which the sum of the submatrix from `(0,0)` to `(r,c)` is at most `k`.
+
+A naive approach of recalculating the sum for each possible bottom-right corner would be too slow, leading to a complexity of O(m² * n²). A much more efficient method is to use a 2D prefix sum array.
+
+1.  **Core Idea: 2D Prefix Sum**
+    We can compute a prefix sum matrix where each cell `(r, c)` stores the sum of all elements in the rectangle from `(0,0)` to `(r,c)`. This allows us to find the sum of any required submatrix in O(1) time after an initial O(m*n) preprocessing step.
+
+2.  **In-place Calculation**
+    To optimize for space, instead of creating a separate prefix sum matrix, we can modify the input `grid` in-place. As we iterate through the grid row by row, and column by column, we update `grid[r][c]` to become the prefix sum of the submatrix ending at `(r,c)`. The calculation relies on the standard prefix sum recurrence:
+    `prefix_sum(r,c) = grid(r,c) + prefix_sum(r-1,c) + prefix_sum(r,c-1) - prefix_sum(r-1,c-1)`
+    When we compute the value for `grid[r][c]`, the values `grid[r-1][c]`, `grid[r][c-1]`, and `grid[r-1][c-1]` have already been converted to their respective prefix sums, so the formula works correctly in-place.
+
+3.  **Algorithm and Optimization**
+    The algorithm iterates through each cell `(r, c)` of the grid:
+    - It first calculates the prefix sum for `grid[r][c]`.
+    - It then checks if this sum is less than or equal to `k`. If it is, a counter is incremented.
+    - An important optimization is possible because the problem constraints state that all grid elements are non-negative. This implies that for any fixed row `r`, the prefix sums `prefix_sum(r, c)` will be a non-decreasing sequence as `c` increases.
+    - Consequently, if we find that `prefix_sum(r, c) > k`, we can be certain that `prefix_sum(r, c+1)`, `prefix_sum(r, c+2)`, etc., will also be greater than `k`. We can therefore `break` the inner loop and proceed to the next row, avoiding unnecessary computations.
+
+### Complexity Analysis
+-   **Time Complexity:** O(m * n), where `m` is the number of rows and `n` is the number of columns. We visit each cell of the grid exactly once.
+-   **Space Complexity:** O(1) extra space, as the prefix sums are calculated by modifying the input grid in-place.
+
+LLM Testcase Validation:
+```python
+# Testcase 1
+grid1 = [[7,6,3],[6,6,1]]
+k1 = 18
+# Expected output: 4
+sol = Solution()
+# Note: The function modifies the grid in-place. A copy is used for validation.
+grid1_copy = [row[:] for row in grid1]
+output1 = sol.countSubmatrices(grid1_copy, k1)
+assert output1 == 4, f"Testcase 1 Failed: Expected 4, Got {output1}"
+
+# Testcase 2
+grid2 = [[7,2,9],[1,5,0],[2,6,6]]
+k2 = 20
+# Expected output: 6
+sol = Solution()
+grid2_copy = [row[:] for row in grid2]
+output2 = sol.countSubmatrices(grid2_copy, k2)
+assert output2 == 6, f"Testcase 2 Failed: Expected 6, Got {output2}"
+
+# Custom Testcase: Single row
+grid3 = [[10, 20, 30]]
+k3 = 25
+# Submatrices: [[10]] (sum=10<=25). [[10,20]] (sum=30>25).
+# Expected output: 1
+sol = Solution()
+grid3_copy = [row[:] for row in grid3]
+output3 = sol.countSubmatrices(grid3_copy, k3)
+assert output3 == 1, f"Testcase 3 Failed: Expected 1, Got {output3}"
+
+# Custom Testcase: Single column
+grid4 = [[10], [20], [30]]
+k4 = 35
+# Submatrices: [[10]] (sum=10<=35). [[10],[20]] (sum=30<=35). [[10],[20],[30]] (sum=60>35).
+# Expected output: 2
+sol = Solution()
+grid4_copy = [row[:] for row in grid4]
+output4 = sol.countSubmatrices(grid4_copy, k4)
+assert output4 == 2, f"Testcase 4 Failed: Expected 2, Got {output4}"
+
+# Custom Testcase: First element already > k
+grid5 = [[100, 1, 1], [1, 1, 1]]
+k5 = 50
+# Expected output: 0
+sol = Solution()
+grid5_copy = [row[:] for row in grid5]
+output5 = sol.countSubmatrices(grid5_copy, k5)
+assert output5 == 0, f"Testcase 5 Failed: Expected 0, Got {output5}"
+
+print("All testcases passed!")
+```
