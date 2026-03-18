@@ -12,6 +12,15 @@ android {
         keystorePropertiesFile.inputStream().use { keystoreProperties.load(it) }
     }
 
+    val localPropertiesFile = rootProject.file("local.properties")
+    val localProperties = Properties()
+    if (localPropertiesFile.exists()) {
+        localPropertiesFile.inputStream().use { localProperties.load(it) }
+    }
+    val geminiApiKey = localProperties.getProperty("GEMINI_API_KEY", "")
+        .replace("\\", "\\\\")
+        .replace("\"", "\\\"")
+
     namespace = "com.vignesh.leetcodechecker"
     compileSdk = 35
 
@@ -21,6 +30,7 @@ android {
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
+        buildConfigField("String", "GEMINI_API_KEY", "\"$geminiApiKey\"")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {

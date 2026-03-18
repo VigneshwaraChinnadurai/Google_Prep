@@ -45,7 +45,14 @@ data class QuestionDetailsData(
 
 data class QuestionDetails(
     val content: String?,
-    val exampleTestcases: String?
+    val exampleTestcases: String?,
+    val codeSnippets: List<CodeSnippet>?
+)
+
+data class CodeSnippet(
+    val lang: String,
+    val langSlug: String,
+    val code: String
 )
 
 interface LeetCodeApi {

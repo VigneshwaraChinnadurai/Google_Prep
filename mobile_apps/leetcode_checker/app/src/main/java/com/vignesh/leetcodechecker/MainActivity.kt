@@ -11,6 +11,9 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -33,14 +36,13 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.vignesh.leetcodechecker.data.DailyChallengeUiModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-
-private const val AI_STUDIO_PROMPT_URL = "https://aistudio.google.com/prompts/1NS1ZfsHlX_Wpf0wGVugWBou6q3hvc60n"
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -67,23 +69,33 @@ private fun LeetCodeCheckerScreen(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     var markedCompleted by rememberSaveable { mutableStateOf(false) }
+    var showPipelineLog by rememberSaveable { mutableStateOf(false) }
+    var showPythonFile by rememberSaveable { mutableStateOf(true) }
+    var showExplanation by rememberSaveable { mutableStateOf(true) }
+    var showConcepts by rememberSaveable { mutableStateOf(true) }
     var handledChallengeUrl by rememberSaveable { mutableStateOf<String?>(null) }
 
     LaunchedEffect(state.challenge?.url) {
         val challenge = state.challenge ?: return@LaunchedEffect
         if (handledChallengeUrl == challenge.url) return@LaunchedEffect
 
-        val prompt = buildAiPrompt(challenge)
-        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-        clipboard.setPrimaryClip(ClipData.newPlainText("LeetCode AI Prompt", prompt))
         Toast.makeText(
             context,
-            "Problem copied. Paste in AI Studio to generate detailed Python solution.",
-            Toast.LENGTH_LONG
+            "Fetched daily problem. Generating detailed Python solution automatically...",
+            Toast.LENGTH_SHORT
         ).show()
-        onOpenLink(AI_STUDIO_PROMPT_URL)
         handledChallengeUrl = challenge.url
         markedCompleted = false
+        showPipelineLog = false
+        showPythonFile = true
+        showExplanation = true
+        showConcepts = true
+    }
+
+    LaunchedEffect(state.infoMessage) {
+        val message = state.infoMessage ?: return@LaunchedEffect
+        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+        viewModel.clearInfoMessage()
     }
 
     Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
@@ -91,7 +103,8 @@ private fun LeetCodeCheckerScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(16.dp),
+                .padding(16.dp)
+                .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Row(
@@ -118,6 +131,14 @@ private fun LeetCodeCheckerScreen(
 
             if (state.isLoading) {
                 CircularProgressIndicator()
+            }
+
+            state.infoMessage?.let {
+                Text(
+                    text = it,
+                    color = MaterialTheme.colorScheme.primary,
+                    style = MaterialTheme.typography.bodySmall
+                )
             }
 
             state.error?.let {
@@ -152,24 +173,138 @@ private fun LeetCodeCheckerScreen(
                             Text("Open Problem")
                         }
 
-                        Button(
-                            onClick = {
-                                val prompt = buildAiPrompt(challenge)
-                                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                                clipboard.setPrimaryClip(ClipData.newPlainText("LeetCode AI Prompt", prompt))
-                                onOpenLink(AI_STUDIO_PROMPT_URL)
-                            }
-                        ) {
-                            Text("Open AI Studio Prompt")
-                        }
-
                         Button(onClick = { onOpenLink(challenge.url) }) {
                             Text("Open LeetCode Editor (Manual Submit)")
                         }
 
                         Spacer(modifier = Modifier.size(4.dp))
+                        if (state.isAiLoading) {
+                            Text("Generating detailed answer with Gemini... waiting through rate limits if needed.")
+                            CircularProgressIndicator()
+                        }
+
+                        state.aiError?.let { aiError ->
+                            Text(
+                                text = aiError,
+                                color = MaterialTheme.colorScheme.error,
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+
+                        state.aiCode?.let { aiCode ->
+                            Button(
+                                onClick = { showPythonFile = !showPythonFile },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(if (showPythonFile) "Hide Generated Python File" else "Show Generated Python File")
+                            }
+
+                            if (showPythonFile) {
+                                Text(
+                                    text = "Generated Python File",
+                                    style = MaterialTheme.typography.titleMedium
+                                )
+                                Text(
+                                    text = "Filename: solution_${challenge.titleSlug}.py",
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                                SelectionContainer {
+                                    Text(
+                                        text = aiCode,
+                                        style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace)
+                                    )
+                                }
+                            }
+
+                            Button(
+                                onClick = {
+                                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                    clipboard.setPrimaryClip(ClipData.newPlainText("LeetCode Python3 Code", aiCode))
+                                    Toast.makeText(context, "LeetCode Python3 code copied", Toast.LENGTH_SHORT).show()
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text("Copy Python3 Code")
+                            }
+                        }
+
+                        state.aiTestcaseValidation?.takeIf { it.isNotBlank() }?.let { validation ->
+                            Text(
+                                text = "Testcase Validation",
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                            Text(
+                                text = validation,
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+
+                        state.aiExplanation?.takeIf { it.isNotBlank() }?.let { explanation ->
+                            val concepts = extractDsaConcepts(explanation, challenge.tags)
+
+                            if (concepts.isNotEmpty()) {
+                                Button(
+                                    onClick = { showConcepts = !showConcepts },
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text(if (showConcepts) "Hide Concepts Used" else "Show Concepts Used")
+                                }
+
+                                if (showConcepts) {
+                                    Text(
+                                        text = "Concepts Used (DSA Learning)",
+                                        style = MaterialTheme.typography.titleMedium
+                                    )
+                                    Text(
+                                        text = concepts.joinToString(" | "),
+                                        style = MaterialTheme.typography.bodySmall
+                                    )
+                                }
+                            }
+
+                            Button(
+                                onClick = { showExplanation = !showExplanation },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(if (showExplanation) "Hide Explanation" else "Show Explanation")
+                            }
+
+                            if (showExplanation) {
+                                Text(
+                                    text = "Detailed Explanation (DSA Learning)",
+                                    style = MaterialTheme.typography.titleMedium
+                                )
+                                SelectionContainer {
+                                    Text(
+                                        text = explanation,
+                                        style = MaterialTheme.typography.bodySmall
+                                    )
+                                }
+                            }
+                        }
+
+                        state.aiDebugLog?.takeIf { it.isNotBlank() }?.let { pipelineLog ->
+                            Button(
+                                onClick = { showPipelineLog = !showPipelineLog },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(if (showPipelineLog) "Hide Pipeline Logs" else "Show Pipeline Logs")
+                            }
+
+                            if (showPipelineLog) {
+                                Text(
+                                    text = "Pipeline Debug Log",
+                                    style = MaterialTheme.typography.titleMedium
+                                )
+                                Text(
+                                    text = pipelineLog,
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
+                        }
+
                         Text(
-                            text = "Auto-sign-in and auto-submit are not supported safely in this app. Use the button above, sign in, paste Python code, and submit.",
+                            text = "Auto sign-in and auto-submit are not supported safely in this app. Use Open LeetCode Editor, sign in, paste Python code, and submit.",
                             style = MaterialTheme.typography.bodySmall
                         )
 
@@ -194,25 +329,52 @@ private fun LeetCodeCheckerScreen(
     }
 }
 
-private fun buildAiPrompt(challenge: DailyChallengeUiModel): String {
-    return """
-You are an expert coding interview coach.
+private fun extractDsaConcepts(explanation: String, tags: List<String>): List<String> {
+    val text = explanation.lowercase()
+    val concepts = linkedSetOf<String>()
 
-Explain this LeetCode daily problem in very detailed manner:
-- Problem ID: ${challenge.questionId}
-- Title: ${challenge.title}
-- Difficulty: ${challenge.difficulty}
-- Tags: ${challenge.tags.joinToString()}
-- URL: ${challenge.url}
-- Problem snippet: ${challenge.descriptionPreview}
+    // Keep LeetCode tags first; they are high-confidence concepts.
+    tags.map { it.trim() }
+        .filter { it.isNotBlank() }
+        .forEach { concepts.add(it) }
 
-Please provide:
-1) Restatement and intuition.
-2) Brute-force approach and why it is inefficient.
-3) Optimal approach with step-by-step reasoning.
-4) Time and space complexity analysis.
-5) Dry run on an example.
-6) Clean, production-quality Python 3 solution.
-7) Edge cases and test inputs.
-""".trimIndent()
+    val keywordMap = listOf(
+        "prefix sum" to "Prefix Sum",
+        "sliding window" to "Sliding Window",
+        "two pointers" to "Two Pointers",
+        "binary search" to "Binary Search",
+        "dynamic programming" to "Dynamic Programming",
+        "dp" to "Dynamic Programming",
+        "greedy" to "Greedy",
+        "monotonic stack" to "Monotonic Stack",
+        "stack" to "Stack",
+        "queue" to "Queue",
+        "deque" to "Deque",
+        "hash map" to "Hash Map",
+        "hashmap" to "Hash Map",
+        "dictionary" to "Hash Map",
+        "set" to "Set",
+        "sort" to "Sorting",
+        "matrix" to "Matrix",
+        "graph" to "Graph",
+        "tree" to "Tree",
+        "dfs" to "Depth-First Search",
+        "bfs" to "Breadth-First Search",
+        "union-find" to "Union Find",
+        "disjoint set" to "Union Find",
+        "backtracking" to "Backtracking",
+        "recursion" to "Recursion",
+        "bitmask" to "Bit Manipulation",
+        "bit" to "Bit Manipulation",
+        "heap" to "Heap / Priority Queue",
+        "priority queue" to "Heap / Priority Queue"
+    )
+
+    keywordMap.forEach { (token, label) ->
+        if (text.contains(token)) {
+            concepts.add(label)
+        }
+    }
+
+    return concepts.toList()
 }

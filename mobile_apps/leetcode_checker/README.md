@@ -56,3 +56,7 @@ APK output paths:
 
 - Internet permission is included in manifest.
 - The app opens the daily problem URL in browser via an "Open in Browser" button.
+
+## Detailed Documentation
+
+- See `DETAILED_DOCUMENTATION.md` for a full architecture and runtime-flow guide.
