@@ -1,0 +1,68 @@
+Date: 2026-03-20
+Question ID: 3567
+Title: Minimum Absolute Difference in Sliding Submatrix
+Difficulty: Medium
+Tags: Array, Sorting, Matrix
+URL: https://leetcode.com/problems/minimum-absolute-difference-in-sliding-submatrix/
+
+Question:
+You are given an m x n integer matrix grid and an integer k . For every contiguous k x k submatrix of grid , compute the minimum absolute difference between any two distinct values within that submatrix . Return a 2D array ans of size (m - k + 1) x (n - k + 1) , where ans[i][j] is the minimum absolute difference in the submatrix whose top-left corner is (i, j) in grid . Note : If all elements in the submatrix have the same value, the answer will be 0. A submatrix (x1, y1, x2, y2) is a matrix that is formed by choosing all cells matrix[x][y] where x1 &lt;= x &lt;= x2 and y1 &lt;= y &lt;= y2 . Example 1: Input: grid = [[1,8],[3,-2]], k = 2 Output: [[2]] Explanation: There is only one possible k x k submatrix: [[1, 8], [3, -2]] . Distinct values in the submatrix are [1, 8, 3, -2] . The minimum absolute difference in the submatrix is |1 - 3| = 2 . Thus, the answer is [[2]] . Example 2: Input: grid = [[3,-1]], k = 1 Output: [[0,0]] Explanation: Both k x k submatrix has only one distinct element. Thus, the answer is [[0, 0]] . Example 3: Input: grid = [[1,-2,3],[2,3,5]], k = 2 Output: [[1,2]] Explanation: There are two possible k &times; k submatrix: Starting at (0, 0) : [[1, -2], [2, 3]] . Distinct values in the submatrix are [1, -2, 2, 3] . The minimum absolute difference in the submatrix is |1 - 2| = 1 . Starting at (0, 1) : [[-2, 3], [3, 5]] . Distinct values in the submatrix are [-2, 3, 5] . The minimum absolute difference in the submatrix is |3 - 5| = 2 . Thus, the answer is [[1, 2]] . Constraints: 1 &lt;= m == grid.length &lt;= 30 1 &lt;= n == grid[i].length &lt;= 30 -10 5 &lt;= grid[i][j] &lt;= 10 5 1 &lt;= k &lt;= min(m, n)
+
+Starter Code (Python3):
+class Solution:
+    def minAbsDiff(self, grid: List[List[int]], k: int) -> List[List[int]]:
+        
+
+Testcases:
+[[1,8],[3,-2]]
+2
+[[3,-1]]
+1
+[[1,-2,3],[2,3,5]]
+2
+
+Expected Output / Validation:
+```python
+import collections
+from typing import List
+
+# Assuming the Solution class is defined above
+
+# Testcase 1
+grid1 = [[1,8],[3,-2]]
+k1 = 2
+expected1 = [[2]]
+sol = Solution()
+output1 = sol.minAbsDiff(grid1, k1)
+assert output1 == expected1, f"Testcase 1 Failed: Expected {expected1}, Got {output1}"
+
+# Testcase 2
+grid2 = [[3,-1]]
+k2 = 1
+expected2 = [[0,0]]
+output2 = sol.minAbsDiff(grid2, k2)
+assert output2 == expected2, f"Testcase 2 Failed: Expected {expected2}, Got {output2}"
+
+# Testcase 3
+grid3 = [[1,-2,3],[2,3,5]]
+k3 = 2
+expected3 = [[1,2]]
+output3 = sol.minAbsDiff(grid3, k3)
+assert output3 == expected3, f"Testcase 3 Failed: Expected {expected3}, Got {output3}"
+
+# Custom Testcase 4: All same elements
+grid4 = [[7,7,7],[7,7,7],[7,7,7]]
+k4 = 2
+expected4 = [[0,0],[0,0]]
+output4 = sol.minAbsDiff(grid4, k4)
+assert output4 == expected4, f"Testcase 4 Failed: Expected {expected4}, Got {output4}"
+
+# Custom Testcase 5: Larger grid
+grid5 = [[9,6,8,4],[1,5,3,7],[2,0,1,5]]
+k5 = 2
+expected5 = [[1,1,1],[1,1,2]]
+output5 = sol.minAbsDiff(grid5, k5)
+assert output5 == expected5, f"Testcase 5 Failed: Expected {expected5}, Got {output5}"
+
+print("All testcases passed!")
+```
