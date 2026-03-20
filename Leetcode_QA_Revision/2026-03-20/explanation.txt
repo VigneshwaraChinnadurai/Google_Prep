@@ -1,0 +1,84 @@
+Date: 2026-03-20
+Title: Minimum Absolute Difference in Sliding Submatrix
+URL: https://leetcode.com/problems/minimum-absolute-difference-in-sliding-submatrix/
+
+LLM Explanation:
+The problem requires us to find the minimum absolute difference between any two distinct values for every `k x k` submatrix in a given `m x n` grid.
+
+### High-Level Approach
+A naive approach would be to iterate through each `k x k` submatrix, collect all its `k*k` elements, find the unique values, sort them, and then find the minimum difference between adjacent elements. However, this recomputes everything for each submatrix, which can be inefficient.
+
+A more optimized approach is to use a 2D sliding window. We can process the grid in horizontal strips of height `k`. For each strip, we slide a `k x k` window from left to right. This allows us to reuse computations by only accounting for the elements in the column that leaves the window and the column that enters it.
+
+### Implementation Details
+1.  **Sliding Window Structure**: We iterate through each possible starting row `r_start` from `0` to `m - k`. This defines a horizontal strip of `k` rows.
+2.  **Frequency Map**: For each strip, we maintain a frequency map (using `collections.Counter`) of all numbers within the current `k x k` window.
+3.  **Initialization**: For the first window in a strip (at columns `0` to `k-1`), we initialize the frequency map by adding all `k*k` elements.
+4.  **Sliding**: We then slide the window one column at a time to the right. In each step:
+    *   **Remove**: We decrement the counts of the `k` elements from the column that is leaving the window on the left. If an element's count drops to zero, it's removed from our map.
+    *   **Add**: We increment the counts of the `k` elements from the new column entering the window on the right.
+5.  **Calculating Minimum Difference**: After each initialization or slide, the frequency map is up-to-date. We use a helper function, `calculate_min_diff`, to compute the result for the current window. This function works as follows:
+    *   It retrieves the unique numbers (the keys of the frequency map).
+    *   It sorts these unique numbers. The minimum absolute difference in any set of numbers will always be between two adjacent elements in its sorted version.
+    *   It iterates through the sorted list to find the minimum difference between consecutive elements.
+    *   If there are fewer than two unique elements, the difference is 0, as per the problem statement.
+
+### Complexity Analysis
+-   **Time Complexity**: `O(m * n * k^2 * log(k^2))`.
+    - We iterate through `(m - k + 1) * (n - k + 1)` submatrices, which is `O(m * n)`.
+    - For each submatrix, we call `calculate_min_diff`. The number of unique elements `U` is at most `k^2`. Sorting these keys takes `O(U log U)`, which is `O(k^2 * log(k^2))` in the worst case.
+    - The updates to the frequency map during a slide take `O(k)`. However, the dominant cost at each step is the `calculate_min_diff` call.
+    - Given the constraints (`m, n, k <= 30`), this complexity is acceptable.
+
+-   **Space Complexity**: `O(k^2)`.
+    - The space is primarily used for the `collections.Counter`, which stores at most `k^2` unique elements for each window.
+
+### Edge Cases
+-   **k = 1**: Each submatrix has one element. The frequency map will have a size of 1, correctly resulting in a minimum difference of 0.
+-   **All elements are the same**: If a submatrix contains only one distinct value, the frequency map will also have a size of 1, leading to a difference of 0.
+
+LLM Testcase Validation:
+```python
+import collections
+from typing import List
+
+# Assuming the Solution class is defined above
+
+# Testcase 1
+grid1 = [[1,8],[3,-2]]
+k1 = 2
+expected1 = [[2]]
+sol = Solution()
+output1 = sol.minAbsDiff(grid1, k1)
+assert output1 == expected1, f"Testcase 1 Failed: Expected {expected1}, Got {output1}"
+
+# Testcase 2
+grid2 = [[3,-1]]
+k2 = 1
+expected2 = [[0,0]]
+output2 = sol.minAbsDiff(grid2, k2)
+assert output2 == expected2, f"Testcase 2 Failed: Expected {expected2}, Got {output2}"
+
+# Testcase 3
+grid3 = [[1,-2,3],[2,3,5]]
+k3 = 2
+expected3 = [[1,2]]
+output3 = sol.minAbsDiff(grid3, k3)
+assert output3 == expected3, f"Testcase 3 Failed: Expected {expected3}, Got {output3}"
+
+# Custom Testcase 4: All same elements
+grid4 = [[7,7,7],[7,7,7],[7,7,7]]
+k4 = 2
+expected4 = [[0,0],[0,0]]
+output4 = sol.minAbsDiff(grid4, k4)
+assert output4 == expected4, f"Testcase 4 Failed: Expected {expected4}, Got {output4}"
+
+# Custom Testcase 5: Larger grid
+grid5 = [[9,6,8,4],[1,5,3,7],[2,0,1,5]]
+k5 = 2
+expected5 = [[1,1,1],[1,1,2]]
+output5 = sol.minAbsDiff(grid5, k5)
+assert output5 == expected5, f"Testcase 5 Failed: Expected {expected5}, Got {output5}"
+
+print("All testcases passed!")
+```
