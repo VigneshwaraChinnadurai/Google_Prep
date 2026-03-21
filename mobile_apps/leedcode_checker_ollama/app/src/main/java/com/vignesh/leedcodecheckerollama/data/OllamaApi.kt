@@ -2,6 +2,7 @@ package com.vignesh.leedcodecheckerollama.data
 
 import com.squareup.moshi.Json
 import okhttp3.ResponseBody
+import retrofit2.http.Streaming
 import retrofit2.http.GET
 import retrofit2.http.Body
 import retrofit2.http.POST
@@ -39,12 +40,20 @@ data class OllamaPullResponse(
     val error: String?
 )
 
+data class OllamaPullStreamEvent(
+    val status: String?,
+    val error: String?,
+    val total: Long?,
+    val completed: Long?
+)
+
 data class OllamaTagResponse(
     val models: List<OllamaModelTag>?
 )
 
 data class OllamaModelTag(
-    val name: String?
+    val name: String?,
+    val size: Long?
 )
 
 interface OllamaApi {
@@ -56,8 +65,19 @@ interface OllamaApi {
         @Body body: OllamaPullRequest
     ): OllamaPullResponse
 
+    @Streaming
+    @POST("api/pull")
+    suspend fun pullModelStream(
+        @Body body: OllamaPullRequest
+    ): ResponseBody
+
     @POST("api/generate")
     suspend fun generateRaw(
         @Body body: OllamaGenerateRequest
     ): ResponseBody
+}
+
+interface OllamaCatalogApi {
+    @GET("api/tags")
+    suspend fun listCatalogTags(): OllamaTagResponse
 }

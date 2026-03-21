@@ -9,6 +9,7 @@ import com.vignesh.leedcodecheckerollama.BuildConfig
 import com.vignesh.leedcodecheckerollama.data.AiGenerationResult
 import com.vignesh.leedcodecheckerollama.data.DailyChallengeUiModel
 import com.vignesh.leedcodecheckerollama.data.LeetCodeRepository
+import com.vignesh.leedcodecheckerollama.data.OllamaModelInfo
 import com.vignesh.leedcodecheckerollama.data.PipelineException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -30,7 +31,11 @@ data class LeetCodeUiState(
     val isCompletedToday: Boolean = false,
     val isPushLoading: Boolean = false,
     val localRevisionPath: String? = null,
-    val settings: AppSettings = AppSettings()
+    val settings: AppSettings = AppSettings(),
+    val catalogOllamaModels: List<OllamaModelInfo> = emptyList(),
+    val installedOllamaModels: List<OllamaModelInfo> = emptyList(),
+    val isModelActionLoading: Boolean = false,
+    val modelDownloadProgress: String? = null
 )
 
 class LeetCodeViewModel(
@@ -63,6 +68,8 @@ class LeetCodeViewModel(
 
     init {
         loadFromLocalStorage()
+        refreshInstalledModels()
+        refreshCatalogModels()
         viewModelScope.launch {
             repository.liveDebugLog.collectLatest { logText ->
                 if (logText.isNotBlank()) {
@@ -198,6 +205,150 @@ class LeetCodeViewModel(
                     )
                 }
         }
+    }
+
+    fun runOllamaDiagnostics() {
+        if (_uiState.value.isLoading || _uiState.value.isAiLoading) {
+            _uiState.value = _uiState.value.copy(infoMessage = "A request is already running.")
+            return
+        }
+
+        _uiState.value = _uiState.value.copy(
+            infoMessage = "Running Ollama connection diagnostics...",
+            aiError = null
+        )
+
+        viewModelScope.launch {
+            val report = repository.runOllamaConnectionDiagnostics()
+            _uiState.value = _uiState.value.copy(
+                aiDebugLog = report,
+                infoMessage = "Diagnostics finished. Check Pipeline Logs for details."
+            )
+        }
+    }
+
+    fun refreshInstalledModels() {
+        _uiState.value = _uiState.value.copy(
+            isModelActionLoading = true,
+            infoMessage = "Fetching Ollama model list..."
+        )
+
+        viewModelScope.launch {
+            repository.listAvailableModels()
+                .onSuccess { models ->
+                    _uiState.value = _uiState.value.copy(
+                        installedOllamaModels = models,
+                        isModelActionLoading = false,
+                        infoMessage = "Loaded ${models.size} models from Ollama server."
+                    )
+                }
+                .onFailure { error ->
+                    _uiState.value = _uiState.value.copy(
+                        isModelActionLoading = false,
+                        infoMessage = "Unable to load models: ${error.message}"
+                    )
+                }
+        }
+    }
+
+    fun refreshCatalogModels() {
+        _uiState.value = _uiState.value.copy(
+            isModelActionLoading = true,
+            infoMessage = "Fetching full Ollama model catalog..."
+        )
+
+        viewModelScope.launch {
+            repository.listCatalogModels()
+                .onSuccess { models ->
+                    _uiState.value = _uiState.value.copy(
+                        catalogOllamaModels = models,
+                        isModelActionLoading = false,
+                        infoMessage = "Loaded ${models.size} models from Ollama catalog."
+                    )
+                }
+                .onFailure { error ->
+                    _uiState.value = _uiState.value.copy(
+                        isModelActionLoading = false,
+                        infoMessage = "Unable to load model catalog: ${error.message}"
+                    )
+                }
+        }
+    }
+
+    fun downloadOllamaModel(modelName: String) {
+        val target = modelName.trim()
+        if (target.isBlank()) {
+            _uiState.value = _uiState.value.copy(infoMessage = "Enter a model name (example: qwen2.5:3b).")
+            return
+        }
+
+        _uiState.value = _uiState.value.copy(
+            isModelActionLoading = true,
+            modelDownloadProgress = "Queued...",
+            infoMessage = "Downloading model '$target' from Ollama..."
+        )
+
+        viewModelScope.launch {
+            repository.downloadModel(target) { progressText ->
+                _uiState.value = _uiState.value.copy(modelDownloadProgress = progressText)
+            }
+                .onSuccess {
+                    val currentSettings = _uiState.value.settings
+                    val preferred = currentSettings.preferredModelsCsv
+                        .split(',')
+                        .map { it.trim() }
+                        .filter { it.isNotBlank() }
+                        .toMutableList()
+
+                    preferred.removeAll { it.equals(target, ignoreCase = true) }
+                    preferred.add(0, target)
+
+                    val updatedSettings = currentSettings.copy(
+                        preferredModelsCsv = preferred.joinToString(",")
+                    )
+
+                    AppSettingsStore.save(appContext, updatedSettings)
+                    _uiState.value = _uiState.value.copy(
+                        settings = updatedSettings,
+                        modelDownloadProgress = "Completed"
+                    )
+
+                    refreshInstalledModels()
+                    _uiState.value = _uiState.value.copy(
+                        isModelActionLoading = false,
+                        infoMessage = "Model '$target' downloaded and selected for use."
+                    )
+                }
+                .onFailure { error ->
+                    _uiState.value = _uiState.value.copy(
+                        isModelActionLoading = false,
+                        modelDownloadProgress = null,
+                        infoMessage = "Model download failed: ${error.message}"
+                    )
+                }
+        }
+    }
+
+    fun setPreferredModel(modelName: String) {
+        val target = modelName.trim()
+        if (target.isBlank()) return
+
+        val currentSettings = _uiState.value.settings
+        val preferred = currentSettings.preferredModelsCsv
+            .split(',')
+            .map { it.trim() }
+            .filter { it.isNotBlank() }
+            .toMutableList()
+
+        preferred.removeAll { it.equals(target, ignoreCase = true) }
+        preferred.add(0, target)
+
+        val updatedSettings = currentSettings.copy(preferredModelsCsv = preferred.joinToString(","))
+        AppSettingsStore.save(appContext, updatedSettings)
+        _uiState.value = _uiState.value.copy(
+            settings = updatedSettings,
+            infoMessage = "Preferred model set to '$target'."
+        )
     }
 
     fun markCompletedToday() {

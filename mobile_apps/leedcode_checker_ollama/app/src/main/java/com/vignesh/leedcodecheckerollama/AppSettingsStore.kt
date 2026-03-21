@@ -8,6 +8,7 @@ data class AppSettings(
     val checkerTitle: String = "LeetCode Consistency Checker",
     val consistencyButtonLabel: String = "LeetCode Consistency Checker",
     val promptName: String = "Prompt for Leetcode_solver",
+    val ollamaBaseUrl: String = BuildConfig.OLLAMA_BASE_URL,
     val preferredModelsCsv: String = "qwen2.5:3b,llama3.1:8b",
     val maxModelRetries: Int = 3,
     val maxInputTokens: Int = 1_048_576,
@@ -38,6 +39,7 @@ object AppSettingsStore {
                 checkerTitle = json.optString("checkerTitle", "LeetCode Consistency Checker"),
                 consistencyButtonLabel = json.optString("consistencyButtonLabel", "LeetCode Consistency Checker"),
                 promptName = json.optString("promptName", "Prompt for Leetcode_solver"),
+                ollamaBaseUrl = json.optString("ollamaBaseUrl", BuildConfig.OLLAMA_BASE_URL),
                 preferredModelsCsv = json.optString("preferredModelsCsv", "qwen2.5:3b,llama3.1:8b"),
                 maxModelRetries = json.optInt("maxModelRetries", 3),
                 maxInputTokens = json.optInt("maxInputTokens", 1_048_576),
@@ -61,6 +63,7 @@ object AppSettingsStore {
             .put("checkerTitle", settings.checkerTitle)
             .put("consistencyButtonLabel", settings.consistencyButtonLabel)
             .put("promptName", settings.promptName)
+            .put("ollamaBaseUrl", settings.ollamaBaseUrl)
             .put("preferredModelsCsv", settings.preferredModelsCsv)
             .put("maxModelRetries", settings.maxModelRetries)
             .put("maxInputTokens", settings.maxInputTokens)

@@ -1,0 +1,3 @@
+method,expected_return,volatility,sharpe_metric,selected_assets
+classical_max_sharpe,0.24663872322249766,0.27608588892147123,0.8208993371876455,"GOOGL,AAPL"
+qubo_best_from_sweep,0.2249457923276127,0.25788091131728896,0.8722855490876024,"AAPL,GOOGL"

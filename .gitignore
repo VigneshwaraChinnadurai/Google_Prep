@@ -138,6 +138,8 @@ celerybeat.pid
 .env
 .envrc
 .venv
+.venv-1/
+.vscode/
 env/
 venv/
 ENV/
@@ -219,4 +221,5 @@ mobile_apps/leetcode_checker/*.keystore
 
 # Android local/generated files
 mobile_apps/leetcode_checker/.gradle/
+mobile_apps/leedcode_checker_ollama/.gradle/
 mobile_apps/leetcode_checker/local.properties

@@ -11,11 +11,14 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import retrofit2.HttpException
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
 import java.io.IOException
+import java.net.URI
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -41,6 +44,11 @@ data class AiGenerationResult(
     val explanation: String,
     val rawResponse: String,
     val debugLog: String
+)
+
+data class OllamaModelInfo(
+    val name: String,
+    val sizeBytes: Long?
 )
 
 class PipelineException(
@@ -70,9 +78,9 @@ class LeetCodeRepository(
             .create(LeetCodeApi::class.java)
     }
 
-    private val ollamaApi: OllamaApi by lazy {
-        Retrofit.Builder()
-            .baseUrl(ensureTrailingSlash(BuildConfig.OLLAMA_BASE_URL.trim()))
+    private fun ollamaApi(): OllamaApi {
+        return Retrofit.Builder()
+            .baseUrl(resolveOllamaBaseUrl())
             .client(createHttpClient())
             .addConverterFactory(MoshiConverterFactory.create(moshi))
             .build()
@@ -83,8 +91,21 @@ class LeetCodeRepository(
         moshi.adapter(OllamaGenerateResponse::class.java)
     }
 
+    private val ollamaPullEventAdapter by lazy {
+        moshi.adapter(OllamaPullStreamEvent::class.java)
+    }
+
     private val ollamaRequestAdapter by lazy {
         moshi.adapter(OllamaGenerateRequest::class.java)
+    }
+
+    private val catalogApi: OllamaCatalogApi by lazy {
+        Retrofit.Builder()
+            .baseUrl("https://ollama.com/")
+            .client(createHttpClient())
+            .addConverterFactory(MoshiConverterFactory.create(moshi))
+            .build()
+            .create(OllamaCatalogApi::class.java)
     }
 
     private val answerCache = mutableMapOf<String, AiGenerationResult>()
@@ -108,14 +129,116 @@ class LeetCodeRepository(
         return BuildConfig.OLLAMA_MODEL.trim().ifBlank { "qwen2.5:3b" }
     }
 
-    suspend fun listAvailableModels(): Result<List<String>> {
+    suspend fun listAvailableModels(): Result<List<OllamaModelInfo>> {
         return runCatching {
-            ollamaApi.listTags().models.orEmpty()
+            ollamaApi().listTags().models.orEmpty()
+                .mapNotNull { tag ->
+                    val trimmed = tag.name?.trim().orEmpty()
+                    if (trimmed.isBlank()) null else OllamaModelInfo(trimmed, tag.size)
+                }
+                .distinctBy { it.name.lowercase() }
+                .sortedBy { it.name.lowercase() }
+        }
+    }
+
+    suspend fun listCatalogModels(): Result<List<OllamaModelInfo>> {
+        return runCatching {
+            catalogApi.listCatalogTags().models.orEmpty()
+                .mapNotNull { tag ->
+                    val trimmed = tag.name?.trim().orEmpty()
+                    if (trimmed.isBlank()) null else OllamaModelInfo(trimmed, tag.size)
+                }
+                .distinctBy { it.name.lowercase() }
+                .sortedBy { it.name.lowercase() }
+        }
+    }
+
+    suspend fun downloadModel(model: String, onProgress: (String) -> Unit): Result<String> {
+        val trimmed = model.trim()
+        if (trimmed.isBlank()) {
+            return Result.failure(IllegalArgumentException("Model name cannot be blank."))
+        }
+
+        return runCatching {
+            onProgress("Starting download for '$trimmed'...")
+
+            withContext(Dispatchers.IO) {
+                ollamaApi().pullModelStream(
+                    OllamaPullRequest(model = trimmed, stream = true)
+                ).use { responseBody ->
+                    responseBody.charStream().buffered().useLines { lines ->
+                        lines.forEach { line ->
+                            if (line.isBlank()) return@forEach
+                            val event = runCatching { ollamaPullEventAdapter.fromJson(line) }.getOrNull()
+                            val status = event?.status.orEmpty().ifBlank { "downloading" }
+                            val errorText = event?.error.orEmpty()
+                            if (errorText.isNotBlank()) {
+                                throw IllegalStateException("Ollama pull failed: $errorText")
+                            }
+
+                            val completed = event?.completed ?: 0L
+                            val total = event?.total ?: 0L
+                            if (total > 0L && completed in 0..total) {
+                                val percent = ((completed * 100.0) / total).toInt().coerceIn(0, 100)
+                                onProgress("$status ($percent%)")
+                            } else {
+                                onProgress(status)
+                            }
+                        }
+                    }
+                }
+            }
+
+            val namesAfterPull = ollamaApi().listTags().models.orEmpty()
                 .mapNotNull { it.name }
-                .map { it.trim() }
+                .map { normalizeModelName(it) }
+
+            val normalized = normalizeModelName(trimmed)
+            if (namesAfterPull.none { it == normalized }) {
+                error("Model '$trimmed' is still unavailable after pull.")
+            }
+
+            onProgress("Download completed.")
+            "downloaded"
+        }
+    }
+
+    suspend fun runOllamaConnectionDiagnostics(): String {
+        val report = StringBuilder()
+        val baseUrl = resolveOllamaBaseUrl()
+        val host = runCatching { URI(baseUrl).host.orEmpty() }.getOrDefault("")
+
+        report.appendLine("[${formatTimestamp(System.currentTimeMillis())}] Ollama diagnostics started")
+        report.appendLine("Configured Ollama base URL: $baseUrl")
+
+        if (host == "127.0.0.1" || host.equals("localhost", ignoreCase = true)) {
+            report.appendLine("Detected localhost/loopback base URL.")
+            report.appendLine("If Ollama runs on PC, keep adb reverse active: adb reverse tcp:11434 tcp:11434")
+        }
+
+        return runCatching {
+            val tags = ollamaApi().listTags().models.orEmpty()
+                .mapNotNull { it.name?.trim() }
                 .filter { it.isNotBlank() }
                 .distinct()
                 .sorted()
+
+            report.appendLine("Connectivity: SUCCESS")
+            report.appendLine("Model count: ${tags.size}")
+            if (tags.isNotEmpty()) {
+                report.appendLine("Available models: ${tags.joinToString(", ")}")
+            } else {
+                report.appendLine("No models found. Run /api/pull or pull from Ollama CLI on server.")
+            }
+            report.appendLine("Diagnostics completed successfully.")
+            report.toString().trim()
+        }.getOrElse { error ->
+            report.appendLine("Connectivity: FAILED")
+            report.appendLine("Error: ${error.message.orEmpty()}")
+            report.appendLine("Troubleshooting:")
+            buildOllamaTroubleshootingHints(baseUrl, host, error)
+                .forEach { hint -> report.appendLine("- $hint") }
+            report.toString().trim()
         }
     }
 
@@ -238,10 +361,10 @@ class LeetCodeRepository(
 
             logDebug(debug, "Starting Ollama pipeline for ${challenge.titleSlug}")
             logDebug(debug, "Configured token limits: maxInputTokens=$maxInputTokens, maxOutputTokens=$maxOutputTokens")
-            logDebug(debug, "Ollama base URL: ${BuildConfig.OLLAMA_BASE_URL}")
+            logDebug(debug, "Ollama base URL: ${resolveOllamaBaseUrl()}")
 
             val availableModels = runCatching {
-                ollamaApi.listTags().models.orEmpty()
+                ollamaApi().listTags().models.orEmpty()
                     .mapNotNull { it.name?.trim() }
                     .filter { it.isNotBlank() }
             }.getOrDefault(emptyList())
@@ -360,7 +483,7 @@ ${challenge.exampleTestcases.ifBlank { "Not provided" }}
                 logDebug(debug, "$model request payload: ${ollamaRequestAdapter.toJson(request)}")
 
                 val startedAt = System.currentTimeMillis()
-                val rawResponse = ollamaApi.generateRaw(request)
+                val rawResponse = ollamaApi().generateRaw(request)
                 val finishedAt = System.currentTimeMillis()
                 logDebug(debug, "$model response received in ${finishedAt - startedAt} ms")
 
@@ -433,10 +556,10 @@ ${challenge.exampleTestcases.ifBlank { "Not provided" }}
         val normalizedTarget = normalizeModelName(model)
         logDebug(debug, "Checking local Ollama model availability for $normalizedTarget")
 
-        val tags = runCatching { ollamaApi.listTags() }
+        val tags = runCatching { ollamaApi().listTags() }
             .getOrElse { error ->
                 throw PipelineException(
-                    "Unable to query local Ollama tags. Ensure Ollama daemon is running (${BuildConfig.OLLAMA_BASE_URL}). ${error.message}",
+                    "Unable to query local Ollama tags. Ensure Ollama daemon is running (${resolveOllamaBaseUrl()}). ${error.message}",
                     debug.toString().trim()
                 )
             }
@@ -454,7 +577,7 @@ ${challenge.exampleTestcases.ifBlank { "Not provided" }}
 
         logDebug(debug, "Model not present. Starting on-device download via /api/pull: $normalizedTarget")
         val pullResponse = runCatching {
-            ollamaApi.pullModel(OllamaPullRequest(model = model, stream = false))
+            ollamaApi().pullModel(OllamaPullRequest(model = model, stream = false))
         }.getOrElse { error ->
             throw PipelineException(
                 "Failed to start model pull for '$model'. ${error.message}",
@@ -471,7 +594,7 @@ ${challenge.exampleTestcases.ifBlank { "Not provided" }}
 
         logDebug(debug, "Ollama pull status: ${pullResponse.status.orEmpty().ifBlank { "unknown" }}")
 
-        val tagsAfterPull = runCatching { ollamaApi.listTags() }
+        val tagsAfterPull = runCatching { ollamaApi().listTags() }
             .getOrDefault(OllamaTagResponse(models = emptyList()))
         val namesAfterPull = tagsAfterPull.models.orEmpty()
             .mapNotNull { it.name }
@@ -528,7 +651,38 @@ ${challenge.exampleTestcases.ifBlank { "Not provided" }}
         return if (url.endsWith("/")) url else "$url/"
     }
 
+    private fun resolveOllamaBaseUrl(): String {
+        val settingsUrl = loadSettings().ollamaBaseUrl.trim()
+        val buildUrl = BuildConfig.OLLAMA_BASE_URL.trim()
+        return ensureTrailingSlash(settingsUrl.ifBlank { buildUrl })
+    }
+
     private fun normalizeModelName(model: String): String {
         return model.trim().lowercase().removePrefix("models/")
+    }
+
+    private fun buildOllamaTroubleshootingHints(baseUrl: String, host: String, error: Throwable): List<String> {
+        val hints = mutableListOf<String>()
+        val msg = error.message.orEmpty().lowercase()
+
+        if (msg.contains("cleartext") || msg.contains("network security policy")) {
+            hints += "HTTP cleartext is blocked. Ensure network_security_config allows cleartext for Ollama app."
+        }
+
+        if (host == "127.0.0.1" || host.equals("localhost", ignoreCase = true)) {
+            hints += "If phone should use PC Ollama, run: adb reverse tcp:11434 tcp:11434"
+            hints += "If Ollama runs on another laptop, set Ollama Base URL in app Settings to http://<laptop-ip>:11434/"
+        }
+
+        if (!(host == "127.0.0.1" || host.equals("localhost", ignoreCase = true))) {
+            hints += "Verify $baseUrl is reachable from phone browser (same Wi-Fi/network)."
+            hints += "Allow inbound TCP 11434 on server firewall."
+            hints += "Run Ollama server with external bind, e.g. OLLAMA_HOST=0.0.0.0:11434"
+        }
+
+        hints += "Confirm Ollama server is running: curl http://<server-ip>:11434/api/tags"
+        hints += "Confirm selected model exists on server, or pull model first."
+
+        return hints.distinct()
     }
 }

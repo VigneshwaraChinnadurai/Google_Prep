@@ -68,6 +68,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import java.util.Calendar
+import java.util.Locale
 import java.util.TimeZone
 
 private val AppDarkColors = darkColorScheme(
@@ -140,6 +141,7 @@ private fun LeetCodeCheckerScreen(
     val expectedSettingsPassword = BuildConfig.SETTINGS_UPDATE_PASSWORD.ifBlank { "1234" }
 
     var settingsModelsCsv by rememberSaveable { mutableStateOf(state.settings.preferredModelsCsv) }
+    var settingsOllamaBaseUrl by rememberSaveable { mutableStateOf(state.settings.ollamaBaseUrl) }
     var settingsMaxRetries by rememberSaveable { mutableStateOf(state.settings.maxModelRetries.toString()) }
     var settingsMaxInput by rememberSaveable { mutableStateOf(state.settings.maxInputTokens.toString()) }
     var settingsMaxOutput by rememberSaveable { mutableStateOf(state.settings.maxOutputTokens.toString()) }
@@ -151,6 +153,8 @@ private fun LeetCodeCheckerScreen(
     var settingsGithubOwner by rememberSaveable { mutableStateOf(state.settings.githubOwnerOverride) }
     var settingsGithubRepo by rememberSaveable { mutableStateOf(state.settings.githubRepoOverride) }
     var settingsGithubBranch by rememberSaveable { mutableStateOf(state.settings.githubBranchOverride) }
+    var settingsModelToDownload by rememberSaveable { mutableStateOf("") }
+    var settingsModelSearch by rememberSaveable { mutableStateOf("") }
 
     val notificationPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -198,6 +202,7 @@ private fun LeetCodeCheckerScreen(
 
     LaunchedEffect(state.settings) {
         settingsModelsCsv = state.settings.preferredModelsCsv
+        settingsOllamaBaseUrl = state.settings.ollamaBaseUrl
         settingsMaxRetries = state.settings.maxModelRetries.toString()
         settingsMaxInput = state.settings.maxInputTokens.toString()
         settingsMaxOutput = state.settings.maxOutputTokens.toString()
@@ -212,15 +217,23 @@ private fun LeetCodeCheckerScreen(
     }
 
     LaunchedEffect(currentScreen) {
-        if (currentScreen != AppScreen.ConsistencyChecker) return@LaunchedEffect
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            val granted = ContextCompat.checkSelfPermission(
-                context,
-                Manifest.permission.POST_NOTIFICATIONS
-            ) == PackageManager.PERMISSION_GRANTED
-            if (!granted) {
-                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        when (currentScreen) {
+            AppScreen.ConsistencyChecker -> {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    val granted = ContextCompat.checkSelfPermission(
+                        context,
+                        Manifest.permission.POST_NOTIFICATIONS
+                    ) == PackageManager.PERMISSION_GRANTED
+                    if (!granted) {
+                        notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    }
+                }
             }
+            AppScreen.Settings -> {
+                viewModel.refreshInstalledModels()
+                viewModel.refreshCatalogModels()
+            }
+            else -> Unit
         }
     }
 
@@ -320,6 +333,150 @@ private fun LeetCodeCheckerScreen(
                     label = { Text("Preferred Models CSV") },
                     modifier = Modifier.fillMaxWidth()
                 )
+                OutlinedTextField(
+                    value = settingsOllamaBaseUrl,
+                    onValueChange = { settingsOllamaBaseUrl = it },
+                    label = { Text("Ollama Base URL") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    Column(
+                        modifier = Modifier.padding(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text("Ollama Model Manager", style = MaterialTheme.typography.titleMedium)
+                        Text(
+                            "Fetch installed models from your server and full model catalog from Ollama. You can download directly and track progress.",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+
+                        OutlinedTextField(
+                            value = settingsModelSearch,
+                            onValueChange = { settingsModelSearch = it },
+                            label = { Text("Search Model Name") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        OutlinedTextField(
+                            value = settingsModelToDownload,
+                            onValueChange = { settingsModelToDownload = it },
+                            label = { Text("Model Name To Download (e.g. qwen2.5:3b)") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Button(
+                                onClick = { viewModel.refreshInstalledModels() },
+                                enabled = !state.isModelActionLoading,
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text("Refresh Installed")
+                            }
+                            Button(
+                                onClick = { viewModel.refreshCatalogModels() },
+                                enabled = !state.isModelActionLoading,
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text("Refresh Catalog")
+                            }
+                        }
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Button(
+                                onClick = {
+                                    viewModel.downloadOllamaModel(settingsModelToDownload)
+                                    settingsModelsCsv = settingsModelToDownload.trim()
+                                },
+                                enabled = !state.isModelActionLoading && settingsModelToDownload.isNotBlank(),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text("Download")
+                            }
+                        }
+
+                        if (state.isModelActionLoading) {
+                            Text("Loading model data...", style = MaterialTheme.typography.bodySmall)
+                        }
+
+                        state.modelDownloadProgress?.let { progress ->
+                            Text("Download Progress: $progress", style = MaterialTheme.typography.bodySmall)
+                        }
+
+                        Text("Installed Models (${state.installedOllamaModels.size})", style = MaterialTheme.typography.titleSmall)
+                        if (state.installedOllamaModels.isEmpty()) {
+                            Text(
+                                "No models detected. Use Download with a model name, then refresh.",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        } else {
+                            state.installedOllamaModels.forEach { model ->
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = model.name + formatModelSizeSuffix(model.sizeBytes),
+                                        style = MaterialTheme.typography.bodySmall
+                                    )
+                                    Button(onClick = {
+                                        viewModel.setPreferredModel(model.name)
+                                        settingsModelsCsv = model.name
+                                    }) {
+                                        Text("Use")
+                                    }
+                                }
+                            }
+                        }
+
+                        val catalogFiltered = state.catalogOllamaModels.filter { model ->
+                            settingsModelSearch.isBlank() || model.name.contains(settingsModelSearch.trim(), ignoreCase = true)
+                        }
+                        Text("Available Catalog Models (${catalogFiltered.size})", style = MaterialTheme.typography.titleSmall)
+                        if (catalogFiltered.isEmpty()) {
+                            Text(
+                                "No catalog models found for current search.",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        } else {
+                            catalogFiltered.forEach { model ->
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = model.name + formatModelSizeSuffix(model.sizeBytes),
+                                        style = MaterialTheme.typography.bodySmall
+                                    )
+                                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                        Button(onClick = {
+                                            settingsModelToDownload = model.name
+                                            viewModel.downloadOllamaModel(model.name)
+                                            settingsModelsCsv = model.name
+                                        }) {
+                                            Text("Download")
+                                        }
+                                        Button(onClick = {
+                                            viewModel.setPreferredModel(model.name)
+                                            settingsModelsCsv = model.name
+                                        }) {
+                                            Text("Use")
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
                 OutlinedTextField(
                     value = settingsMaxRetries,
                     onValueChange = { settingsMaxRetries = it },
@@ -425,6 +582,7 @@ private fun LeetCodeCheckerScreen(
                                             checkerTitle = state.settings.checkerTitle,
                                             consistencyButtonLabel = state.settings.consistencyButtonLabel,
                                             promptName = state.settings.promptName,
+                                            ollamaBaseUrl = settingsOllamaBaseUrl,
                                             preferredModelsCsv = settingsModelsCsv,
                                             maxModelRetries = settingsMaxRetries.toIntOrNull() ?: state.settings.maxModelRetries,
                                             maxInputTokens = settingsMaxInput.toIntOrNull() ?: state.settings.maxInputTokens,
@@ -498,6 +656,28 @@ private fun LeetCodeCheckerScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Refresh Ollama Answer")
+            }
+
+            Button(
+                onClick = {
+                    showPipelineLog = true
+                    viewModel.runOllamaDiagnostics()
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Run Ollama Connection Diagnostics")
+            }
+
+            Button(
+                onClick = {
+                    val bundleText = buildDiagnosticsBundle(state)
+                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                    clipboard.setPrimaryClip(ClipData.newPlainText("Ollama Diagnostics Bundle", bundleText))
+                    Toast.makeText(context, "Diagnostics bundle copied.", Toast.LENGTH_SHORT).show()
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Copy Diagnostics Bundle")
             }
 
             Button(
@@ -975,5 +1155,50 @@ private fun extractDsaConcepts(explanation: String, tags: List<String>): List<St
     }
 
     return concepts.toList()
+}
+
+private fun formatModelSizeSuffix(sizeBytes: Long?): String {
+    val bytes = sizeBytes ?: return ""
+    if (bytes <= 0L) return ""
+    val kb = 1024.0
+    val mb = kb * 1024
+    val gb = mb * 1024
+    return when {
+        bytes >= gb -> String.format(Locale.US, " (%.1f GB)", bytes / gb)
+        bytes >= mb -> String.format(Locale.US, " (%.1f MB)", bytes / mb)
+        bytes >= kb -> String.format(Locale.US, " (%.1f KB)", bytes / kb)
+        else -> " (${bytes} B)"
+    }
+}
+
+private fun buildDiagnosticsBundle(state: LeetCodeUiState): String {
+    val selectedModel = state.settings.preferredModelsCsv
+        .split(',')
+        .map { it.trim() }
+        .firstOrNull { it.isNotBlank() }
+        .orEmpty()
+
+    val challenge = state.challenge
+    val challengeSummary = if (challenge == null) {
+        "none"
+    } else {
+        "${challenge.questionId} - ${challenge.title} (${challenge.titleSlug})"
+    }
+
+    return buildString {
+        appendLine("=== OLLAMA DIAGNOSTICS BUNDLE ===")
+        appendLine("Timestamp: ${System.currentTimeMillis()}")
+        appendLine("Ollama Base URL: ${state.settings.ollamaBaseUrl}")
+        appendLine("Selected Model: ${selectedModel.ifBlank { "none" }}")
+        appendLine("Installed Models Count: ${state.installedOllamaModels.size}")
+        appendLine("Catalog Models Count: ${state.catalogOllamaModels.size}")
+        appendLine("Current Challenge: $challengeSummary")
+        appendLine("AI Error: ${state.aiError.orEmpty().ifBlank { "none" }}")
+        appendLine("General Error: ${state.error.orEmpty().ifBlank { "none" }}")
+        appendLine("Download Progress: ${state.modelDownloadProgress.orEmpty().ifBlank { "none" }}")
+        appendLine("--- PIPELINE LOG START ---")
+        appendLine(state.aiDebugLog.orEmpty().ifBlank { "No pipeline log available." })
+        appendLine("--- PIPELINE LOG END ---")
+    }.trim()
 }
 
