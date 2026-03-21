@@ -1,0 +1,65 @@
+Date: 2026-03-21
+Question ID: 3643
+Title: Flip Square Submatrix Vertically
+Difficulty: Easy
+Tags: Array, Two Pointers, Matrix
+URL: https://leetcode.com/problems/flip-square-submatrix-vertically/
+
+Question:
+You are given an m x n integer matrix grid , and three integers x , y , and k . The integers x and y represent the row and column indices of the top-left corner of a square submatrix and the integer k represents the size (side length) of the square submatrix. Your task is to flip the submatrix by reversing the order of its rows vertically. Return the updated matrix. Example 1: Input: grid = [[1,2,3,4],[5,6,7,8],[9,10,11,12],[13,14,15,16]] , x = 1, y = 0, k = 3 Output: [[1,2,3,4],[13,14,15,8],[9,10,11,12],[5,6,7,16]] Explanation: The diagram above shows the grid before and after the transformation. Example 2: ​​​​​​​ Input: grid = [[3,4,2,3],[2,3,4,2]], x = 0, y = 2, k = 2 Output: [[3,4,4,2],[2,3,2,3]] Explanation: The diagram above shows the grid before and after the transformation. Constraints: m == grid.length n == grid[i].length 1 &lt;= m, n &lt;= 50 1 &lt;= grid[i][j] &lt;= 100 0 &lt;= x &lt; m 0 &lt;= y &lt; n 1 &lt;= k &lt;= min(m - x, n - y)
+
+Starter Code (Python3):
+class Solution:
+    def reverseSubmatrix(self, grid: List[List[int]], x: int, y: int, k: int) -> List[List[int]]:
+        
+
+Testcases:
+[[1,2,3,4],[5,6,7,8],[9,10,11,12],[13,14,15,16]]
+1
+0
+3
+[[3,4,2,3],[2,3,4,2]]
+0
+2
+2
+
+Expected Output / Validation:
+# Testcase 1
+grid1 = [[1,2,3,4],[5,6,7,8],[9,10,11,12],[13,14,15,16]]
+x1 = 1
+y1 = 0
+k1 = 3
+expected1 = [[1,2,3,4],[13,14,15,8],[9,10,11,12],[5,6,7,16]]
+sol = Solution()
+# Create a copy of the grid to avoid modifying the original testcase data
+output1 = sol.reverseSubmatrix([row[:] for row in grid1], x1, y1, k1)
+assert output1 == expected1, f"Testcase 1 Failed: Expected {expected1}, Got {output1}"
+
+# Testcase 2
+grid2 = [[3,4,2,3],[2,3,4,2]]
+x2 = 0
+y2 = 2
+k2 = 2
+expected2 = [[3,4,4,2],[2,3,2,3]]
+output2 = sol.reverseSubmatrix([row[:] for row in grid2], x2, y2, k2)
+assert output2 == expected2, f"Testcase 2 Failed: Expected {expected2}, Got {output2}"
+
+# Additional Testcase: k=1 (no change)
+grid3 = [[1,2],[3,4]]
+x3 = 0
+y3 = 0
+k3 = 1
+expected3 = [[1,2],[3,4]]
+output3 = sol.reverseSubmatrix([row[:] for row in grid3], x3, y3, k3)
+assert output3 == expected3, f"Testcase 3 Failed: Expected {expected3}, Got {output3}"
+
+# Additional Testcase: k=4, full matrix
+grid4 = [[1,2,3,4],[5,6,7,8],[9,10,11,12],[13,14,15,16]]
+x4 = 0
+y4 = 0
+k4 = 4
+expected4 = [[13,14,15,16],[9,10,11,12],[5,6,7,8],[1,2,3,4]]
+output4 = sol.reverseSubmatrix([row[:] for row in grid4], x4, y4, k4)
+assert output4 == expected4, f"Testcase 4 Failed: Expected {expected4}, Got {output4}"
+
+print("All testcases passed!")

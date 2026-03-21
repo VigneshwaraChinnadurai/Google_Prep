@@ -1,0 +1,69 @@
+Date: 2026-03-21
+Title: Flip Square Submatrix Vertically
+URL: https://leetcode.com/problems/flip-square-submatrix-vertically/
+
+LLM Explanation:
+The problem asks us to vertically flip a square submatrix of size `k x k` within a larger `m x n` grid. The submatrix's top-left corner is at `(x, y)`. A vertical flip is equivalent to reversing the order of the rows within that submatrix.
+
+The most direct way to solve this is using a two-pointer approach, which is a standard technique for reversing sequences.
+
+1.  **Identify Submatrix Rows:** The submatrix occupies rows from index `x` to `x + k - 1`.
+
+2.  **Two-Pointer Setup:** We initialize two pointers:
+    *   `top`: points to the first row of the submatrix, starting at `x`.
+    *   `bottom`: points to the last row of the submatrix, starting at `x + k - 1`.
+
+3.  **Iterative Swapping:** We loop as long as `top < bottom`. In each iteration:
+    *   We swap the row segment of the `top` row with the corresponding segment of the `bottom` row.
+    *   The segments to be swapped are defined by the submatrix's columns, which range from `y` to `y + k - 1`.
+    *   In Python, this swap can be done concisely using slice assignment: `grid[top][y:y+k], grid[bottom][y:y+k] = grid[bottom][y:y+k], grid[top][y:y+k]`.
+    *   After the swap, we move the pointers closer to the center: `top` is incremented, and `bottom` is decremented.
+
+4.  **Termination:** The loop terminates when the pointers meet or cross, at which point all the necessary rows have been swapped, and the submatrix is vertically flipped.
+
+The entire operation is performed in-place on the input `grid`, which is then returned.
+
+**Complexity Analysis:**
+*   **Time Complexity:** `O(k^2)`. The `while` loop runs `k / 2` times. Inside the loop, swapping slices of length `k` takes `O(k)` time. Therefore, the total time complexity is `O(k/2 * k) = O(k^2)`.
+*   **Space Complexity:** `O(k)`. The in-place modification of the grid means we don't use extra space proportional to the grid size. However, the slice assignment operation creates temporary copies of the row segments being swapped, which requires `O(k)` auxiliary space.
+
+LLM Testcase Validation:
+# Testcase 1
+grid1 = [[1,2,3,4],[5,6,7,8],[9,10,11,12],[13,14,15,16]]
+x1 = 1
+y1 = 0
+k1 = 3
+expected1 = [[1,2,3,4],[13,14,15,8],[9,10,11,12],[5,6,7,16]]
+sol = Solution()
+# Create a copy of the grid to avoid modifying the original testcase data
+output1 = sol.reverseSubmatrix([row[:] for row in grid1], x1, y1, k1)
+assert output1 == expected1, f"Testcase 1 Failed: Expected {expected1}, Got {output1}"
+
+# Testcase 2
+grid2 = [[3,4,2,3],[2,3,4,2]]
+x2 = 0
+y2 = 2
+k2 = 2
+expected2 = [[3,4,4,2],[2,3,2,3]]
+output2 = sol.reverseSubmatrix([row[:] for row in grid2], x2, y2, k2)
+assert output2 == expected2, f"Testcase 2 Failed: Expected {expected2}, Got {output2}"
+
+# Additional Testcase: k=1 (no change)
+grid3 = [[1,2],[3,4]]
+x3 = 0
+y3 = 0
+k3 = 1
+expected3 = [[1,2],[3,4]]
+output3 = sol.reverseSubmatrix([row[:] for row in grid3], x3, y3, k3)
+assert output3 == expected3, f"Testcase 3 Failed: Expected {expected3}, Got {output3}"
+
+# Additional Testcase: k=4, full matrix
+grid4 = [[1,2,3,4],[5,6,7,8],[9,10,11,12],[13,14,15,16]]
+x4 = 0
+y4 = 0
+k4 = 4
+expected4 = [[13,14,15,16],[9,10,11,12],[5,6,7,8],[1,2,3,4]]
+output4 = sol.reverseSubmatrix([row[:] for row in grid4], x4, y4, k4)
+assert output4 == expected4, f"Testcase 4 Failed: Expected {expected4}, Got {output4}"
+
+print("All testcases passed!")
