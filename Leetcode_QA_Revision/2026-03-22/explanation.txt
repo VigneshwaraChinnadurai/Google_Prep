@@ -1,0 +1,49 @@
+Date: 2026-03-22
+Title: Determine Whether Matrix Can Be Obtained By Rotation
+URL: https://leetcode.com/problems/determine-whether-matrix-can-be-obtained-by-rotation/
+
+LLM Explanation:
+The core idea is to check if `mat` can become `target` after 0, 1, 2, or 3 rotations of 90 degrees clockwise. We can simulate this process.
+
+The algorithm is as follows:
+1.  We use a loop that iterates four times, corresponding to the four possible rotational states (0°, 90°, 180°, 270°).
+2.  In each iteration, we first compare the current state of `mat` with `target`. If they are identical, we have found a valid rotation, and we return `true`.
+3.  If they are not equal, we rotate `mat` by 90 degrees clockwise to prepare for the check in the next iteration.
+4.  If the loop completes without finding any match, it means none of the four orientations of `mat` equal `target`, so we return `false`.
+
+To perform a 90-degree clockwise rotation on the matrix in-place, we can use a two-step procedure:
+1.  **Transpose the matrix**: This operation swaps the element at `(i, j)` with the element at `(j, i)`. We iterate through the upper triangle of the matrix (where `j > i`) to perform the swaps efficiently.
+2.  **Reverse each row**: After the matrix is transposed, we iterate through each row and reverse its elements.
+
+This two-step process correctly rotates the matrix 90 degrees clockwise.
+
+**Complexity Analysis:**
+-   **Time Complexity**: O(N²), where N is the side length of the matrix. The main loop runs a constant 4 times. Inside the loop, both the matrix comparison and the in-place rotation take O(N²) time. Therefore, the total time complexity is dominated by these operations, resulting in O(N²).
+-   **Space Complexity**: O(1). The rotation is performed in-place, so we do not use any extra space that scales with the size of the input matrix.
+
+LLM Testcase Validation:
+Testcase 1:
+Input: mat = [[0,1],[1,0]], target = [[1,0],[0,1]]
+My code's logic:
+- 0° rotation: [[0,1],[1,0]] != target. Rotate mat.
+- mat becomes [[1,0],[0,1]].
+- 90° rotation: [[1,0],[0,1]] == target. Return true.
+Output: true. Correct.
+
+Testcase 2:
+Input: mat = [[0,1],[1,1]], target = [[1,0],[0,1]]
+My code's logic:
+- 0° rotation: [[0,1],[1,1]] != target. Rotate mat -> [[1,0],[1,1]].
+- 90° rotation: [[1,0],[1,1]] != target. Rotate mat -> [[1,1],[1,0]].
+- 180° rotation: [[1,1],[1,0]] != target. Rotate mat -> [[1,1],[0,1]].
+- 270° rotation: [[1,1],[0,1]] != target. Rotate mat -> [[0,1],[1,1]].
+- Loop ends. Return false.
+Output: false. Correct.
+
+Testcase 3:
+Input: mat = [[0,0,0],[0,1,0],[1,1,1]], target = [[1,1,1],[0,1,0],[0,0,0]]
+My code's logic:
+- 0° rotation: [[0,0,0],[0,1,0],[1,1,1]] != target. Rotate mat -> [[1,0,0],[1,1,0],[1,0,0]].
+- 90° rotation: [[1,0,0],[1,1,0],[1,0,0]] != target. Rotate mat -> [[1,1,1],[0,1,0],[0,0,0]].
+- 180° rotation: [[1,1,1],[0,1,0],[0,0,0]] == target. Return true.
+Output: true. Correct.
