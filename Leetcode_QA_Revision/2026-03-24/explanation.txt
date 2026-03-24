@@ -1,0 +1,64 @@
+Date: 2026-03-24
+Title: Construct Product Matrix
+URL: https://leetcode.com/problems/construct-product-matrix/
+
+LLM Explanation:
+The problem asks us to construct a product matrix `p` where `p[i][j]` is the product of all elements in the input `grid` except for `grid[i][j]`, with all calculations performed modulo 12345.
+
+This problem is a 2D extension of the classic "Product of Array Except Self". A naive approach of recalculating the product for each cell would be too slow (O((n*m)^2)). A seemingly clever approach of finding the total product and then dividing by `grid[i][j]` for each cell fails because modular division is complicated and often not possible, especially since the modulus `12345` is not a prime number.
+
+The optimal solution adapts the two-pass prefix and suffix product method from the 1D version. We can imagine the 2D `grid` as a single flattened array and apply the same logic.
+
+1.  **Core Idea**: For any element `grid[i][j]`, the product of all other elements is equivalent to `(product of all elements before it) * (product of all elements after it)`. We can calculate these two components efficiently in two separate passes.
+
+2.  **Algorithm**:
+    *   **Initialization**: We create a result matrix `p` of the same size as `grid`, initializing all its elements to 1.
+    *   **Forward Pass (Prefix Products)**: We iterate through the `grid` from the top-left `(0,0)` to the bottom-right `(n-1, m-1)`. We maintain a running product variable, `prefix_prod`, initialized to 1. For each cell `(i, j)`, we first set `p[i][j]` to the current `prefix_prod`. This stores the product of all elements that appeared *before* `grid[i][j]`. Then, we update `prefix_prod` by multiplying it with `grid[i][j]`, all modulo `12345`.
+    *   **Backward Pass (Suffix Products)**: After the forward pass, `p[i][j]` holds the prefix product. Now, we iterate backward from `(n-1, m-1)` to `(0,0)`. We use another running product, `suffix_prod`, initialized to 1. For each cell `(i, j)`, we multiply its current value `p[i][j]` by `suffix_prod`. This incorporates the product of all elements that appear *after* `grid[i][j]`. We then update `suffix_prod` by multiplying it with `grid[i][j]`, again modulo `12345`.
+
+3.  **Result**: After both passes, each `p[i][j]` will correctly hold the product of all elements in `grid` except `grid[i][j]`, modulo `12345`.
+
+4.  **Complexity**:
+    *   **Time Complexity**: O(n * m), as we make two full passes over the grid.
+    *   **Space Complexity**: O(1) extra space. The space used for the output matrix `p` is typically not counted as extra space.
+
+LLM Testcase Validation:
+```
+Input: grid = [[1,2],[3,4]]
+Output: [[24,12],[8,6]]
+Running the code with the input [[1,2],[3,4]]:
+1. Initialize p = [[1, 1], [1, 1]], MOD = 12345.
+2. Forward pass (prefix products):
+   - prefix_prod = 1
+   - (0,0): p[0][0] = 1, prefix_prod = (1 * 1) % MOD = 1
+   - (0,1): p[0][1] = 1, prefix_prod = (1 * 2) % MOD = 2
+   - (1,0): p[1][0] = 2, prefix_prod = (2 * 3) % MOD = 6
+   - (1,1): p[1][1] = 6, prefix_prod = (6 * 4) % MOD = 24
+   - After pass, p = [[1, 1], [2, 6]]
+3. Backward pass (suffix products):
+   - suffix_prod = 1
+   - (1,1): p[1][1] = (6 * 1) % MOD = 6, suffix_prod = (1 * 4) % MOD = 4
+   - (1,0): p[1][0] = (2 * 4) % MOD = 8, suffix_prod = (4 * 3) % MOD = 12
+   - (0,1): p[0][1] = (1 * 12) % MOD = 12, suffix_prod = (12 * 2) % MOD = 24
+   - (0,0): p[0][0] = (1 * 24) % MOD = 24, suffix_prod = (24 * 1) % MOD = 24
+   - Final p = [[24, 12], [8, 6]].
+The output matches the expected output.
+
+Input: grid = [[12345],[2],[1]]
+Output: [[2],[0],[0]]
+Running the code with the input [[12345],[2],[1]]:
+1. Initialize p = [[1], [1], [1]], MOD = 12345.
+2. Forward pass (prefix products):
+   - prefix_prod = 1
+   - (0,0): p[0][0] = 1, prefix_prod = (1 * 12345) % MOD = 0
+   - (1,0): p[1][0] = 0, prefix_prod = (0 * 2) % MOD = 0
+   - (2,0): p[2][0] = 0, prefix_prod = (0 * 1) % MOD = 0
+   - After pass, p = [[1], [0], [0]]
+3. Backward pass (suffix products):
+   - suffix_prod = 1
+   - (2,0): p[2][0] = (0 * 1) % MOD = 0, suffix_prod = (1 * 1) % MOD = 1
+   - (1,0): p[1][0] = (0 * 1) % MOD = 0, suffix_prod = (1 * 2) % MOD = 2
+   - (0,0): p[0][0] = (1 * 2) % MOD = 2, suffix_prod = (2 * 12345) % MOD = 0
+   - Final p = [[2], [0], [0]].
+The output matches the expected output.
+```
