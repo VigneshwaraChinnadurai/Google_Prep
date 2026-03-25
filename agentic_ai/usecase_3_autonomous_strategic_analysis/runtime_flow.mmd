@@ -1,0 +1,39 @@
+flowchart TD
+    A[User Strategic Prompt] --> B[main.py bootstraps runtime]
+    B --> C[Initialize GraphMemory]
+    C --> D[Initialize NewsAndDataAgent]
+    C --> E[Initialize FinancialModelerAgent]
+    C --> F[Initialize CritiqueModule]
+    D --> G[Construct AnalystAgent]
+    E --> G
+    F --> G
+
+    G --> H[AnalystAgent.build_plan]
+    H --> I[AnalystAgent.run]
+
+    I --> J[NewsAndDataAgent.fetch_quarterly_metrics]
+    I --> K[NewsAndDataAgent.fetch_qualitative_signals]
+    I --> L[FinancialModelerAgent.create_market_share_tool]
+
+    L --> M[Write generated_tools.py]
+    M --> N[Dynamic import via importlib]
+    N --> O[calculate market share delta]
+
+    J --> P[Prepare previous/current revenue vectors]
+    O --> Q[Compute market-share delta by provider]
+
+    Q --> R[Initial conclusion generation]
+    R --> S[CritiqueModule.critique]
+    S --> T[Refined causal interpretation]
+
+    I --> U[GraphMemory.query Azure links]
+    U --> V[Memory-backed strategy context]
+
+    T --> W[Threat statement synthesis]
+    V --> W
+    K --> W
+
+    W --> X[Generate 3 strategy options]
+    X --> Y[Return result dictionary]
+    Y --> Z[main.py render_report]
+    Z --> AA[Write outputs/strategic_report.md]

@@ -1,0 +1,56 @@
+{
+  "quarter": "FY2026-Q1",
+  "companies": {
+    "GOOGL": {
+      "name": "Google Cloud",
+      "current": {
+        "revenue_billion": 12.4,
+        "yoy_growth_percent": 31.0,
+        "qoq_growth_percent": 6.9,
+        "operating_income_billion": 1.9,
+        "operating_margin_percent": 15.3
+      },
+      "previous": {
+        "revenue_billion": 11.6,
+        "yoy_growth_percent": 28.0,
+        "qoq_growth_percent": 5.4,
+        "operating_income_billion": 1.5,
+        "operating_margin_percent": 12.9
+      }
+    },
+    "MSFT": {
+      "name": "Microsoft Azure",
+      "current": {
+        "revenue_billion": 35.8,
+        "yoy_growth_percent": 29.0,
+        "qoq_growth_percent": 4.4,
+        "operating_income_billion": 14.1,
+        "operating_margin_percent": 39.4
+      },
+      "previous": {
+        "revenue_billion": 34.3,
+        "yoy_growth_percent": 30.0,
+        "qoq_growth_percent": 4.0,
+        "operating_income_billion": 13.6,
+        "operating_margin_percent": 39.7
+      }
+    },
+    "AMZN": {
+      "name": "Amazon AWS",
+      "current": {
+        "revenue_billion": 28.7,
+        "yoy_growth_percent": 18.0,
+        "qoq_growth_percent": 3.2,
+        "operating_income_billion": 9.8,
+        "operating_margin_percent": 34.1
+      },
+      "previous": {
+        "revenue_billion": 27.8,
+        "yoy_growth_percent": 17.0,
+        "qoq_growth_percent": 2.8,
+        "operating_income_billion": 9.1,
+        "operating_margin_percent": 32.7
+      }
+    }
+  }
+}

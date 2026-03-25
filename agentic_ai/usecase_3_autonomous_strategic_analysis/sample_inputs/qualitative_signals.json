@@ -1,0 +1,24 @@
+{
+  "sources": [
+    {
+      "type": "earnings_call",
+      "company": "GOOGL",
+      "summary": "Google Cloud growth is led by AI infrastructure demand, Vertex AI adoption, and data/analytics workloads on BigQuery."
+    },
+    {
+      "type": "analyst_note",
+      "company": "MSFT",
+      "summary": "Azure remains strong in enterprise migrations, but AI-native startup wins are increasingly contested by Google Cloud."
+    },
+    {
+      "type": "market_commentary",
+      "company": "cross_market",
+      "summary": "Developers prefer integrated data + AI tooling where model serving, feature stores, and analytics pipelines are tightly coupled."
+    },
+    {
+      "type": "benchmark_discussion",
+      "company": "cross_market",
+      "summary": "Vertex AI and BigQuery are frequently cited for faster iteration in early-stage AI products, while Azure's strength remains enterprise integration and governance."
+    }
+  ]
+}

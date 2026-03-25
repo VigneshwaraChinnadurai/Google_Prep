@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 
-OUTPUT_DIR = Path("outputs")
+OUTPUT_DIR = Path("quantum_modelling/outputs")
 
 
 def main() -> None:

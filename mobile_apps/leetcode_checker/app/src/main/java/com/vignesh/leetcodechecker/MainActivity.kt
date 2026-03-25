@@ -908,7 +908,6 @@ private fun insertCompletionCalendarEvent(context: Context, challenge: DailyChal
         )
         val selection = (
             "${CalendarContract.Calendars.VISIBLE}=1 AND " +
-                "${CalendarContract.Calendars.SYNC_EVENTS}=1 AND " +
                 "${CalendarContract.Calendars.CALENDAR_ACCESS_LEVEL}>=?"
             )
         val selectionArgs = arrayOf(CalendarContract.Calendars.CAL_ACCESS_CONTRIBUTOR.toString())
@@ -932,7 +931,7 @@ private fun insertCompletionCalendarEvent(context: Context, challenge: DailyChal
         }
         val selectedCalendarId = calendarId ?: return false
 
-        val timezone = TimeZone.getTimeZone("Asia/Kolkata")
+        val timezone = TimeZone.getDefault()
         val start = Calendar.getInstance(timezone).apply {
             set(Calendar.HOUR_OF_DAY, 0)
             set(Calendar.MINUTE, 0)
@@ -947,6 +946,32 @@ private fun insertCompletionCalendarEvent(context: Context, challenge: DailyChal
             "LeetCode Completed: ${challenge.title}"
         } else {
             "LeetCode Completed"
+        }
+
+        val existingEventSelection = (
+            "${CalendarContract.Events.CALENDAR_ID}=? AND " +
+                "${CalendarContract.Events.DTSTART}>=? AND " +
+                "${CalendarContract.Events.DTSTART}<? AND " +
+                "${CalendarContract.Events.TITLE} LIKE ?"
+            )
+        val existingEventArgs = arrayOf(
+            selectedCalendarId.toString(),
+            start.timeInMillis.toString(),
+            end.timeInMillis.toString(),
+            "LeetCode Completed%"
+        )
+        val existingProjection = arrayOf(CalendarContract.Events._ID)
+        val existingCursor = context.contentResolver.query(
+            CalendarContract.Events.CONTENT_URI,
+            existingProjection,
+            existingEventSelection,
+            existingEventArgs,
+            "${CalendarContract.Events.DTSTART} DESC"
+        )
+        existingCursor?.use {
+            if (it.moveToFirst()) {
+                return true
+            }
         }
 
         val values = ContentValues().apply {

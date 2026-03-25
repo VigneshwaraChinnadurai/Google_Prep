@@ -1,2 +1,0 @@
-ocean_import_error=No module named 'dwave'
-action=install_or_reinstall_dwave_ocean_sdk
