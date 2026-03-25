@@ -1,0 +1,50 @@
+Date: 2026-03-25
+Question ID: 3546
+Title: Equal Sum Grid Partition I
+Difficulty: Medium
+Tags: Array, Matrix, Enumeration, Prefix Sum
+URL: https://leetcode.com/problems/equal-sum-grid-partition-i/
+
+Question:
+You are given an m x n matrix grid of positive integers. Your task is to determine if it is possible to make either one horizontal or one vertical cut on the grid such that: Each of the two resulting sections formed by the cut is non-empty . The sum of the elements in both sections is equal . Return true if such a partition exists; otherwise return false . Example 1: Input: grid = [[1,4],[2,3]] Output: true Explanation: A horizontal cut between row 0 and row 1 results in two non-empty sections, each with a sum of 5. Thus, the answer is true . Example 2: Input: grid = [[1,3],[2,4]] Output: false Explanation: No horizontal or vertical cut results in two non-empty sections with equal sums. Thus, the answer is false . Constraints: 1 &lt;= m == grid.length &lt;= 10 5 1 &lt;= n == grid[i].length &lt;= 10 5 2 &lt;= m * n &lt;= 10 5 1 &lt;= grid[i][j] &lt;= 10 5
+
+Starter Code (Python3):
+class Solution:
+    def canPartitionGrid(self, grid: List[List[int]]) -> bool:
+        
+
+Testcases:
+[[1,4],[2,3]]
+[[1,3],[2,4]]
+
+Expected Output / Validation:
+```
+Input: grid = [[1,4],[2,3]]
+Output: true
+My output: true
+Explanation:
+m=2, n=2.
+row_sums = [5, 5].
+total_sum = 10.
+total_sum is even. target_sum = 5.
+Horizontal check:
+i=0: current_sum = row_sums[0] = 5.
+current_sum == target_sum. Return true.
+
+Input: grid = [[1,3],[2,4]]
+Output: false
+My output: false
+Explanation:
+m=2, n=2.
+row_sums = [4, 6].
+total_sum = 10.
+total_sum is even. target_sum = 5.
+Horizontal check:
+i=0: current_sum = row_sums[0] = 4. 4 != 5.
+Loop ends.
+Vertical check:
+col_sums = [1+2, 3+4] = [3, 7].
+j=0: current_sum = col_sums[0] = 3. 3 != 5.
+Loop ends.
+Return false.
+```
