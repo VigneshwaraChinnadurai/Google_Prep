@@ -115,6 +115,7 @@ private enum class AppScreen {
     Landing,
     ConsistencyChecker,
     FlowDiagram,
+    SubmissionHistory,
     Settings
 }
 
@@ -297,6 +298,16 @@ private fun LeetCodeCheckerScreen(
                 }
 
                 Button(
+                    onClick = {
+                        currentScreen = AppScreen.SubmissionHistory
+                        viewModel.refreshLocalRevisionHistory()
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Submission History")
+                }
+
+                Button(
                     onClick = { currentScreen = AppScreen.Settings },
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -319,6 +330,7 @@ private fun LeetCodeCheckerScreen(
                     text = when (currentScreen) {
                         AppScreen.Settings -> "Settings"
                         AppScreen.FlowDiagram -> "Mermaid Flow Diagram"
+                        AppScreen.SubmissionHistory -> "Submission History"
                         else -> state.settings.checkerTitle
                     },
                     style = MaterialTheme.typography.titleLarge,
@@ -626,6 +638,97 @@ private fun LeetCodeCheckerScreen(
                             style = MaterialTheme.typography.bodySmall
                         )
                         ZoomableFlowDiagramImage()
+                    }
+                }
+            } else if (currentScreen == AppScreen.SubmissionHistory) {
+                Button(
+                    onClick = { viewModel.refreshLocalRevisionHistory() },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Refresh Local History")
+                }
+
+                if (state.isHistoryLoading) {
+                    CircularProgressIndicator()
+                }
+
+                if (state.revisionHistory.isEmpty() && !state.isHistoryLoading) {
+                    Text(
+                        text = "No local submissions found yet. Generate and save at least one submission first.",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+
+                state.revisionHistory.forEach { item ->
+                    val isSelected = state.selectedHistoryItem?.folderDate == item.folderDate
+                    Card(modifier = Modifier.fillMaxWidth()) {
+                        Column(
+                            modifier = Modifier.padding(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Text(
+                                text = if (item.questionId.isNotBlank()) {
+                                    "${item.folderDate} • ${item.questionId}"
+                                } else {
+                                    item.folderDate
+                                },
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                            )
+                            Text(
+                                text = item.title.ifBlank { "(Title unavailable)" },
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                            Button(
+                                onClick = { viewModel.selectHistoryItem(item.folderDate) },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(if (isSelected) "Selected" else "View Details")
+                            }
+                        }
+                    }
+                }
+
+                state.selectedHistoryItem?.let { selected ->
+                    Card(modifier = Modifier.fillMaxWidth()) {
+                        Column(
+                            modifier = Modifier.padding(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = "Submission Details",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Text(
+                                text = "Folder: ${selected.folderPath}",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+
+                            Text("Question", style = MaterialTheme.typography.titleSmall)
+                            SelectionContainer {
+                                Text(
+                                    text = selected.questionText.ifBlank { "Question file not found." },
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
+
+                            Text("Solution", style = MaterialTheme.typography.titleSmall)
+                            SelectionContainer {
+                                Text(
+                                    text = selected.answerPython.ifBlank { "Answer file not found." },
+                                    style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace)
+                                )
+                            }
+
+                            Text("Explanation", style = MaterialTheme.typography.titleSmall)
+                            SelectionContainer {
+                                Text(
+                                    text = selected.explanationText.ifBlank { "Explanation file not found." },
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
+                        }
                     }
                 }
             } else {

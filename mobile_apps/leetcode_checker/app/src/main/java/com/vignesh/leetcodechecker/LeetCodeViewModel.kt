@@ -30,6 +30,9 @@ data class LeetCodeUiState(
     val isCompletedToday: Boolean = false,
     val isPushLoading: Boolean = false,
     val localRevisionPath: String? = null,
+    val isHistoryLoading: Boolean = false,
+    val revisionHistory: List<LocalRevisionHistoryItem> = emptyList(),
+    val selectedHistoryItem: LocalRevisionHistoryItem? = null,
     val settings: AppSettings = AppSettings()
 )
 
@@ -63,6 +66,7 @@ class LeetCodeViewModel(
 
     init {
         loadFromLocalStorage()
+        refreshLocalRevisionHistory()
         viewModelScope.launch {
             repository.liveDebugLog.collectLatest { logText ->
                 if (logText.isNotBlank()) {
@@ -208,6 +212,25 @@ class LeetCodeViewModel(
         )
     }
 
+    fun refreshLocalRevisionHistory() {
+        _uiState.value = _uiState.value.copy(isHistoryLoading = true)
+        viewModelScope.launch {
+            val items = RevisionExportManager.readLocalRevisionHistory(appContext)
+            val selectedDate = _uiState.value.selectedHistoryItem?.folderDate
+            val selected = items.firstOrNull { it.folderDate == selectedDate } ?: items.firstOrNull()
+            _uiState.value = _uiState.value.copy(
+                isHistoryLoading = false,
+                revisionHistory = items,
+                selectedHistoryItem = selected
+            )
+        }
+    }
+
+    fun selectHistoryItem(folderDate: String) {
+        val selected = _uiState.value.revisionHistory.firstOrNull { it.folderDate == folderDate }
+        _uiState.value = _uiState.value.copy(selectedHistoryItem = selected)
+    }
+
     private fun applyAiResult(result: AiGenerationResult) {
         _uiState.value = _uiState.value.copy(
             aiCode = result.leetcodePythonCode,
@@ -302,6 +325,7 @@ class LeetCodeViewModel(
             RevisionExportManager.writeLocalRevisionFiles(appContext, files)
         }.onSuccess { localPath ->
             _uiState.value = _uiState.value.copy(localRevisionPath = localPath)
+            refreshLocalRevisionHistory()
         }
     }
 

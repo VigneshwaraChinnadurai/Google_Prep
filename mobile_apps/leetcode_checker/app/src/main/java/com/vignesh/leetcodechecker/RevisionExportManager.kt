@@ -13,12 +13,24 @@ import retrofit2.HttpException
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
 import java.io.File
+import java.util.Locale
 
 data class RevisionFiles(
     val folderDate: String,
     val questionText: String,
     val answerPython: String,
     val explanationText: String
+)
+
+data class LocalRevisionHistoryItem(
+    val folderDate: String,
+    val folderPath: String,
+    val questionId: String,
+    val title: String,
+    val questionText: String,
+    val answerPython: String,
+    val explanationText: String,
+    val lastUpdatedMillis: Long
 )
 
 object RevisionExportManager {
@@ -96,6 +108,66 @@ object RevisionExportManager {
             File(baseDir, "explanation.txt").writeText(files.explanationText)
             baseDir.absolutePath
         }
+    }
+
+    suspend fun readLocalRevisionHistory(context: Context): List<LocalRevisionHistoryItem> {
+        return withContext(Dispatchers.IO) {
+            val settings = AppSettingsStore.load(context)
+            val rootFolder = settings.revisionFolderName.ifBlank { "Leetcode_QA_Revision" }
+            val rootDir = File(context.getExternalFilesDir(null), rootFolder)
+
+            if (!rootDir.exists() || !rootDir.isDirectory) {
+                return@withContext emptyList()
+            }
+
+            rootDir.listFiles()
+                .orEmpty()
+                .filter { it.isDirectory }
+                .mapNotNull { folder ->
+                    val questionFile = File(folder, "question.txt")
+                    val answerFile = File(folder, "answer.py")
+                    val explanationFile = File(folder, "explanation.txt")
+
+                    if (!questionFile.exists() && !answerFile.exists() && !explanationFile.exists()) {
+                        return@mapNotNull null
+                    }
+
+                    val questionText = questionFile.takeIf { it.exists() }?.readText().orEmpty()
+                    val answerText = answerFile.takeIf { it.exists() }?.readText().orEmpty()
+                    val explanationText = explanationFile.takeIf { it.exists() }?.readText().orEmpty()
+
+                    val questionId = extractMetadataValue(questionText, "Question ID")
+                    val title = extractMetadataValue(questionText, "Title")
+
+                    val lastModified = listOf(questionFile, answerFile, explanationFile)
+                        .filter { it.exists() }
+                        .maxOfOrNull { it.lastModified() }
+                        ?: folder.lastModified()
+
+                    LocalRevisionHistoryItem(
+                        folderDate = folder.name,
+                        folderPath = folder.absolutePath,
+                        questionId = questionId,
+                        title = title,
+                        questionText = questionText,
+                        answerPython = answerText,
+                        explanationText = explanationText,
+                        lastUpdatedMillis = lastModified
+                    )
+                }
+                .sortedWith(
+                    compareByDescending<LocalRevisionHistoryItem> { it.folderDate }
+                        .thenByDescending { it.lastUpdatedMillis }
+                )
+        }
+    }
+
+    private fun extractMetadataValue(text: String, key: String): String {
+        if (text.isBlank()) return ""
+        val target = "$key:".lowercase(Locale.US)
+        val line = text.lineSequence().firstOrNull { it.trim().lowercase(Locale.US).startsWith(target) }
+            ?: return ""
+        return line.substringAfter(':').trim()
     }
 
     suspend fun pushToGitHub(
