@@ -1,345 +1,369 @@
-# Autonomous Strategic Analysis of Google Cloud
+# Autonomous Strategic Analysis — Detailed Technical Documentation
 
 ## 1. Purpose and Scope
 
-This project implements a deterministic, offline-capable, multi-agent strategic analysis workflow.
-It is designed to simulate how an executive-grade analysis assistant can:
+This is a **genuinely agentic** strategic analysis system — not a mock-up.
 
-1. Ingest cloud financial and qualitative signals.
-2. Decompose a strategic prompt into execution steps.
-3. Delegate subtasks across specialized agents.
-4. Dynamically create and execute a financial modeling tool.
-5. Self-critique shallow conclusions.
-6. Produce an actionable strategy report for Microsoft in response to Google Cloud momentum.
+Every reasoning step (planning, extraction, threat analysis, critique, strategy generation,
+memory curation, synthesis) is performed by the Gemini LLM.  Every piece of data comes from
+real internet sources (SEC EDGAR, Google News, Gemini Google-Search grounding).
 
-The current implementation intentionally uses local sample data rather than live APIs so results are reproducible and easy to validate.
+The system answers this C-suite question:
 
-## 2. Business Question Solved
+> "Analyze Alphabet's latest quarterly earnings focused on Google Cloud.
+> Identify the biggest strategic threat to Microsoft Azure.
+> Generate three actionable mitigation strategies."
 
-Core command implemented by the system:
+## 2. Architecture Overview
 
-Analyze Alphabet's latest quarterly earnings, focus on Google Cloud, identify the strongest strategic threat to Microsoft Azure, and generate three mitigation strategies.
+```
+┌──────────────────────────────────────────────────────────┐
+│                     main.py (CLI)                        │
+│  Config · CostGuard · GeminiClient · Agent construction  │
+└──────────────────────┬───────────────────────────────────┘
+                       │
+                       ▼
+┌──────────────────────────────────────────────────────────┐
+│               AnalystAgent (orchestrator)                 │
+│  Plan → Delegate → Extract → Analyse → Critique →        │
+│  Refine → Strategise → Memory → Synthesise               │
+└──┬────────┬────────────┬─────────────┬───────────────────┘
+   │        │            │             │
+   ▼        ▼            ▼             ▼
+┌──────┐ ┌──────────┐ ┌──────────┐ ┌──────────────┐
+│Graph │ │ News &   │ │Financial │ │  Critique    │
+│Memory│ │ Data Agt │ │Modeler   │ │  Module      │
+│      │ │          │ │Agent     │ │              │
+│ R+W  │ │ fetch +  │ │ dynamic  │ │ LLM rubric   │
+│edges │ │ retrieve │ │ tool gen │ │ scoring      │
+└──────┘ └────┬─────┘ └──────────┘ └──────────────┘
+              │
+              ▼
+┌──────────────────────────────────────────────────────────┐
+│              Retrieval Pipeline (retrieval/)              │
+│                                                          │
+│  web_fetcher  →  chunker  →  metadata_enricher           │
+│       ↓              ↓              ↓                     │
+│  Documents      Chunks         Enriched Chunks            │
+│                                     │                     │
+│                    ┌────────────────┴────────────────┐    │
+│                    ▼                                 ▼    │
+│            BM25 Sparse Index            Dense Index       │
+│              (free, fast)          (Gemini embeddings)    │
+│                    │                         │            │
+│                    └───────────┬──────────────┘            │
+│                                ▼                          │
+│                    Hybrid Index (RRF Fusion)               │
+│                                │                          │
+│                                ▼                          │
+│                    LLM Reranker (score 0-1)                │
+│                                │                          │
+│                                ▼                          │
+│                    Context Fuser (dedup + budget)          │
+└──────────────────────────────────────────────────────────┘
+                       │
+                       ▼
+┌──────────────────────────────────────────────────────────┐
+│                  CostGuard (billing)                      │
+│  Per-call USD tracking · Hard budget cap · Dry-run mode   │
+│  Cache-hit accounting · Token-level granularity           │
+└──────────────────────────────────────────────────────────┘
+```
 
-## 3. System Design
+## 3. Data Sources — All Real, No Mock Data
 
-### 3.1 Agent Roles
+### 3.1 Gemini Google-Search Grounding (Primary)
 
-1. AnalystAgent
-   - Owns orchestration logic.
-   - Builds an execution plan.
-   - Calls subordinate agents.
-   - Fuses outputs into threat statement and strategy set.
+Gemini's `googleSearch` tool enables grounded generation: the model searches
+the live web and returns text with source citations.
 
-2. NewsAndDataAgent
-   - Reads structured KPI data from sample_inputs/quarterly_cloud_metrics.json.
-   - Reads qualitative commentary from sample_inputs/qualitative_signals.json.
+We issue 6 targeted queries:
+1. Google Cloud latest quarterly earnings (revenue, growth, margin)
+2. Microsoft Azure latest quarterly earnings
+3. Amazon AWS latest quarterly earnings
+4. Google Cloud vs Azure competitive analysis
+5. Analyst commentary on strategic threats
+6. Google Cloud growth drivers (Vertex AI, BigQuery)
 
-3. FinancialModelerAgent
-   - Dynamically writes generated_tools.py at runtime.
-   - Loads function calculate_market_share_delta via importlib.
-   - Computes sequential market share delta for Google, Azure, AWS.
+Each response comes with grounding metadata (URLs, titles) that we preserve.
 
-4. CritiqueModule
-   - Detects superficial statements such as only reporting market-share movement.
-   - Forces a causal layer: why shifts happen and what strategic response requires.
+### 3.2 SEC EDGAR XBRL API (Structured)
 
-5. GraphMemory
-   - Stores and queries strategic relationship edges.
-   - Injects historical context into recommendation quality.
+Free, public API — no keys required.
 
-### 3.2 Why This Architecture
+- Endpoint: `https://data.sec.gov/api/xbrl/companyfacts/CIK{cik}.json`
+- Provides: Revenue, Operating Income, Net Income from 10-Q/10-K filings
+- We pull the last 8 filings for GOOGL, MSFT, AMZN
 
-This decomposition mirrors real enterprise analysis:
+### 3.3 Google News RSS (Headlines + Signals)
 
-1. Data collection is separate from interpretation.
-2. Financial math is separated into explicit tools for traceability.
-3. Critique ensures quality control and reduces weak summaries.
-4. Memory reduces stateless analysis and keeps strategic continuity.
+Free RSS feed from Google News — 4 search queries for cloud earnings and
+competitive dynamics.  Provides directional signals and recency context.
 
-## 4. End-to-End Runtime Flow
+### 3.4 SEC EDGAR Full-Text Search (Filing Snippets)
 
-Rendered flow image:
+Free-text search across recent 10-Q/10-K filings for specific terms like
+"Google Cloud revenue operating income".
 
-![Runtime Flow Diagram](runtime_flow.png)
+## 4. Hybrid Retrieval Pipeline — Deep Dive
+
+### 4.1 Why Hybrid?
+
+| Approach | Strength | Weakness |
+|---|---|---|
+| BM25 (sparse) | Exact keyword match, zero cost | Misses semantic synonyms |
+| Embeddings (dense) | Semantic understanding | Costs API calls, misses exact terms |
+| **Hybrid (RRF)** | **Best of both** | Slightly more complex |
+
+### 4.2 Chunking Strategy
+
+Sentence-aware with configurable overlap:
+- **Chunk size**: ~480 tokens (≈1920 chars)
+- **Overlap**: ~60 tokens — ensures context continuity across boundaries
+- **Boundary**: splits on sentence endings (`.!?`) or paragraph breaks
+
+### 4.3 Metadata Enrichment
+
+Every chunk is tagged with:
+- **company**: GOOGL / MSFT / AMZN / cross_market / unknown (regex rules)
+- **topic**: revenue / growth / ai_ml / cloud / strategy / competitive / general
+- **source_type**: sec_filing / grounded_search / news / unknown
+- **date**: extracted ISO date or quarter string if present
+
+This enables **filtered retrieval** (e.g., "only GOOGL revenue chunks").
+
+### 4.4 Sparse Index — BM25 from Scratch
+
+Full Okapi BM25 implementation:
+
+```
+score(q, d) = Σ_{t∈q}  IDF(t) · (tf(t,d)·(k₁+1)) / (tf(t,d) + k₁·(1-b+b·|d|/avgdl))
+IDF(t) = ln((N - n(t) + 0.5) / (n(t) + 0.5) + 1)
+```
+
+Parameters: k₁=1.5, b=0.75 (standard defaults).
+Minimal stop-word list — the reranker handles noise.
+
+### 4.5 Dense Index — Gemini Embeddings
+
+Model: `text-embedding-004` (**free** on Google AI Studio).
+Task type: `RETRIEVAL_DOCUMENT` for indexing, `RETRIEVAL_QUERY` for search.
+Similarity: cosine.
+
+### 4.6 Hybrid Fusion — Reciprocal Rank Fusion (RRF)
+
+```
+score_rrf(d) = α/(k + rank_sparse(d)) + (1-α)/(k + rank_dense(d))
+```
+
+- **α = 0.55**: slightly favours sparse (free BM25) over dense
+- **k = 60**: standard RRF constant
+
+Optional metadata filtering applied post-fusion.
+
+### 4.7 LLM Reranker
+
+Candidate chunks (top-15 from hybrid) are batched and sent to Gemini.
+The model scores each chunk 0.0 – 1.0 on relevance.
+Chunks below **0.35** are dropped.
+Top **6** survive.
+
+Batched into groups of 10 per API call (token optimisation).
+
+### 4.8 Context Fusion
+
+1. **De-duplicate**: Jaccard similarity > 0.80 → merged
+2. **Order by score**: highest relevance first
+3. **Token budget**: accumulate until 4000 tokens
+4. **Format**: each chunk gets a header like `[source=grounded_search company=GOOGL score=0.87]`
+
+## 5. Agent Logic — Deep Dive
+
+### 5.1 AnalystAgent.run() — 13-Step Pipeline
+
+| Step | What | LLM? | Cost |
+|---|---|---|---|
+| 1 | Plan decomposition | Yes | ~200 tok |
+| 2 | Fetch & index real data | Grounding + EDGAR | ~6 grounding calls |
+| 3 | Retrieve financial context | Hybrid search + rerank | 1 rerank call |
+| 4 | Extract structured financials | Yes (JSON mode) | ~500 tok |
+| 5 | Compute market share delta | Dynamic Python tool | Free (local) |
+| 6 | Retrieve qualitative signals | Hybrid search + rerank | 1 rerank call |
+| 7 | Read GraphMemory | Local lookup | Free |
+| 8 | Threat analysis | Yes | ~800 tok |
+| 9 | Critique (rubric scoring) | Yes (JSON mode) | ~400 tok |
+| 10 | Refinement loop (0-2x) | Yes + re-retrieve | ~600 tok each |
+| 11 | Generate 3 strategies | Yes (JSON mode) | ~1000 tok |
+| 12 | Extract memory edges | Yes (JSON mode) | ~300 tok |
+| 13 | Executive summary | Yes | ~500 tok |
+
+### 5.2 CritiqueModule — Rubric Scoring
+
+Four criteria, each scored 0-10:
+- **Depth**: Does it explain WHY, not just WHAT?
+- **Evidence**: Does it cite specific data or signals?
+- **Causality**: Does it identify root drivers, not symptoms?
+- **Actionability**: Could a decision-maker act on this?
+
+Overall ≥ 7 → PASS.  Otherwise NEEDS_REFINEMENT → triggers loop.
+
+### 5.3 Refinement Loop
+
+When critique says NEEDS_REFINEMENT:
+1. LLM reads the feedback and generates 1-2 targeted search queries
+2. Hybrid retrieval runs those queries
+3. Threat analysis re-runs with enriched context
+4. Critique re-evaluates
+5. Maximum 2 loops (configurable)
+
+### 5.4 Dynamic Memory
+
+Old system: memory was pre-seeded and read-only.
+New system: after analysis, LLM extracts relationship triples:
+```
+(Google Cloud, GrowthDriver, Vertex AI + BigQuery)
+(Azure, Vulnerable, AI-native startup segment)
+(Microsoft, StrategicAsset, Office365 enterprise base)
+```
+These persist in GraphMemory and influence future strategy reasoning.
+
+## 6. Cost Control System
+
+### 6.1 Model Choice
+
+`gemini-2.5-flash-preview-05-20` — the **cheapest** available generation model.
+
+Google AI Studio free tier: 15 RPM, 1M TPM, 1500 RPD — **completely free**.
+Even on pay-as-you-go: $0.15 per million input tokens, $0.60 per million output.
+
+### 6.2 CostGuard Module
+
+Every API call flows through CostGuard which:
+1. **Records** input/output tokens and computes incremental USD cost
+2. **Checks** cumulative spend against the hard budget cap BEFORE each call
+3. **Raises `BudgetExceeded`** immediately if the cap would be exceeded
+4. Separately tracks cache hits and embedding tokens (free)
+
+### 6.3 Aggressive Caching
+
+diskcache stores every API response keyed by SHA-256 of the prompt.
+Re-runs are **instant and free**.
+
+### 6.4 Dry-Run Mode
+
+`python main.py --dry-run` — skips ALL LLM/embedding/grounding calls.
+Useful for testing plumbing, verifying config, and understanding flow.
+
+### 6.5 Token Budget Hierarchy
+
+| Level | Control | Default |
+|---|---|---|
+| Per-response | `max_output_tokens` | 4096 |
+| Reranker | batch of 10, cap 1024 output | Small |
+| Context fusion | `context_token_budget` | 4000 |
+| Critique | 512 output | Tiny |
+| Total budget | CostGuard `budget_usd` | $0.50 |
+
+### 6.6 Expected Cost Per Run
+
+| Component | Est. tokens | Est. cost |
+|---|---|---|
+| 6 grounding queries | ~6000 in, ~6000 out | $0.0045 |
+| 2 rerank calls | ~2000 in, ~400 out | $0.0005 |
+| Financial extraction | ~1500 in, ~500 out | $0.0005 |
+| Threat analysis | ~2000 in, ~500 out | $0.0006 |
+| Critique (1-2x) | ~1500 in, ~300 out | $0.0004 |
+| Strategies | ~2000 in, ~800 out | $0.0008 |
+| Memory + summary | ~2000 in, ~500 out | $0.0006 |
+| Planning | ~200 in, ~300 out | $0.0002 |
+| Embeddings | ~10000 tokens | **FREE** |
+| **TOTAL** | | **~$0.008 – $0.03** |
+
+## 7. End-to-End Runtime Flow
+
+See `runtime_flow.mmd` for the full Mermaid diagram.
 
 ```mermaid
 flowchart TD
-    A[User Strategic Prompt] --> B[main.py bootstraps runtime]
-    B --> C[Initialize GraphMemory]
-    C --> D[Initialize NewsAndDataAgent]
-    C --> E[Initialize FinancialModelerAgent]
-    C --> F[Initialize CritiqueModule]
-    D --> G[Construct AnalystAgent]
-    E --> G
-    F --> G
-
-    G --> H[AnalystAgent.build_plan]
-    H --> I[AnalystAgent.run]
-
-    I --> J[NewsAndDataAgent.fetch_quarterly_metrics]
-    I --> K[NewsAndDataAgent.fetch_qualitative_signals]
-    I --> L[FinancialModelerAgent.create_market_share_tool]
-
-    L --> M[Write generated_tools.py]
-    M --> N[Dynamic import via importlib]
-   N --> O[calculate market share delta]
-
-    J --> P[Prepare previous/current revenue vectors]
-    O --> Q[Compute market-share delta by provider]
-
-    Q --> R[Initial conclusion generation]
-    R --> S[CritiqueModule.critique]
-    S --> T[Refined causal interpretation]
-
-    I --> U[GraphMemory.query Azure links]
-    U --> V[Memory-backed strategy context]
-
-    T --> W[Threat statement synthesis]
-    V --> W
-    K --> W
-
-    W --> X[Generate 3 strategy options]
-    X --> Y[Return result dictionary]
-    Y --> Z[main.py render_report]
-    Z --> AA[Write outputs/strategic_report.md]
+    A[User Prompt] --> B[Config + CostGuard]
+    B --> C[GeminiClient + Cache]
+    C --> D[Agent Team]
+    D --> E[LLM Plan]
+    E --> F[Fetch Real Data]
+    F --> G[Chunk + Enrich + Index]
+    G --> H[Hybrid Retrieve + Rerank]
+    H --> I[LLM Extract Financials]
+    I --> J[Dynamic Tool: Share Delta]
+    J --> K[LLM Threat Analysis]
+    K --> L[LLM Critique]
+    L --> M{Pass?}
+    M -->|No| N[Refine + Re-retrieve]
+    N --> K
+    M -->|Yes| O[LLM Strategies]
+    O --> P[LLM Memory Extraction]
+    P --> Q[LLM Executive Summary]
+    Q --> R[Render Report + Cost Summary]
 ```
 
-## 5. File-Level Deep Dive
+## 8. Configuration Reference
 
-### 5.1 main.py
+All config lives in `config.py`:
 
-Responsibilities:
+| Knob | Default | Purpose |
+|---|---|---|
+| `generation_model` | gemini-2.5-flash-preview-05-20 | Cheapest flash model |
+| `embedding_model` | text-embedding-004 | Free embeddings |
+| `max_output_tokens` | 4096 | Hard cap per response |
+| `budget_usd` | 0.50 | Hard cost cap |
+| `dry_run` | False | Skip all API calls |
+| `hybrid_alpha` | 0.55 | Sparse/dense weight |
+| `top_k_retrieval` | 15 | Candidates from hybrid |
+| `top_k_rerank` | 6 | After LLM reranking |
+| `rerank_relevance_floor` | 0.35 | Drop below this |
+| `context_token_budget` | 4000 | Fused context limit |
+| `max_critique_loops` | 2 | Refinement iterations |
 
-1. Sets project base path.
-2. Seeds graph memory with key strategic links.
-3. Instantiates all agents/modules.
-4. Runs the full analysis pipeline.
-5. Renders and writes final markdown report.
+## 9. How to Run
 
-Key function: render_report(result)
+```bash
+# Dry run (zero cost)
+python main.py --dry-run
 
-1. Extracts current quarter metrics.
-2. Formats strategy actions into markdown table rows.
-3. Adds critique output and memory context.
-4. Produces final executive-ready markdown artifact.
-
-### 5.2 agents.py
-
-Contains all agent/module classes:
-
-1. GraphMemory
-   - add_edge(source, relation, target)
-   - query(source=None, relation=None)
-
-2. NewsAndDataAgent
-   - fetch_quarterly_metrics()
-   - fetch_qualitative_signals()
-
-3. FinancialModelerAgent
-   - create_market_share_tool()
-   - Writes generated_tools.py and loads callable dynamically.
-
-4. CritiqueModule
-   - critique(initial_conclusion)
-   - Returns advisory string indicating depth quality.
-
-5. AnalystAgent
-   - build_plan()
-   - run(): executes complete strategic logic and synthesis.
-
-### 5.3 sample_inputs/quarterly_cloud_metrics.json
-
-Provides two periods for each provider:
-
-1. Current quarter KPI set.
-2. Previous quarter KPI set.
-
-Metrics included:
-
-1. revenue_billion
-2. yoy_growth_percent
-3. qoq_growth_percent
-4. operating_income_billion
-5. operating_margin_percent
-
-These values are sufficient for trend analysis and market-share delta math.
-
-### 5.4 sample_inputs/qualitative_signals.json
-
-Contains commentary-like textual signals by source category:
-
-1. earnings_call
-2. analyst_note
-3. market_commentary
-4. benchmark_discussion
-
-These signals are used to add causal interpretation beyond raw KPI numbers.
-
-### 5.5 generated_tools.py
-
-Created at runtime by FinancialModelerAgent.
-
-Contains function:
-
-calculate_market_share_delta(previous_revenue, current_revenue)
-
-It computes:
-
-1. Total market size for previous and current periods.
-2. Provider share in each period.
-3. Delta in percentage points per provider.
-
-### 5.6 outputs/strategic_report.md
-
-Final output artifact generated each run.
-
-Includes:
-
-1. Executive summary.
-2. KPI snapshot.
-3. Market-share delta.
-4. Critique feedback.
-5. Threat statement.
-6. Three mitigation strategies.
-7. Execution trace.
-
-## 6. Dynamic Tooling Mechanics
-
-The runtime tool-generation pattern is intentional and valuable for agentic systems:
-
-1. Analyst requests a quantitative operation.
-2. FinancialModeler creates specialized function code.
-3. Tool is loaded dynamically.
-4. Analyst uses generated callable in the same run.
-
-Benefits:
-
-1. Improves modularity of reasoning and computation.
-2. Makes math logic explicit and inspectable.
-3. Enables future extension to many generated tools.
-
-Risks and constraints in production:
-
-1. Must sandbox code execution.
-2. Must validate generated code signatures and behavior.
-3. Must apply strict security controls for untrusted tool generation.
-
-## 7. Critique Loop and Quality Control
-
-The critique stage catches shallow strategic statements.
-
-Example pattern:
-
-1. Initial statement: Google is growing share faster.
-2. Critique: This is only what changed, not why.
-3. Refinement: Explain AI-native product pull, data gravity, developer preference, and enterprise integration effects.
-
-This raises output quality from dashboard commentary to strategic guidance.
-
-## 8. Memory Usage and Strategic Continuity
-
-Current seeded edge:
-
-Microsoft Azure --[StronglyLinkedTo]--> Office365/EnterpriseSales
-
-How memory improves decisions:
-
-1. Prevents recommendations from ignoring known strengths.
-2. Supports moat-oriented strategies instead of generic reactions.
-3. Preserves institutional strategic context across runs.
-
-## 9. Data Lineage: Where sample_inputs came from
-
-Important clarification:
-
-1. sample_inputs are synthetic demonstration data created for this project.
-2. They are not pulled directly from live SEC filings, earnings APIs, or premium analyst terminals.
-3. The structure and directional patterns are based on publicly discussed cloud-market behavior:
-   - Google Cloud AI-led acceleration narrative.
-   - Azure enterprise strength.
-   - AWS scale and margin profile.
-
-Why synthetic data is used here:
-
-1. Deterministic output for local reproducibility.
-2. No external API keys required.
-3. Simplifies debugging and understanding agent flow.
-
-## 10. Assumptions in this Implementation
-
-1. Revenue comparability assumption
-   - Revenue values are treated as comparable cloud-segment proxies for sequential share math.
-
-2. Time consistency assumption
-   - Current and previous periods are assumed aligned across providers.
-
-3. Signal reliability assumption
-   - Qualitative source summaries are treated as valid directional evidence.
-
-4. Causality simplification assumption
-   - Signals are interpreted for strategic causality without full econometric modeling.
-
-5. Strategy feasibility assumption
-   - Strategy costs and outcomes are directional, not budget-authorized plans.
-
-## 11. How to Run
-
-From this folder:
-
+# Real run
 python main.py
 
-Expected console output:
+# With custom budget
+python main.py --budget 0.25
 
-1. Analysis complete.
-2. Report path location.
+# Clear cache first
+python main.py --clear-cache
+```
 
-## 12. Validation Checklist
+## 10. Extending to Production
 
-After each run verify:
+1. **More data sources**: Add earnings transcript APIs, analyst report APIs
+2. **Vector DB**: Replace in-memory dense index with ChromaDB / Pinecone
+3. **Persistent memory**: Save GraphMemory to file/DB between runs
+4. **Multi-quarter**: Compare trends across 4-8 quarters
+5. **Confidence scores**: Add uncertainty quantification to each claim
+6. **Citation mapping**: Trace every report sentence to its source chunk
+7. **PDF export**: Render report to PDF via WeasyPrint
 
-1. generated_tools.py exists.
-2. outputs/strategic_report.md is regenerated.
-3. Market-share deltas are numeric and plausible.
-4. Critique section is present.
-5. Strategy table has three entries.
+## 11. Known Limitations
 
-## 13. Extending to Production
+1. SEC EDGAR data may lag 30-60 days behind latest earnings
+2. Google-Search grounding quality depends on web freshness
+3. No real-time stock price or analyst estimate integration
+4. Single-run analysis (no persistent multi-session learning yet)
+5. No API key rotation or multi-key support
 
-Recommended upgrades:
+## 12. Glossary
 
-1. Replace sample inputs with live connectors:
-   - SEC filings parser.
-   - Earnings transcript ingestion.
-   - Financial KPI APIs.
-
-2. Add schema validation:
-   - Pydantic or JSON schema checks for all inputs.
-
-3. Add observability:
-   - Structured logs.
-   - Step timings.
-   - Trace IDs per analysis run.
-
-4. Add testing:
-   - Unit tests for tool generation and share math.
-   - Golden-file tests for report rendering.
-
-5. Add risk controls:
-   - Confidence scoring.
-   - Citation mapping.
-   - Hallucination-safe output constraints.
-
-## 14. Known Limitations
-
-1. No live web/news retrieval in current version.
-2. No citation granularity at sentence level.
-3. No multi-quarter time-series forecasting yet.
-4. No probabilistic scenario simulations yet.
-
-## 15. Quick Glossary
-
-1. QoQ: Quarter-over-quarter growth.
-2. YoY: Year-over-year growth.
-3. Data gravity: Tendency for workloads to run near data location.
-4. MLOps: Tooling to operationalize machine-learning lifecycle.
-5. Percentage-point delta: Absolute change between percentage values.
+| Term | Meaning |
+|---|---|
+| BM25 | Best-Match-25 — classic sparse retrieval algorithm |
+| RRF | Reciprocal Rank Fusion — merges multiple ranking lists |
+| Grounding | Gemini feature that searches the web and cites sources |
+| CostGuard | Module that tracks spending and enforces budget cap |
+| GoT | Graph of Thoughts — structured reasoning (we use LLM planning) |
+| XBRL | eXtensible Business Reporting Language — structured SEC data |

@@ -1,39 +1,63 @@
 flowchart TD
-    A[User Strategic Prompt] --> B[main.py bootstraps runtime]
-    B --> C[Initialize GraphMemory]
-    C --> D[Initialize NewsAndDataAgent]
-    C --> E[Initialize FinancialModelerAgent]
-    C --> F[Initialize CritiqueModule]
-    D --> G[Construct AnalystAgent]
-    E --> G
-    F --> G
+    A[User Strategic Prompt] --> B[main.py: Load Config + CostGuard]
+    B --> C[Initialize GeminiClient with cache + guard]
+    C --> D[Seed GraphMemory with known edges]
 
-    G --> H[AnalystAgent.build_plan]
-    H --> I[AnalystAgent.run]
+    D --> E[Construct Agent Team]
+    E --> F["AnalystAgent.run(prompt)"]
 
-    I --> J[NewsAndDataAgent.fetch_quarterly_metrics]
-    I --> K[NewsAndDataAgent.fetch_qualitative_signals]
-    I --> L[FinancialModelerAgent.create_market_share_tool]
+    %% ── Planning ──
+    F --> G["Step 1: build_plan() — LLM decomposes prompt"]
+    G --> H["Step 2: NewsAndDataAgent.fetch_and_index()"]
 
-    L --> M[Write generated_tools.py]
-    M --> N[Dynamic import via importlib]
-    N --> O[calculate market share delta]
+    %% ── Real data fetching ──
+    H --> H1[Gemini Google-Search Grounding — 6 queries]
+    H --> H2[SEC EDGAR XBRL — GOOGL, MSFT, AMZN]
+    H --> H3[SEC EDGAR Full-Text Search]
+    H --> H4[Google News RSS — 4 queries]
 
-    J --> P[Prepare previous/current revenue vectors]
-    O --> Q[Compute market-share delta by provider]
+    H1 --> I[Raw Documents]
+    H2 --> I
+    H3 --> I
+    H4 --> I
 
-    Q --> R[Initial conclusion generation]
-    R --> S[CritiqueModule.critique]
-    S --> T[Refined causal interpretation]
+    %% ── Retrieval pipeline ──
+    I --> J[Chunker: sentence-aware, overlap]
+    J --> K[Metadata Enricher: company, topic, date]
+    K --> L1[BM25 Sparse Index]
+    K --> L2[Gemini Embedding Dense Index]
+    L1 --> M[Hybrid Index: RRF Fusion]
+    L2 --> M
 
-    I --> U[GraphMemory.query Azure links]
-    U --> V[Memory-backed strategy context]
+    %% ── Query phase ──
+    M --> N["Step 3: Retrieve financial context"]
+    N --> O[LLM Reranker: score 0-1, drop < 0.35]
+    O --> P[Context Fuser: de-dup + token budget]
 
-    T --> W[Threat statement synthesis]
-    V --> W
-    K --> W
+    %% ── Analysis ──
+    P --> Q["Step 4: LLM extracts structured financials"]
+    Q --> R["Step 5: Dynamic tool — market share delta"]
+    R --> S["Step 6: Retrieve qualitative signals"]
+    S --> T["Step 7: Read GraphMemory context"]
+    T --> U["Step 8: LLM threat analysis"]
 
-    W --> X[Generate 3 strategy options]
-    X --> Y[Return result dictionary]
-    Y --> Z[main.py render_report]
-    Z --> AA[Write outputs/strategic_report.md]
+    %% ── Critique loop ──
+    U --> V["Step 9: CritiqueModule — rubric scoring"]
+    V --> W{Verdict?}
+    W -->|PASS| X["Step 11: LLM generate 3 strategies"]
+    W -->|NEEDS_REFINEMENT| Y["Step 10: LLM refinement queries"]
+    Y --> Z[Re-retrieve + re-analyse]
+    Z --> V
+
+    %% ── Synthesis ──
+    X --> AA["Step 12: LLM extracts memory edges"]
+    AA --> BB["Step 13: LLM executive summary"]
+    BB --> CC[main.py: render_report]
+    CC --> DD[Write outputs/strategic_report.md]
+    CC --> EE[Write outputs/raw_result.json]
+    DD --> FF[Print Cost Summary]
+    EE --> FF
+
+    %% ── Cost guard throughout ──
+    style C fill:#2d6,stroke:#333,color:#fff
+    style FF fill:#d62,stroke:#333,color:#fff

@@ -1,101 +1,267 @@
+"""
+Autonomous Strategic Analysis — main entry point.
+
+Usage
+-----
+    # Normal run (uses Gemini API — costs ~$0.01-0.05 on flash):
+    python main.py
+
+    # Dry run (zero API cost — tests plumbing only):
+    python main.py --dry-run
+
+    # Custom budget cap:
+    python main.py --budget 0.25
+
+    # Clear cache (forces fresh API calls):
+    python main.py --clear-cache
+
+Pipeline
+--------
+1. Load config + API key
+2. Initialise CostGuard (hard budget cap)
+3. Initialise GeminiClient (with cache + guard)
+4. Build agent team
+5. Run full agentic analysis
+6. Render + save report
+7. Print cost summary
+"""
 from __future__ import annotations
 
-from pathlib import Path
+import argparse
+import json
+import logging
+import shutil
+import sys
 from datetime import datetime, timezone
+from pathlib import Path
 
+from config import load_config
+from cost_guard import CostGuard, BudgetExceeded
+from llm_client import GeminiClient
 from agents import AnalystAgent, CritiqueModule, FinancialModelerAgent, GraphMemory, NewsAndDataAgent
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s  %(levelname)-7s  %(name)s  %(message)s",
+    datefmt="%H:%M:%S",
+)
+logger = logging.getLogger(__name__)
 
-def render_report(result: dict) -> str:
-    companies = result["metrics"]["companies"]
-    quarter = result["metrics"]["quarter"]
 
-    google = companies["GOOGL"]["current"]
-    azure = companies["MSFT"]["current"]
-    aws = companies["AMZN"]["current"]
+# ═══════════════════════════════════════════════════════════════════════════
+# Report renderer
+# ═══════════════════════════════════════════════════════════════════════════
+def render_report(result: dict, guard: CostGuard) -> str:
+    """Build the final strategic report as Markdown."""
 
-    strategy_rows = []
-    for idx, s in enumerate(result["strategies"], start=1):
-        actions = "<br>".join([f"- {a}" for a in s["actions"]])
-        strategy_rows.append(
-            f"| {idx}. {s['name']} | {actions} | {s['cost']} | {s['expected_outcome']} |"
+    # Strategy table
+    rows: list[str] = []
+    for idx, s in enumerate(result.get("strategies", []), start=1):
+        actions = "<br>".join(f"- {a}" for a in s.get("actions", []))
+        rows.append(
+            f"| {idx}. {s.get('name', '?')} | {actions} | "
+            f"{s.get('cost', '?')} | {s.get('expected_outcome', '?')} |"
         )
 
-    signals_text = "\n".join(
-        [f"- [{item['type']}] {item['summary']}" for item in result["signals"]["sources"]]
+    # Financials
+    companies = result.get("financials", {}).get("companies", {})
+    fin_lines: list[str] = []
+    for ticker, d in companies.items():
+        fin_lines.append(
+            f"- **{d.get('name', ticker)}**: "
+            f"Revenue ${d.get('current_revenue_b', '?')}B, "
+            f"YoY {d.get('yoy_growth_pct', '?')}%, "
+            f"Op. Margin {d.get('operating_margin_pct', '?')}%"
+        )
+
+    # Share delta
+    sd = result.get("share_delta", {})
+    sd_lines = [f"- {k}: {v}" for k, v in sd.items()] if isinstance(sd, dict) else [str(sd)]
+
+    # Critique
+    crit = result.get("critique", {})
+    crit_text = (
+        f"Score: {crit.get('overall_score', '?')}/10 — "
+        f"Verdict: {crit.get('verdict', '?')}\n"
+        f"Feedback: {crit.get('feedback', '(none)')}"
     )
 
-    plan_text = "\n".join([f"{i}. {step}" for i, step in enumerate(result["plan"], start=1)])
+    # Memory
+    edges = result.get("memory_edges", [])
+    mem_lines = [f"  ({s}) --[{r}]--> ({t})" for s, r, t in edges] if edges else ["(empty)"]
+
+    # Plan
+    plan_text = "\n".join(f"{i}. {s}" for i, s in enumerate(result.get("plan", []), 1))
+
+    # Trace
+    trace_text = "\n".join(
+        f"- **{t['step']}**: {t['detail']}" for t in result.get("trace", [])
+    )
 
     report = f"""# Strategic Response to Google Cloud's AI-Led Growth
 
-Generated: {datetime.now(timezone.utc).isoformat()}  
-Analyzed quarter: {quarter}
+Generated: {datetime.now(timezone.utc).isoformat()}
+Quarter analysed: {result.get('financials', {}).get('quarter', 'latest available')}
+
+---
 
 ## 1) Executive Summary
-Alphabet's latest quarter indicates sustained Google Cloud acceleration, with stronger AI/workload pull than generic infrastructure expansion. The primary threat to Microsoft Azure is targeted erosion in next-generation AI workloads, especially where developer speed and integrated data+ML tooling drive platform choice.
 
-## 2) Key Metrics Snapshot
-- Google Cloud revenue: ${google['revenue_billion']}B (YoY {google['yoy_growth_percent']}%, QoQ {google['qoq_growth_percent']}%), operating margin {google['operating_margin_percent']}%.
-- Microsoft Azure revenue (estimated cloud segment for benchmark): ${azure['revenue_billion']}B (YoY {azure['yoy_growth_percent']}%, QoQ {azure['qoq_growth_percent']}%), operating margin {azure['operating_margin_percent']}%.
-- AWS revenue: ${aws['revenue_billion']}B (YoY {aws['yoy_growth_percent']}%, QoQ {aws['qoq_growth_percent']}%), operating margin {aws['operating_margin_percent']}%.
+{result.get('executive_summary', '(not generated)')}
 
-## 3) Market Share Delta (Sequential)
-- Google: {result['share_delta']['Google']} percentage points
-- Azure: {result['share_delta']['Azure']} percentage points
-- AWS: {result['share_delta']['AWS']} percentage points
+## 2) Key Metrics (LLM-extracted from real data)
 
-Initial conclusion: {result['initial_conclusion']}
+{chr(10).join(fin_lines) if fin_lines else '(no structured financials extracted)'}
 
-Critique module feedback: {result['critique']}
+## 3) Market Share Delta (computed by generated tool)
 
-## 4) Causal Signals (Why Google Is Gaining)
-{signals_text}
+{chr(10).join(sd_lines)}
 
-## 5) Memory-Backed Strategic Context
-{result['memory_note']}
+## 4) Critique Module Assessment
 
-## 6) Primary Strategic Threat to Azure
-{result['threat_statement']}
+{crit_text}
 
-## 7) Three Actionable Strategies for Microsoft
+## 5) Primary Strategic Threat to Azure
+
+{result.get('threat_statement', '(not generated)')}
+
+## 6) Three Actionable Strategies for Microsoft
+
 | Strategy | Actions | Potential Cost | Expected Outcome |
 |---|---|---|---|
-{chr(10).join(strategy_rows)}
+{chr(10).join(rows) if rows else '| (none generated) | | | |'}
 
-## 8) Agentic Execution Trace
+## 7) Graph Memory (discovered relationships)
+
+```
+{chr(10).join(mem_lines)}
+```
+
+## 8) Agentic Execution Plan (LLM-generated)
+
 {plan_text}
+
+## 9) Full Execution Trace
+
+{trace_text}
+
+## 10) Cost Report
+
+```
+{guard.summary()}
+```
+
+---
+
+*This report was generated by an autonomous multi-agent system using Gemini.*
+*Data sourced from: SEC EDGAR, Google News RSS, Gemini Google-Search grounding.*
 """
     return report
 
 
-def main() -> None:
+# ═══════════════════════════════════════════════════════════════════════════
+# CLI
+# ═══════════════════════════════════════════════════════════════════════════
+def parse_args() -> argparse.Namespace:
+    p = argparse.ArgumentParser(description="Autonomous Strategic Analysis")
+    p.add_argument("--dry-run", action="store_true",
+                   help="Skip all LLM calls (zero cost)")
+    p.add_argument("--budget", type=float, default=0.50,
+                   help="Hard budget cap in USD (default: $0.50)")
+    p.add_argument("--clear-cache", action="store_true",
+                   help="Delete response cache before running")
+    return p.parse_args()
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Main
+# ═══════════════════════════════════════════════════════════════════════════
+def main() -> int:
+    args = parse_args()
     base_path = Path(__file__).resolve().parent
 
+    # ── Config + cost guard ──────────────────────────────────────────
+    cfg = load_config(base_path, budget_usd=args.budget, dry_run=args.dry_run)
+    guard = CostGuard(budget_usd=cfg.billing.budget_usd, dry_run=cfg.billing.dry_run)
+
+    if args.dry_run:
+        logger.info("═══ DRY RUN MODE — no API calls will be made ═══")
+
+    # ── Cache management ─────────────────────────────────────────────
+    cache_path = cfg.cache_dir / "gemini"
+    if args.clear_cache and cache_path.exists():
+        shutil.rmtree(cache_path)
+        logger.info("Cache cleared: %s", cache_path)
+
+    # ── LLM client ───────────────────────────────────────────────────
+    llm = GeminiClient(cfg.gemini, cache_dir=str(cache_path), cost_guard=guard)
+
+    logger.info("Model: %s  |  Budget: $%.2f  |  Dry-run: %s",
+                cfg.gemini.generation_model, guard.budget_usd, guard.dry_run)
+
+    # ── Agent team ───────────────────────────────────────────────────
     memory = GraphMemory()
+    # Seed known strategic relationships
     memory.add_edge("Microsoft Azure", "StronglyLinkedTo", "Office365/EnterpriseSales")
     memory.add_edge("Google Cloud", "StronglyLinkedTo", "AI-First Data-Native Workloads")
 
-    news_agent = NewsAndDataAgent(base_path)
+    news_agent = NewsAndDataAgent(llm, cfg)
     finance_agent = FinancialModelerAgent(base_path)
-    critique = CritiqueModule()
+    critique_mod = CritiqueModule(llm)
 
     analyst = AnalystAgent(
+        llm=llm,
         memory=memory,
         news_agent=news_agent,
         finance_agent=finance_agent,
-        critique_module=critique,
+        critique_module=critique_mod,
+        cfg=cfg,
     )
 
-    result = analyst.run()
-    report = render_report(result)
+    # ── Run ──────────────────────────────────────────────────────────
+    strategic_prompt = (
+        "Analyze Alphabet's latest quarterly earnings, focusing specifically on "
+        "Google Cloud's performance. Identify the biggest strategic threat this "
+        "poses to Microsoft Azure and generate a report outlining three actionable "
+        "business strategies Microsoft could pursue to mitigate this threat."
+    )
 
-    output_path = base_path / "outputs" / "strategic_report.md"
-    output_path.write_text(report, encoding="utf-8")
+    try:
+        result = analyst.run(strategic_prompt)
+    except BudgetExceeded as e:
+        logger.error("BUDGET EXCEEDED: %s", e)
+        print(f"\n{'='*60}\nBUDGET EXCEEDED — analysis stopped to protect your wallet.\n{e}\n{'='*60}")
+        print(guard.summary())
+        return 2
 
+    # ── Render & save ────────────────────────────────────────────────
+    report = render_report(result, guard)
+    out_dir = base_path / "outputs"
+    out_dir.mkdir(exist_ok=True)
+    out_path = out_dir / "strategic_report.md"
+    out_path.write_text(report, encoding="utf-8")
+
+    # Also save raw JSON for debugging
+    raw_path = out_dir / "raw_result.json"
+    serializable = {}
+    for k, v in result.items():
+        try:
+            json.dumps(v)
+            serializable[k] = v
+        except (TypeError, ValueError):
+            serializable[k] = str(v)
+    raw_path.write_text(json.dumps(serializable, indent=2, default=str), encoding="utf-8")
+
+    # ── Print summary ────────────────────────────────────────────────
+    print(f"\n{'='*60}")
     print("Analysis complete.")
-    print(f"Report path: {output_path}")
+    print(f"Report:    {out_path}")
+    print(f"Raw JSON:  {raw_path}")
+    print(f"{'='*60}")
+    print(guard.summary())
+
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
