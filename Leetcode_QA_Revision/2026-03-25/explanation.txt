@@ -1,0 +1,54 @@
+Date: 2026-03-25
+Title: Equal Sum Grid Partition I
+URL: https://leetcode.com/problems/equal-sum-grid-partition-i/
+
+LLM Explanation:
+The problem asks if we can find a single horizontal or vertical cut that divides the grid into two non-empty sections with equal sums.
+
+A key insight is that if such a partition exists, the total sum of all elements in the grid must be an even number. If the total sum is `S`, then each of the two sections must have a sum of `S / 2`. If `S` is odd, no such integer partition is possible, so we can immediately return `false`.
+
+If the total sum is even, we define a `target_sum = S / 2`. Our goal is to check if any possible cut creates a section with a sum equal to this `target_sum`.
+
+The algorithm proceeds as follows:
+1.  Calculate the sum of all elements in the grid. If it's odd, return `false`. Otherwise, calculate the `target_sum`.
+2.  **Check for Horizontal Cuts:** A horizontal cut occurs between two rows. We can check all `m-1` possible horizontal cuts. For a cut after row `i`, the top section consists of rows `0` to `i`. We can efficiently find the sum of this top section by first pre-calculating the sum of each row and then computing a running prefix sum of these row sums. If any prefix sum equals the `target_sum`, we've found a valid cut and can return `true`.
+3.  **Check for Vertical Cuts:** Similarly, a vertical cut occurs between two columns. We check all `n-1` possible vertical cuts. For a cut after column `j`, the left section consists of columns `0` to `j`. We pre-calculate the sum of each column and then compute a running prefix sum of these column sums. If any of these prefix sums equal the `target_sum`, we return `true`.
+4.  If we check all possible horizontal and vertical cuts and none satisfy the condition, no such partition exists, so we return `false`.
+
+**Complexity Analysis:**
+*   **Time Complexity:** `O(m * n)`. This is dominated by the initial calculation of row and column sums, which requires iterating through the entire grid. The subsequent checks on these sums take `O(m)` and `O(n)`.
+*   **Space Complexity:** `O(m + n)`. We need arrays to store the sums of `m` rows and `n` columns.
+
+This approach is efficient and handles all edge cases, including grids that are long rows or tall columns, as per the constraints.
+
+LLM Testcase Validation:
+```
+Input: grid = [[1,4],[2,3]]
+Output: true
+My output: true
+Explanation:
+m=2, n=2.
+row_sums = [5, 5].
+total_sum = 10.
+total_sum is even. target_sum = 5.
+Horizontal check:
+i=0: current_sum = row_sums[0] = 5.
+current_sum == target_sum. Return true.
+
+Input: grid = [[1,3],[2,4]]
+Output: false
+My output: false
+Explanation:
+m=2, n=2.
+row_sums = [4, 6].
+total_sum = 10.
+total_sum is even. target_sum = 5.
+Horizontal check:
+i=0: current_sum = row_sums[0] = 4. 4 != 5.
+Loop ends.
+Vertical check:
+col_sums = [1+2, 3+4] = [3, 7].
+j=0: current_sum = col_sums[0] = 3. 3 != 5.
+Loop ends.
+Return false.
+```
