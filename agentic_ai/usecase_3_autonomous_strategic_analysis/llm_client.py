@@ -17,6 +17,8 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+import random
+import re
 import time
 from dataclasses import dataclass, field
 from typing import Any
@@ -92,7 +94,7 @@ class GeminiClient:
                 if r.status_code == 200:
                     return r.json()
                 if r.status_code in (429, 500, 502, 503):
-                    wait = self.cfg.retry_base_delay * (2 ** attempt)
+                    wait = self.cfg.retry_base_delay * (2 ** attempt) * random.uniform(0.75, 1.25)
                     logger.warning("Gemini %d – retry %d/%d in %.1fs",
                                    r.status_code, attempt + 1, self.cfg.max_retries, wait)
                     time.sleep(wait)
@@ -100,7 +102,7 @@ class GeminiClient:
                     continue
                 raise RuntimeError(f"Gemini API {r.status_code}: {r.text[:800]}")
             except _requests.exceptions.Timeout:
-                wait = self.cfg.retry_base_delay * (2 ** attempt)
+                wait = self.cfg.retry_base_delay * (2 ** attempt) * random.uniform(0.75, 1.25)
                 logger.warning("Timeout – retry in %.1fs", wait)
                 time.sleep(wait)
                 last_err = "timeout"
@@ -125,9 +127,13 @@ class GeminiClient:
         temperature: float | None = None,
         max_tokens: int | None = None,
         json_mode: bool = False,
+        response_schema: dict | None = None,
+        thinking_budget: int | None = None,
         use_cache: bool = True,
     ) -> LLMResponse:
-        ck = self._ckey("gen", f"{system}|{prompt}|json={json_mode}")
+        schema_sig = hashlib.sha256(json.dumps(response_schema, sort_keys=True).encode()).hexdigest()[:8] if response_schema else ""
+        think_sig = str(thinking_budget) if thinking_budget is not None else ""
+        ck = self._ckey("gen", f"{system}|{prompt}|json={json_mode}|s={schema_sig}|t={think_sig}")
         if use_cache and self._cache and ck in self._cache:
             self._cache_hits += 1
             self.guard.record_cache_hit()
@@ -140,6 +146,10 @@ class GeminiClient:
         }
         if json_mode:
             gen_cfg["responseMimeType"] = "application/json"
+            if response_schema:
+                gen_cfg["responseSchema"] = response_schema
+        if thinking_budget is not None:
+            gen_cfg["thinkingConfig"] = {"thinkingBudget": thinking_budget}
 
         body: dict[str, Any] = {
             "contents": [{"parts": [{"text": prompt}]}],
@@ -342,6 +352,34 @@ class GeminiClient:
         except (KeyError, IndexError):
             logger.error("Unexpected Gemini response: %s", json.dumps(raw)[:500])
             return ""
+
+    @staticmethod
+    def _clean_json_text(text: str) -> str:
+        """Strip markdown code fences and fix precision explosions."""
+        text = text.strip()
+        if text.startswith("```"):
+            lines = text.split("\n")
+            lines = lines[1:]  # remove opening ```json
+            if lines and lines[-1].strip() == "```":
+                lines = lines[:-1]
+            text = "\n".join(lines).strip()
+        # Fix floating-point precision explosions (e.g. 48.0000000000001421...)
+        text = re.sub(r'(\d+\.\d{2})\d{10,}', r'\1', text)
+        return text
+
+    @staticmethod
+    def parse_json(text: str) -> Any:
+        """Parse JSON from LLM output with defensive code-fence stripping.
+
+        Best practice: always apply cleanup first (strips fences, fixes
+        precision explosions) then parse \u2014 defence in depth.
+        """
+        cleaned = GeminiClient._clean_json_text(text)
+        try:
+            return json.loads(cleaned)
+        except json.JSONDecodeError:
+            # Fallback: try original text in case cleanup mangled it
+            return json.loads(text)
 
     def close(self) -> None:
         self._s.close()

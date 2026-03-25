@@ -193,6 +193,16 @@ def main() -> int:
         shutil.rmtree(cache_path)
         logger.info("Cache cleared: %s", cache_path)
 
+    # ── File logging for complete trace capture ──────────────────────
+    log_dir = base_path / "outputs"
+    log_dir.mkdir(exist_ok=True)
+    file_handler = logging.FileHandler(
+        str(log_dir / "execution_log.txt"), mode="w", encoding="utf-8")
+    file_handler.setLevel(logging.DEBUG)
+    file_handler.setFormatter(logging.Formatter(
+        "%(asctime)s  %(levelname)-8s %(name)s  %(message)s", datefmt="%H:%M:%S"))
+    logging.getLogger().addHandler(file_handler)
+
     # ── LLM client ───────────────────────────────────────────────────
     llm = GeminiClient(cfg.gemini, cache_dir=str(cache_path), cost_guard=guard)
 
@@ -257,6 +267,7 @@ def main() -> int:
     print("Analysis complete.")
     print(f"Report:    {out_path}")
     print(f"Raw JSON:  {raw_path}")
+    print(f"Exec log:  {log_dir / 'execution_log.txt'}")
     print(f"{'='*60}")
     print(guard.summary())
 

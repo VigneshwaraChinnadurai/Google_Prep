@@ -27,6 +27,18 @@ _SYSTEM = (
 
 _MAX_CHUNKS_PER_CALL = 10          # keep prompt within safe token range
 
+_RERANKER_SCHEMA = {
+    "type": "ARRAY",
+    "items": {
+        "type": "OBJECT",
+        "properties": {
+            "id": {"type": "INTEGER"},
+            "score": {"type": "NUMBER"},
+        },
+        "required": ["id", "score"],
+    },
+}
+
 
 class LLMReranker:
     """Score-and-filter re-ranker powered by Gemini."""
@@ -56,9 +68,11 @@ class LLMReranker:
             )
             prompt = f"QUERY: {query}\n\nCHUNKS:\n{numbered}"
             resp = self._llm.generate(prompt, system=_SYSTEM, json_mode=True,
+                                       response_schema=_RERANKER_SCHEMA,
+                                       thinking_budget=0,
                                        temperature=0.0, max_tokens=1024)
             try:
-                arr = json.loads(resp.text)
+                arr = GeminiClient.parse_json(resp.text)
                 score_map = {item["id"]: float(item["score"]) for item in arr}
             except (json.JSONDecodeError, KeyError, TypeError):
                 logger.warning("Reranker JSON parse failed, using original scores")

@@ -30,6 +30,112 @@ logger = logging.getLogger(__name__)
 
 
 # ═══════════════════════════════════════════════════════════════════════════
+# Response schemas — Gemini responseSchema (OpenAPI 3.0 subset)
+# Forces structured JSON output, eliminates parse failures.
+# Ref: https://ai.google.dev/gemini-api/docs/structured-output
+# ═══════════════════════════════════════════════════════════════════════════
+def _company_schema() -> dict:
+    """Schema for a single company's financial data."""
+    return {
+        "type": "OBJECT",
+        "properties": {
+            "name": {"type": "STRING"},
+            "current_revenue_b": {"type": "NUMBER", "nullable": True},
+            "previous_revenue_b": {"type": "NUMBER", "nullable": True},
+            "yoy_growth_pct": {"type": "NUMBER", "nullable": True},
+            "operating_margin_pct": {"type": "NUMBER", "nullable": True},
+        },
+        "required": ["name"],
+    }
+
+
+SCHEMA_PLAN = {
+    "type": "OBJECT",
+    "properties": {
+        "steps": {"type": "ARRAY", "items": {"type": "STRING"}},
+    },
+    "required": ["steps"],
+}
+
+SCHEMA_EXTRACTION = {
+    "type": "OBJECT",
+    "properties": {
+        "companies": {
+            "type": "OBJECT",
+            "properties": {
+                "GOOGL": _company_schema(),
+                "MSFT": _company_schema(),
+                "AMZN": _company_schema(),
+            },
+        },
+        "quarter": {"type": "STRING"},
+    },
+    "required": ["companies", "quarter"],
+}
+
+SCHEMA_CRITIQUE = {
+    "type": "OBJECT",
+    "properties": {
+        "overall_score": {"type": "NUMBER"},
+        "depth": {"type": "INTEGER"},
+        "evidence": {"type": "INTEGER"},
+        "causality": {"type": "INTEGER"},
+        "actionability": {"type": "INTEGER"},
+        "verdict": {"type": "STRING", "enum": ["PASS", "NEEDS_REFINEMENT"]},
+        "feedback": {"type": "STRING"},
+    },
+    "required": ["overall_score", "verdict", "feedback"],
+}
+
+SCHEMA_STRATEGY = {
+    "type": "OBJECT",
+    "properties": {
+        "strategies": {
+            "type": "ARRAY",
+            "items": {
+                "type": "OBJECT",
+                "properties": {
+                    "name": {"type": "STRING"},
+                    "actions": {"type": "ARRAY", "items": {"type": "STRING"}},
+                    "cost": {"type": "STRING"},
+                    "expected_outcome": {"type": "STRING"},
+                },
+                "required": ["name", "actions", "cost", "expected_outcome"],
+            },
+        },
+    },
+    "required": ["strategies"],
+}
+
+SCHEMA_MEMORY = {
+    "type": "OBJECT",
+    "properties": {
+        "edges": {
+            "type": "ARRAY",
+            "items": {
+                "type": "OBJECT",
+                "properties": {
+                    "source": {"type": "STRING"},
+                    "relation": {"type": "STRING"},
+                    "target": {"type": "STRING"},
+                },
+                "required": ["source", "relation", "target"],
+            },
+        },
+    },
+    "required": ["edges"],
+}
+
+SCHEMA_REFINEMENT = {
+    "type": "OBJECT",
+    "properties": {
+        "queries": {"type": "ARRAY", "items": {"type": "STRING"}},
+    },
+    "required": ["queries"],
+}
+
+
+# ═══════════════════════════════════════════════════════════════════════════
 # Step result container
 # ═══════════════════════════════════════════════════════════════════════════
 @dataclass
@@ -191,11 +297,13 @@ class CritiqueModule:
             prompt,
             system=_CRITIQUE_SYSTEM,
             json_mode=True,
+            response_schema=SCHEMA_CRITIQUE,
+            thinking_budget=1024,
             temperature=0.0,
-            max_tokens=512,
+            max_tokens=2048,
         )
         try:
-            result = json.loads(resp.text)
+            result = GeminiClient.parse_json(resp.text)
             logger.info("Critique score: %.1f / 10  verdict=%s",
                         result.get("overall_score", 0), result.get("verdict"))
             return result
@@ -243,7 +351,7 @@ Return ONLY valid JSON:
 }
 
 Extract ONLY numbers you find in the text. Use null for missing values.
-Do NOT invent numbers.
+Do NOT invent numbers. Round all numeric values to at most 2 decimal places.
 """
 
 _THREAT_SYSTEM = """\
@@ -331,9 +439,11 @@ class AnalystAgent:
     # ── 1. Planning ──────────────────────────────────────────────────
     def build_plan(self, prompt: str) -> list[str]:
         resp = self._llm.generate(prompt, system=_PLANNER_SYSTEM,
-                                   json_mode=True, temperature=0.1, max_tokens=1024)
+                                   json_mode=True, response_schema=SCHEMA_PLAN,
+                                   thinking_budget=0,
+                                   temperature=0.1, max_tokens=1024)
         try:
-            data = json.loads(resp.text)
+            data = GeminiClient.parse_json(resp.text)
             steps = data.get("steps", [])
         except (json.JSONDecodeError, TypeError):
             steps = [
@@ -353,14 +463,17 @@ class AnalystAgent:
     def extract_financials(self, context: str) -> dict:
         prompt = f"RAW DATA:\n{context[:6000]}"
         resp = self._llm.generate(prompt, system=_EXTRACTION_SYSTEM,
-                                   json_mode=True, temperature=0.0, max_tokens=1024)
+                                   json_mode=True, response_schema=SCHEMA_EXTRACTION,
+                                   thinking_budget=0,
+                                   temperature=0.0, max_tokens=8192)
         try:
-            data = json.loads(resp.text)
+            cleaned = GeminiClient._clean_json_text(resp.text)
+            data = GeminiClient.parse_json(cleaned)
             self._log_step("Extract", f"Parsed financials for {list(data.get('companies', {}).keys())}")
             return data
         except (json.JSONDecodeError, TypeError):
             self._log_step("Extract", "JSON parse failed — raw text stored")
-            return {"raw": resp.text}
+            return {"raw": resp.text[:500]}
 
     # ── 3. Threat analysis via LLM ──────────────────────────────────
     def analyse_threat(self, financials: dict, signals_context: str, memory_context: str) -> str:
@@ -381,9 +494,11 @@ class AnalystAgent:
             f"MARKET CONTEXT:\n{context[:2000]}"
         )
         resp = self._llm.generate(prompt, system=_STRATEGY_SYSTEM,
-                                   json_mode=True, temperature=0.3, max_tokens=2048)
+                                   json_mode=True, response_schema=SCHEMA_STRATEGY,
+                                   thinking_budget=2048,
+                                   temperature=0.3, max_tokens=4096)
         try:
-            data = json.loads(resp.text)
+            data = GeminiClient.parse_json(resp.text)
             strats = data.get("strategies", [])
             self._log_step("Strategies", f"{len(strats)} strategies generated")
             return strats
@@ -395,9 +510,11 @@ class AnalystAgent:
     def extract_memory(self, analysis_text: str) -> None:
         prompt = f"ANALYSIS TEXT:\n{analysis_text[:3000]}"
         resp = self._llm.generate(prompt, system=_MEMORY_EXTRACTION_SYSTEM,
-                                   json_mode=True, temperature=0.0, max_tokens=512)
+                                   json_mode=True, response_schema=SCHEMA_MEMORY,
+                                   thinking_budget=0,
+                                   temperature=0.0, max_tokens=1024)
         try:
-            data = json.loads(resp.text)
+            data = GeminiClient.parse_json(resp.text)
             for edge in data.get("edges", []):
                 self.memory.add_edge(edge["source"], edge["relation"], edge["target"])
         except (json.JSONDecodeError, TypeError, KeyError):
@@ -475,10 +592,12 @@ class AnalystAgent:
             ref_resp = self._llm.generate(
                 f"CRITIQUE FEEDBACK:\n{critique_result.get('feedback', '')}",
                 system=_REFINEMENT_QUERY_SYSTEM,
-                json_mode=True, temperature=0.0, max_tokens=256,
+                json_mode=True, response_schema=SCHEMA_REFINEMENT,
+                thinking_budget=0,
+                temperature=0.0, max_tokens=512,
             )
             try:
-                queries = json.loads(ref_resp.text).get("queries", [])
+                queries = GeminiClient.parse_json(ref_resp.text).get("queries", [])
             except (json.JSONDecodeError, TypeError):
                 queries = []
 
