@@ -21,6 +21,7 @@ import random
 import re
 import time
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from typing import Any
 
 import diskcache
@@ -30,6 +31,36 @@ from config import GeminiConfig
 from cost_guard import CostGuard
 
 logger = logging.getLogger(__name__)
+
+# ── Prompt logger for documentation capture ──────────────────────────────
+_prompt_log_path: str | None = None
+_prompt_log_counter: int = 0
+
+def enable_prompt_logging(log_path: str) -> None:
+    """Turn on prompt capture — writes every prompt to *log_path* as JSONL."""
+    global _prompt_log_path, _prompt_log_counter
+    _prompt_log_path = log_path
+    _prompt_log_counter = 0
+    # Truncate the file
+    with open(log_path, "w", encoding="utf-8") as f:
+        pass
+
+def _log_prompt(call_type: str, system: str, prompt: str, extra: dict | None = None) -> None:
+    global _prompt_log_counter
+    if not _prompt_log_path:
+        return
+    _prompt_log_counter += 1
+    entry = {
+        "seq": _prompt_log_counter,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "call_type": call_type,
+        "system_prompt": system,
+        "user_prompt": prompt,
+    }
+    if extra:
+        entry.update(extra)
+    with open(_prompt_log_path, "a", encoding="utf-8") as f:
+        f.write(json.dumps(entry, ensure_ascii=False) + "\n")
 
 
 # ── Data containers ──────────────────────────────────────────────────────
@@ -158,6 +189,15 @@ class GeminiClient:
         if system:
             body["systemInstruction"] = {"parts": [{"text": system}]}
 
+        # ── Capture prompt for documentation ────────────────────
+        _log_prompt("generate", system, prompt, {
+            "json_mode": json_mode,
+            "thinking_budget": thinking_budget,
+            "temperature": gen_cfg["temperature"],
+            "max_tokens": gen_cfg["maxOutputTokens"],
+            "has_schema": response_schema is not None,
+        })
+
         # ── DRY RUN guard ────────────────────────────────────────
         if self.guard.dry_run:
             logger.info("[DRY RUN] generate() skipped — returning placeholder")
@@ -216,6 +256,13 @@ class GeminiClient:
         }
         if system:
             body["systemInstruction"] = {"parts": [{"text": system}]}
+
+        # ── Capture prompt for documentation ────────────────────
+        _log_prompt("generate_grounded", system, prompt, {
+            "temperature": gen_cfg["temperature"],
+            "max_tokens": gen_cfg["maxOutputTokens"],
+            "grounded": True,
+        })
 
         # ── DRY RUN guard ────────────────────────────────────────
         if self.guard.dry_run:

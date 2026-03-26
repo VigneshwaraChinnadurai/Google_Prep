@@ -1,7 +1,9 @@
 flowchart TD
     A[User Strategic Prompt] --> B[main.py: Load Config + CostGuard]
     B --> C[Initialize GeminiClient with cache + guard]
-    C --> D[Seed GraphMemory with known edges]
+    C --> C1["Enable prompt logging → outputs/prompt_log_{ts}.jsonl"]
+    C1 --> C2["Enable file logging → outputs/execution_log_{ts}.txt"]
+    C2 --> D[Seed GraphMemory with known edges]
 
     D --> E[Construct Agent Team]
     E --> F["AnalystAgent.run(prompt)"]
@@ -11,12 +13,12 @@ flowchart TD
     G --> H["Step 2: NewsAndDataAgent.fetch_and_index()"]
 
     %% ── Real data fetching ──
-    H --> H1[Gemini Google-Search Grounding — 6 queries]
-    H --> H2[SEC EDGAR XBRL — GOOGL, MSFT, AMZN]
+    H --> H1["Gemini Google-Search Grounding — 6 queries (in-memory)"]
+    H --> H2["SEC EDGAR XBRL — GOOGL, MSFT, AMZN (in-memory, not persisted)"]
     H --> H3[SEC EDGAR Full-Text Search]
     H --> H4[Google News RSS — 4 queries]
 
-    H1 --> I[Raw Documents]
+    H1 --> I[Raw Documents — in-memory]
     H2 --> I
     H3 --> I
     H4 --> I
@@ -24,8 +26,8 @@ flowchart TD
     %% ── Retrieval pipeline ──
     I --> J[Chunker: sentence-aware, overlap]
     J --> K[Metadata Enricher: company, topic, date]
-    K --> L1[BM25 Sparse Index]
-    K --> L2[Gemini Embedding Dense Index]
+    K --> L1["BM25 Sparse Index (in-memory)"]
+    K --> L2["Gemini Embedding Dense Index (in-memory, API responses cached in .cache/gemini/)"]
     L1 --> M[Hybrid Index: RRF Fusion]
     L2 --> M
 
@@ -53,11 +55,24 @@ flowchart TD
     X --> AA["Step 12: LLM extracts memory edges"]
     AA --> BB["Step 13: LLM executive summary"]
     BB --> CC[main.py: render_report]
-    CC --> DD[Write outputs/strategic_report.md]
-    CC --> EE[Write outputs/raw_result.json]
+    CC --> DD["Write outputs/strategic_report.md"]
+    CC --> EE["Write outputs/raw_result.json"]
     DD --> FF[Print Cost Summary]
     EE --> FF
 
-    %% ── Cost guard throughout ──
+    %% ── Logging: every LLM call logs to prompt_log JSONL ──
+    G -.->|"log prompt #1"| C1
+    H1 -.->|"log prompts #2-7"| C1
+    O -.->|"log prompts #8-9, #11-12"| C1
+    Q -.->|"log prompt #10"| C1
+    U -.->|"log prompt #13"| C1
+    V -.->|"log prompt #14"| C1
+    X -.->|"log prompt #15"| C1
+    AA -.->|"log prompt #16"| C1
+    BB -.->|"log prompt #17"| C1
+
+    %% ── Styles ──
     style C fill:#2d6,stroke:#333,color:#fff
     style FF fill:#d62,stroke:#333,color:#fff
+    style C1 fill:#36c,stroke:#333,color:#fff
+    style C2 fill:#36c,stroke:#333,color:#fff

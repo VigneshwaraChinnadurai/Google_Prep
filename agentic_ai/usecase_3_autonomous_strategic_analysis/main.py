@@ -196,14 +196,19 @@ def main() -> int:
     # ── File logging for complete trace capture ──────────────────────
     log_dir = base_path / "outputs"
     log_dir.mkdir(exist_ok=True)
+    from datetime import datetime as _dt
+    _run_ts = _dt.now().strftime("%Y%m%d_%H%M%S")
     file_handler = logging.FileHandler(
-        str(log_dir / "execution_log.txt"), mode="w", encoding="utf-8")
+        str(log_dir / f"execution_log_{_run_ts}.txt"), mode="w", encoding="utf-8")
     file_handler.setLevel(logging.DEBUG)
     file_handler.setFormatter(logging.Formatter(
         "%(asctime)s  %(levelname)-8s %(name)s  %(message)s", datefmt="%H:%M:%S"))
     logging.getLogger().addHandler(file_handler)
 
     # ── LLM client ───────────────────────────────────────────────────
+    from llm_client import enable_prompt_logging
+    enable_prompt_logging(str(log_dir / f"prompt_log_{_run_ts}.jsonl"))
+
     llm = GeminiClient(cfg.gemini, cache_dir=str(cache_path), cost_guard=guard)
 
     logger.info("Model: %s  |  Budget: $%.2f  |  Dry-run: %s",
@@ -267,7 +272,7 @@ def main() -> int:
     print("Analysis complete.")
     print(f"Report:    {out_path}")
     print(f"Raw JSON:  {raw_path}")
-    print(f"Exec log:  {log_dir / 'execution_log.txt'}")
+    print(f"Exec log:  {log_dir / f'execution_log_{_run_ts}.txt'}")
     print(f"{'='*60}")
     print(guard.summary())
 
