@@ -87,6 +87,10 @@ object ConsistencyStorage {
         prefs(context).edit().putBoolean(KEY_COMPLETED_PREFIX + istDateKey(), true).apply()
     }
 
+    fun unmarkCompletedToday(context: Context) {
+        prefs(context).edit().putBoolean(KEY_COMPLETED_PREFIX + istDateKey(), false).apply()
+    }
+
     fun isCompletedToday(context: Context): Boolean {
         return prefs(context).getBoolean(KEY_COMPLETED_PREFIX + istDateKey(), false)
     }

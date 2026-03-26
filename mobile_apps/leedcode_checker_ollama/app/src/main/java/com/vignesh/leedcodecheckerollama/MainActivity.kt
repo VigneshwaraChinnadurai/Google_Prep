@@ -1028,38 +1028,50 @@ private fun LeetCodeCheckerScreen(
 
                         Button(
                             onClick = {
-                                val hasWrite = ContextCompat.checkSelfPermission(
-                                    context,
-                                    Manifest.permission.WRITE_CALENDAR
-                                ) == PackageManager.PERMISSION_GRANTED
-                                val hasRead = ContextCompat.checkSelfPermission(
-                                    context,
-                                    Manifest.permission.READ_CALENDAR
-                                ) == PackageManager.PERMISSION_GRANTED
-
-                                if (hasWrite && hasRead) {
-                                    viewModel.markCompletedToday()
-                                    val inserted = insertCompletionCalendarEvent(context, challenge)
-                                    val message = if (inserted) {
-                                        "Marked completed and calendar entry created."
+                                if (state.isCompletedToday) {
+                                    // Undo: unmark and remove calendar event
+                                    viewModel.unmarkCompletedToday()
+                                    val removed = deleteCompletionCalendarEvent(context)
+                                    val message = if (removed) {
+                                        "Unmarked and calendar entry removed."
                                     } else {
-                                        "Marked completed, but calendar entry could not be created."
+                                        "Unmarked, but calendar entry could not be found/removed."
                                     }
                                     Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                                 } else {
-                                    pendingCalendarCompletion = true
-                                    calendarPermissionLauncher.launch(
-                                        arrayOf(
-                                            Manifest.permission.READ_CALENDAR,
-                                            Manifest.permission.WRITE_CALENDAR
+                                    // Mark completed
+                                    val hasWrite = ContextCompat.checkSelfPermission(
+                                        context,
+                                        Manifest.permission.WRITE_CALENDAR
+                                    ) == PackageManager.PERMISSION_GRANTED
+                                    val hasRead = ContextCompat.checkSelfPermission(
+                                        context,
+                                        Manifest.permission.READ_CALENDAR
+                                    ) == PackageManager.PERMISSION_GRANTED
+
+                                    if (hasWrite && hasRead) {
+                                        viewModel.markCompletedToday()
+                                        val inserted = insertCompletionCalendarEvent(context, challenge)
+                                        val message = if (inserted) {
+                                            "Marked completed and calendar entry created."
+                                        } else {
+                                            "Marked completed, but calendar entry could not be created."
+                                        }
+                                        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                                    } else {
+                                        pendingCalendarCompletion = true
+                                        calendarPermissionLauncher.launch(
+                                            arrayOf(
+                                                Manifest.permission.READ_CALENDAR,
+                                                Manifest.permission.WRITE_CALENDAR
+                                            )
                                         )
-                                    )
+                                    }
                                 }
                             },
-                            enabled = !state.isCompletedToday,
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text(if (state.isCompletedToday) "Marked Completed" else "Mark as Completed")
+                            Text(if (state.isCompletedToday) "Undo — Mark Not Completed" else "Mark as Completed")
                         }
 
                         if (state.isCompletedToday) {
@@ -1112,13 +1124,19 @@ private fun insertCompletionCalendarEvent(context: Context, challenge: DailyChal
         val selectedCalendarId = calendarId ?: return false
 
         val timezone = TimeZone.getDefault()
-        val start = Calendar.getInstance(timezone).apply {
+        // Use the device's current time so the calendar event matches the phone clock.
+        val start = Calendar.getInstance(timezone)
+        val end = (start.clone() as Calendar).apply {
+            add(Calendar.MINUTE, 30)
+        }
+        // Day boundaries in device timezone for duplicate detection
+        val dayStart = (start.clone() as Calendar).apply {
             set(Calendar.HOUR_OF_DAY, 0)
             set(Calendar.MINUTE, 0)
             set(Calendar.SECOND, 0)
             set(Calendar.MILLISECOND, 0)
         }
-        val end = (start.clone() as Calendar).apply {
+        val dayEnd = (dayStart.clone() as Calendar).apply {
             add(Calendar.DAY_OF_MONTH, 1)
         }
 
@@ -1136,8 +1154,8 @@ private fun insertCompletionCalendarEvent(context: Context, challenge: DailyChal
             )
         val existingEventArgs = arrayOf(
             selectedCalendarId.toString(),
-            start.timeInMillis.toString(),
-            end.timeInMillis.toString(),
+            dayStart.timeInMillis.toString(),
+            dayEnd.timeInMillis.toString(),
             "LeetCode Completed%"
         )
         val existingProjection = arrayOf(CalendarContract.Events._ID)
@@ -1160,7 +1178,7 @@ private fun insertCompletionCalendarEvent(context: Context, challenge: DailyChal
             put(CalendarContract.Events.DESCRIPTION, "Marked completed from LeetCode Consistency Checker")
             put(CalendarContract.Events.DTSTART, start.timeInMillis)
             put(CalendarContract.Events.DTEND, end.timeInMillis)
-            put(CalendarContract.Events.ALL_DAY, 1)
+            put(CalendarContract.Events.ALL_DAY, 0)
             put(CalendarContract.Events.EVENT_TIMEZONE, timezone.id)
             put(CalendarContract.Events.HAS_ALARM, 1)
             put(CalendarContract.Events.AVAILABILITY, CalendarContract.Events.AVAILABILITY_BUSY)
@@ -1178,6 +1196,39 @@ private fun insertCompletionCalendarEvent(context: Context, challenge: DailyChal
         }
         context.contentResolver.insert(CalendarContract.Reminders.CONTENT_URI, reminderValues)
         true
+    }.getOrDefault(false)
+}
+
+private fun deleteCompletionCalendarEvent(context: Context): Boolean {
+    return runCatching {
+        val timezone = TimeZone.getDefault()
+        val dayStart = Calendar.getInstance(timezone).apply {
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        val dayEnd = (dayStart.clone() as Calendar).apply {
+            add(Calendar.DAY_OF_MONTH, 1)
+        }
+
+        val selection = (
+            "${CalendarContract.Events.DTSTART}>=? AND " +
+                "${CalendarContract.Events.DTSTART}<? AND " +
+                "${CalendarContract.Events.TITLE} LIKE ?"
+            )
+        val selectionArgs = arrayOf(
+            dayStart.timeInMillis.toString(),
+            dayEnd.timeInMillis.toString(),
+            "LeetCode Completed%"
+        )
+
+        val deleted = context.contentResolver.delete(
+            CalendarContract.Events.CONTENT_URI,
+            selection,
+            selectionArgs
+        )
+        deleted > 0
     }.getOrDefault(false)
 }
 

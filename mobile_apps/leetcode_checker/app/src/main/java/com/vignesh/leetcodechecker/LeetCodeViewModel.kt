@@ -212,6 +212,14 @@ class LeetCodeViewModel(
         )
     }
 
+    fun unmarkCompletedToday() {
+        ConsistencyStorage.unmarkCompletedToday(appContext)
+        _uiState.value = _uiState.value.copy(
+            isCompletedToday = false,
+            infoMessage = "Unmarked — completion status cleared for today."
+        )
+    }
+
     fun refreshLocalRevisionHistory() {
         _uiState.value = _uiState.value.copy(isHistoryLoading = true)
         viewModelScope.launch {
@@ -240,6 +248,22 @@ class LeetCodeViewModel(
             aiError = null,
             aiDebugLog = result.debugLog
         )
+    }
+
+    fun updateAiCode(newCode: String) {
+        _uiState.value = _uiState.value.copy(aiCode = newCode)
+        // Persist the edited code locally so it survives app restarts
+        val challenge = _uiState.value.challenge ?: return
+        val explanation = _uiState.value.aiExplanation.orEmpty()
+        val validation = _uiState.value.aiTestcaseValidation.orEmpty()
+        viewModelScope.launch {
+            saveRevisionFilesLocally(
+                challenge = challenge,
+                aiCode = newCode,
+                aiExplanation = explanation,
+                aiValidation = validation
+            )
+        }
     }
 
     fun pushRevisionFilesToGitHub() {

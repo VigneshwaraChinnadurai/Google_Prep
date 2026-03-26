@@ -363,6 +363,14 @@ class LeetCodeViewModel(
         )
     }
 
+    fun unmarkCompletedToday() {
+        ConsistencyStorage.unmarkCompletedToday(appContext)
+        _uiState.value = _uiState.value.copy(
+            isCompletedToday = false,
+            infoMessage = "Unmarked — completion status cleared for today."
+        )
+    }
+
     fun refreshLocalRevisionHistory() {
         _uiState.value = _uiState.value.copy(isHistoryLoading = true)
         viewModelScope.launch {
