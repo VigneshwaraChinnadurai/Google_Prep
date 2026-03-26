@@ -1,0 +1,6 @@
+2026-03-26 13:18:12  INFO     main  ================================================================================
+2026-03-26 13:18:12  INFO     main  SERVER START — 2026-03-26 13:18:12
+2026-03-26 13:18:12  INFO     main  Persistent log file: C:\Users\vichinnadurai\Documents\Vignesh\Personal Enrichment\Personal Work\Google_Prep\agentic_ai\usecase_4_strategic_chatbot\outputs\server_log_20260326_131812.txt
+2026-03-26 13:18:12  INFO     main  ================================================================================
+2026-03-26 13:18:22  INFO     httpx  HTTP Request: HEAD https://huggingface.co/api/telemetry/https%3A/api.gradio.app/gradio-initiated-analytics "HTTP/1.1 200 OK"
+2026-03-26 13:18:23  INFO     httpx  HTTP Request: GET https://api.gradio.app/pkg-version "HTTP/1.1 200 OK"

@@ -1,0 +1,23 @@
+# Usecase 4: Strategic Analysis Chatbot — Dependencies
+#
+# Install: pip install -r requirements.txt
+#
+# Note: usecase_3 dependencies (requests, beautifulsoup4, diskcache,
+# numpy, pydantic, lxml) are also required. If you've already run
+# usecase_3, they're already installed.
+
+# ── UI Framework ─────────────────────────────────────────
+gradio>=4.0              # Web UI with native chat/streaming support
+                         # Ref: https://www.gradio.app/
+
+# ── Configuration ────────────────────────────────────────
+pyyaml>=5.0              # YAML config file parsing (chatbot_config.yaml)
+                         # Ref: https://pyyaml.org/
+
+# ── Shared with usecase_3 (listed for completeness) ─────
+requests>=2.25           # HTTP client for Gemini REST API
+diskcache>=5.0           # LLM response caching (persistent on disk)
+beautifulsoup4>=4.9      # Google News RSS parsing
+lxml>=4.9                # XML parser backend for BeautifulSoup
+numpy>=1.21              # Embedding vector math (cosine similarity)
+pydantic>=2.0            # Config data validation

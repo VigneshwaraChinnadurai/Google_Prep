@@ -1,0 +1,149 @@
+# ═══════════════════════════════════════════════════════════════════════════
+# Strategic Analysis Chatbot — Configuration
+# ═══════════════════════════════════════════════════════════════════════════
+#
+# This YAML file centralises ALL tuneable parameters for the chatbot.
+# Values here serve as defaults that can be overridden by CLI arguments.
+#
+# Priority order (highest wins):
+#   1. CLI arguments   (--port 8080, --dry-run, etc.)
+#   2. This YAML file  (chatbot_config.yaml)
+#   3. Hardcoded fallbacks in app_config.py
+#
+# Why YAML?
+#   - Human-readable, widely supported, supports comments
+#   - No trailing-comma pain (like JSON)
+#   - PyYAML ships with most Python distributions
+#
+# ═══════════════════════════════════════════════════════════════════════════
+
+
+# ─── Server settings ─────────────────────────────────────────────────────
+# These control the Gradio HTTP server.
+# Ref: https://www.gradio.app/docs/gradio/blocks#blocks-launch
+server:
+  # Host binding address:
+  #   "127.0.0.1" = local only (default, safe for development)
+  #   "0.0.0.0"   = listen on all interfaces (LAN-accessible)
+  #   "localhost"  = alias for 127.0.0.1 on most systems
+  host: "127.0.0.1"
+
+  # Port number for the web server.
+  # Gradio default is 7860. Change if you have a conflict.
+  port: 7860
+
+  # Create a public URL via Gradio's built-in ngrok tunnel.
+  # Useful for sharing with teammates or testing from mobile.
+  # Requires internet access; generates a *.gradio.live URL.
+  share: false
+
+  # Auto-open the browser when the server starts.
+  open_browser: true
+
+
+# ─── LLM / Billing ──────────────────────────────────────────────────────
+# These control cost guardrails and LLM behaviour.
+# The Gemini API key is NOT stored here — it's resolved from:
+#   1. GEMINI_API_KEY environment variable
+#   2. .env file (walks up directory tree)
+#   3. local.properties file
+# Ref: usecase_3 config.py → _load_api_key()
+billing:
+  # Hard USD spending cap. Server halts all LLM calls when reached.
+  # $0.50 is generous for Gemini 2.5 Flash (~40+ deep analyses).
+  budget_usd: 0.50
+
+  # Dry-run mode: skip ALL LLM calls (zero cost).
+  # Useful for testing UI plumbing, layout changes, event wiring.
+  # The pipeline still runs, but every LLM call returns "[DRY RUN]".
+  dry_run: false
+
+
+# ─── UI / Appearance ─────────────────────────────────────────────────────
+# Gradio 6.x theme and chatbot widget settings.
+# Ref: https://www.gradio.app/guides/theming-guide
+# Ref: https://www.gradio.app/docs/gradio/chatbot
+ui:
+  # Gradio theme name. Available in Gradio 6.x:
+  #   "Soft"        — Rounded corners, pastel palette (our default)
+  #   "Default"     — Standard Gradio look
+  #   "Monochrome"  — Black/white minimal
+  #   "Glass"       — Translucent cards with blur
+  #   "Base"        — Bare minimum styling
+  #   "Citrus"      — Warm orange/yellow tones
+  #   "Ocean"       — Cool blue tones
+  #   "Origin"      — Original Gradio 3.x look
+  #   "Neon"        — Dark background with bright accents
+  #   "Cyberpunk"   — Futuristic neon
+  #   "Ember"       — Warm red/orange tones
+  # Ref: https://www.gradio.app/guides/theming-guide
+  theme: "Soft"
+
+  # Page title shown in the browser tab.
+  title: "Strategic Analysis Chatbot"
+
+  # Chatbot display height in pixels.
+  # 550px fits well on 1080p monitors; increase for 1440p/4K.
+  chatbot_height: 550
+
+  # Chat bubble layout:
+  #   null    — Gradio default (currently "bubble")
+  #   "panel" — Full-width messages (like ChatGPT)
+  #   "bubble" — Chat bubbles with avatars
+  # Ref: https://www.gradio.app/docs/gradio/chatbot
+  chatbot_layout: null
+
+  # Chatbot action buttons shown on each message.
+  # Options: "copy", "share", "retry", "undo", "edit"
+  # Ref: https://www.gradio.app/docs/gradio/chatbot
+  chatbot_buttons:
+    - "copy"
+
+  # Render Markdown in assistant responses (headers, bold, code blocks).
+  render_markdown: true
+
+  # Placeholder text shown in empty chat area.
+  chatbot_placeholder: >
+    💬 Send a message to start chatting.
+
+    Try: *Analyze the strategic threat Google Cloud poses to Microsoft Azure*
+
+  # Text input placeholder.
+  textbox_placeholder: "Ask a strategic question... (e.g., 'Analyze Google Cloud vs Azure')"
+
+
+# ─── Pipeline behaviour ─────────────────────────────────────────────────
+# Control how the analysis pipeline operates within the chatbot.
+pipeline:
+  # Maximum conversation history turns kept in memory.
+  # Each turn = one user/assistant pair. 10 turns ≈ 5 user messages.
+  # Higher = more context but more tokens per call.
+  max_history_turns: 10
+
+  # Heartbeat interval (seconds) during long-running blocking steps.
+  # fetch_and_index() blocks for ~60-90s. Without heartbeats, the
+  # SSE (Server-Sent Events) connection between the browser and
+  # Gradio server can time out, showing "Connection lost".
+  #
+  # The heartbeat yields a status update to keep the connection alive.
+  # 10s is a safe default; set lower on slow/unreliable networks.
+  heartbeat_interval_sec: 10.0
+
+
+# ─── Logging ─────────────────────────────────────────────────────────────
+# Server logging configuration.
+# Ref: https://docs.python.org/3/library/logging.html
+logging:
+  # Minimum log level: DEBUG, INFO, WARNING, ERROR, CRITICAL
+  level: "INFO"
+
+  # Log format string (Python logging format).
+  # Ref: https://docs.python.org/3/library/logging.html#logrecord-attributes
+  format: "%(asctime)s  %(levelname)-7s  %(name)s  %(message)s"
+
+  # Date format in log timestamps.
+  datefmt: "%Y-%m-%d %H:%M:%S"
+
+  # Directory for persistent server log files (relative to this config).
+  # Each server start creates: server_log_{timestamp}.txt
+  log_dir: "outputs"

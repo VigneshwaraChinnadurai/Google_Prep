@@ -1,0 +1,168 @@
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#4285F4', 'primaryTextColor': '#fff', 'lineColor': '#5f6368'}}}%%
+flowchart TD
+
+    %% ════════════════════════════════════════════════════════
+    %% LAYER 1: User & Browser
+    %% ════════════════════════════════════════════════════════
+    subgraph Browser["🌐 Browser (localhost:7860)"]
+        UI_Chat["gr.Chatbot<br/><i>type='messages'</i><br/><i>streaming + Markdown</i>"]
+        UI_Input["gr.Textbox + gr.Button<br/><i>Enter key / Send click</i>"]
+        UI_Mode["gr.Radio<br/><i>Quick Chat │ Deep Analysis │ Follow-up</i>"]
+        UI_Cost["gr.Markdown<br/><i>💰 Cost: $0.0101</i>"]
+        UI_Session["gr.Markdown<br/><i>📊 Session state</i>"]
+        UI_Examples["Example Prompt Buttons<br/><i>4 pre-written queries</i>"]
+    end
+
+    %% ════════════════════════════════════════════════════════
+    %% LAYER 2: Gradio Event System
+    %% ════════════════════════════════════════════════════════
+    subgraph GradioEvents["⚡ Gradio Event Layer (main.py)"]
+        Respond["respond()<br/><i>Generator function</i><br/><i>yields (textbox, history, cost, info)</i>"]
+        ClearChat["clear_chat()<br/><i>Empties display, keeps state</i>"]
+        ResetSession["reset_session()<br/><i>_session = None</i>"]
+        GetSession["_get_session()<br/><i>Lazy init → create_session()</i>"]
+    end
+
+    %% ════════════════════════════════════════════════════════
+    %% LAYER 3: Orchestrator (Session Manager)
+    %% ════════════════════════════════════════════════════════
+    subgraph Orchestrator["🎯 Orchestrator (orchestrator.py)"]
+        Session["ChatSession"]
+
+        subgraph SessionState["Persistent State (in-memory)"]
+            Memory["GraphMemory<br/><i>2 seeded + N discovered edges</i>"]
+            ConvHistory["Conversation History<br/><i>last 10 turns</i>"]
+            AnalysisResult["Analysis Result<br/><i>dict with all outputs</i>"]
+            IndexFlag["_index_built flag"]
+        end
+
+        QuickChat["quick_chat()<br/><i>→ str</i>"]
+        DeepAnalysis["deep_analysis()<br/><i>→ Generator[str]</i>"]
+        FollowUp["follow_up()<br/><i>→ Generator[str]</i>"]
+        Factory["create_session()<br/><i>Factory function</i>"]
+    end
+
+    %% ════════════════════════════════════════════════════════
+    %% LAYER 4: Usecase 4 Pipeline Modules (Standalone)
+    %% ════════════════════════════════════════════════════════
+    subgraph UC4["📦 Usecase 4 Pipeline Modules (Standalone)"]
+        Config["config.py<br/><i>load_config()</i>"]
+        LLM["llm_client.py<br/><i>GeminiClient</i>"]
+        CostGuard["cost_guard.py<br/><i>CostGuard</i>"]
+        QueryPlanner["query_planner.py<br/><i>SearchPlan generation</i>"]
+        Agents["agents.py<br/><i>AnalystAgent, CritiqueModule,<br/>NewsAndDataAgent (dynamic)</i>"]
+
+        subgraph RAG["Retrieval Pipeline"]
+            Fetcher["web_fetcher.py<br/><i>Dynamic queries from SearchPlan</i>"]
+            Chunker["chunker.py<br/><i>sentence-aware, 480 tokens</i>"]
+            BM25["sparse_retrieval.py<br/><i>BM25 from scratch</i>"]
+            Dense["dense_retrieval.py<br/><i>Gemini embeddings</i>"]
+            Hybrid["hybrid_index.py<br/><i>RRF fusion</i>"]
+            Reranker["reranker.py<br/><i>LLM-based scoring</i>"]
+            Fuser["context_fusion.py<br/><i>dedup + token budget</i>"]
+        end
+    end
+
+    %% ════════════════════════════════════════════════════════
+    %% LAYER 5: External Services
+    %% ════════════════════════════════════════════════════════
+    subgraph External["☁️ External Services"]
+        Gemini["Gemini 2.5 Flash<br/><i>REST API</i><br/><i>$0.15/$0.60 per 1M tokens</i>"]
+        EDGAR["SEC EDGAR<br/><i>XBRL API — free, no key</i>"]
+        GNews["Google News RSS<br/><i>free, no key</i>"]
+    end
+
+    %% ════════════════════════════════════════════════════════
+    %% LAYER 6: Storage
+    %% ════════════════════════════════════════════════════════
+    subgraph Storage["💾 Storage"]
+        DiskCache["diskcache<br/><i>usecase_4/.cache/gemini/</i>"]
+        PromptLog["Prompt Log<br/><i>outputs/chatbot_prompt_log_{ts}.jsonl</i>"]
+        ServerLog["Server Log<br/><i>outputs/server_log_{ts}.txt</i>"]
+    end
+
+    %% ════════════════════════════════════════════════════════
+    %% CONNECTIONS
+    %% ════════════════════════════════════════════════════════
+
+    %% User → Gradio
+    UI_Input -->|"submit / click"| Respond
+    UI_Mode -.->|"mode selection"| Respond
+    UI_Examples -->|"fills textbox"| UI_Input
+
+    %% Gradio → Session
+    Respond -->|"first call"| GetSession
+    GetSession -->|"lazy init"| Factory
+    Factory --> Config
+    Factory --> CostGuard
+    Factory --> LLM
+
+    %% Mode routing
+    Respond -->|"💬 Quick Chat"| QuickChat
+    Respond -->|"🔍 Deep Analysis"| DeepAnalysis
+    Respond -->|"🔄 Follow-up"| FollowUp
+
+    %% Session state
+    QuickChat --> ConvHistory
+    QuickChat --> Memory
+    DeepAnalysis --> QueryPlanner
+    DeepAnalysis --> Memory
+    DeepAnalysis --> AnalysisResult
+    FollowUp --> IndexFlag
+    FollowUp --> Memory
+    FollowUp --> AnalysisResult
+
+    %% Orchestrator → Usecase 4 modules
+    QuickChat -->|"generate()"| LLM
+    QueryPlanner -->|"Step 0: SearchPlan"| Agents
+    DeepAnalysis -->|"10-step pipeline"| Agents
+    FollowUp -->|"retrieve()"| RAG
+
+    %% Agents → RAG
+    Agents --> Fetcher
+    Fetcher --> Chunker
+    Chunker --> BM25
+    Chunker --> Dense
+    BM25 --> Hybrid
+    Dense --> Hybrid
+    Hybrid --> Reranker
+    Reranker --> Fuser
+
+    %% RAG → External
+    Fetcher -->|"grounded search"| Gemini
+    Fetcher -->|"XBRL API"| EDGAR
+    Fetcher -->|"RSS feed"| GNews
+    Dense -->|"batchEmbedContents"| Gemini
+    Reranker -->|"generate()"| Gemini
+    LLM -->|"REST POST"| Gemini
+
+    %% LLM → Storage
+    LLM -->|"cache hit/miss"| DiskCache
+    LLM -.->|"log every call"| PromptLog
+
+    %% CostGuard
+    LLM -->|"check() before each call"| CostGuard
+
+    %% Streaming back to UI
+    DeepAnalysis -.->|"yield progress"| Respond
+    FollowUp -.->|"yield progress"| Respond
+    Respond -.->|"update chat bubble"| UI_Chat
+    Respond -.->|"update sidebar"| UI_Cost
+    Respond -.->|"update sidebar"| UI_Session
+
+    %% Session mgmt buttons
+    ClearChat -->|"empties display"| UI_Chat
+    ResetSession -->|"_session = None"| Session
+
+    %% Styling
+    classDef external fill:#34A853,stroke:#137333,color:#fff
+    classDef storage fill:#FBBC04,stroke:#EA8600,color:#000
+    classDef gradio fill:#7B1FA2,stroke:#4A148C,color:#fff
+    classDef orch fill:#1565C0,stroke:#0D47A1,color:#fff
+    classDef uc4 fill:#E8EAF6,stroke:#3F51B5,color:#1A237E
+
+    class Gemini,EDGAR,GNews external
+    class DiskCache,PromptLog,ServerLog storage
+    class Respond,ClearChat,ResetSession,GetSession gradio
+    class Session,QuickChat,DeepAnalysis,FollowUp,Factory orch
+    class Config,LLM,CostGuard,QueryPlanner,Agents,Fetcher,Chunker,BM25,Dense,Hybrid,Reranker,Fuser uc4
