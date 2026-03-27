@@ -1,0 +1,54 @@
+Date: 2026-03-27
+Title: Matrix Similarity After Cyclic Shifts
+URL: https://leetcode.com/problems/matrix-similarity-after-cyclic-shifts/
+
+LLM Explanation:
+The problem asks if a matrix returns to its original state after `k` cyclic shifts. The key insight is that the net effect of `k` shifts on a row of length `n` is equivalent to a single shift of `k % n` positions.
+
+Let `effective_k = k % n`. If `effective_k` is 0, no net shift occurs, and the matrix is unchanged, so we can return `true`.
+
+Otherwise, we iterate through each row of the matrix:
+1.  For an even-indexed row (`i % 2 == 0`), it undergoes a net left shift of `effective_k` positions.
+2.  For an odd-indexed row (`i % 2 == 1`), it undergoes a net right shift of `effective_k` positions.
+
+For each row, we calculate its final state after the corresponding shift and compare it to the original row. If any row does not return to its original state, the final matrix is different, and we return `false`. If all rows are identical to their original state after their respective shifts, the matrix is similar, and we return `true`.
+
+This approach avoids a costly simulation of `k` steps. The time complexity is O(m * n) because we process each row once. The space complexity is O(n) to temporarily store a shifted row.
+
+LLM Testcase Validation:
+Testcases:
+[[1,2,3],[4,5,6],[7,8,9]]
+4
+[[1,2,1,2],[5,5,5,5],[6,3,6,3]]
+2
+[[2,2],[2,2]]
+3
+
+Testcase 1:
+Input: mat = [[1,2,3],[4,5,6],[7,8,9]], k = 4
+m = 3, n = 3
+effective_k = 4 % 3 = 1
+Row 0 (even): [1,2,3] -> left shift by 1 -> [2,3,1]. Not equal to [1,2,3].
+Expected output: false
+My code output: false. Correct.
+
+Testcase 2:
+Input: mat = [[1,2,1,2],[5,5,5,5],[6,3,6,3]], k = 2
+m = 3, n = 4
+effective_k = 2 % 4 = 2
+Row 0 (even): [1,2,1,2] -> left shift by 2 -> [1,2,1,2]. Equal.
+Row 1 (odd): [5,5,5,5] -> right shift by 2 -> [5,5,5,5]. Equal.
+Row 2 (even): [6,3,6,3] -> left shift by 2 -> [6,3,6,3]. Equal.
+All rows are equal to their original state.
+Expected output: true
+My code output: true. Correct.
+
+Testcase 3:
+Input: mat = [[2,2],[2,2]], k = 3
+m = 2, n = 2
+effective_k = 3 % 2 = 1
+Row 0 (even): [2,2] -> left shift by 1 -> [2,2]. Equal.
+Row 1 (odd): [2,2] -> right shift by 1 -> [2,2]. Equal.
+All rows are equal to their original state.
+Expected output: true
+My code output: true. Correct.
