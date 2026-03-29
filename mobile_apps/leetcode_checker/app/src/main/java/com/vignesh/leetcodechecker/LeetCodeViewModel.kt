@@ -357,6 +357,10 @@ class LeetCodeViewModel(
         _uiState.value = _uiState.value.copy(infoMessage = null)
     }
 
+    fun clearError() {
+        _uiState.value = _uiState.value.copy(error = null, aiError = null)
+    }
+
     private fun normalizeGitHubRepo(repoInput: String): String {
         val trimmed = repoInput.trim()
         if (trimmed.contains("github.com/")) {

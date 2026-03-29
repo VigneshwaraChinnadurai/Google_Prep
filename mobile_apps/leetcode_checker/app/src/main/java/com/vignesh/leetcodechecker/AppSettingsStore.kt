@@ -20,7 +20,11 @@ data class AppSettings(
     val revisionFolderName: String = "Leetcode_QA_Revision",
     val githubOwnerOverride: String = "",
     val githubRepoOverride: String = "",
-    val githubBranchOverride: String = ""
+    val githubBranchOverride: String = "",
+    val chatbotBackendUrl: String = "",  // empty = auto-detect (emulator vs device)
+    // ── Ollama Settings ─────────────────────────────────────────
+    val ollamaBaseUrl: String = "http://127.0.0.1:11434",
+    val ollamaPreferredModels: String = "qwen2.5:3b"
 )
 
 object AppSettingsStore {
@@ -50,7 +54,10 @@ object AppSettingsStore {
                 revisionFolderName = json.optString("revisionFolderName", "Leetcode_QA_Revision"),
                 githubOwnerOverride = json.optString("githubOwnerOverride", ""),
                 githubRepoOverride = json.optString("githubRepoOverride", ""),
-                githubBranchOverride = json.optString("githubBranchOverride", "")
+                githubBranchOverride = json.optString("githubBranchOverride", ""),
+                chatbotBackendUrl = json.optString("chatbotBackendUrl", ""),
+                ollamaBaseUrl = json.optString("ollamaBaseUrl", "http://127.0.0.1:11434"),
+                ollamaPreferredModels = json.optString("ollamaPreferredModels", "qwen2.5:3b")
             )
         }.getOrElse { AppSettings() }
     }
@@ -74,6 +81,9 @@ object AppSettingsStore {
             .put("githubOwnerOverride", settings.githubOwnerOverride)
             .put("githubRepoOverride", settings.githubRepoOverride)
             .put("githubBranchOverride", settings.githubBranchOverride)
+            .put("chatbotBackendUrl", settings.chatbotBackendUrl)
+            .put("ollamaBaseUrl", settings.ollamaBaseUrl)
+            .put("ollamaPreferredModels", settings.ollamaPreferredModels)
             .toString()
 
         prefs(context).edit().putString(KEY_SETTINGS, json).apply()

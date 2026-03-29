@@ -106,4 +106,73 @@ object ConsistencyStorage {
         formatter.timeZone = TimeZone.getTimeZone("Asia/Kolkata")
         return formatter.format(now).toIntOrNull() ?: 0
     }
+
+    // ════════════════════════════════════════════════════════════════════
+    // Ollama-specific cache (separate keys so Gemini & Ollama don't clash)
+    // ════════════════════════════════════════════════════════════════════
+
+    private const val KEY_OLLAMA_CHALLENGE = "ollama_cached_challenge_json"
+    private const val KEY_OLLAMA_AI = "ollama_cached_ai_json"
+
+    fun saveOllamaChallenge(context: Context, challenge: DailyChallengeUiModel) {
+        val json = JSONObject()
+            .put("date", challenge.date)
+            .put("title", challenge.title)
+            .put("titleSlug", challenge.titleSlug)
+            .put("difficulty", challenge.difficulty)
+            .put("questionId", challenge.questionId)
+            .put("tags", challenge.tags.joinToString("||"))
+            .put("url", challenge.url)
+            .put("descriptionPreview", challenge.descriptionPreview)
+            .put("fullStatement", challenge.fullStatement)
+            .put("pythonStarterCode", challenge.pythonStarterCode)
+            .put("exampleTestcases", challenge.exampleTestcases)
+            .toString()
+        prefs(context).edit().putString(KEY_OLLAMA_CHALLENGE, json).apply()
+    }
+
+    fun loadOllamaChallenge(context: Context): DailyChallengeUiModel? {
+        val raw = prefs(context).getString(KEY_OLLAMA_CHALLENGE, null) ?: return null
+        return runCatching {
+            val json = JSONObject(raw)
+            DailyChallengeUiModel(
+                date = json.optString("date"),
+                title = json.optString("title"),
+                titleSlug = json.optString("titleSlug"),
+                difficulty = json.optString("difficulty"),
+                questionId = json.optString("questionId"),
+                tags = json.optString("tags").split("||").filter { it.isNotBlank() },
+                url = json.optString("url"),
+                descriptionPreview = json.optString("descriptionPreview"),
+                fullStatement = json.optString("fullStatement"),
+                pythonStarterCode = json.optString("pythonStarterCode"),
+                exampleTestcases = json.optString("exampleTestcases")
+            )
+        }.getOrNull()
+    }
+
+    fun saveOllamaAi(context: Context, result: AiGenerationResult) {
+        val json = JSONObject()
+            .put("leetcodePythonCode", result.leetcodePythonCode)
+            .put("testcaseValidation", result.testcaseValidation)
+            .put("explanation", result.explanation)
+            .put("rawResponse", result.rawResponse)
+            .put("debugLog", result.debugLog)
+            .toString()
+        prefs(context).edit().putString(KEY_OLLAMA_AI, json).apply()
+    }
+
+    fun loadOllamaAi(context: Context): AiGenerationResult? {
+        val raw = prefs(context).getString(KEY_OLLAMA_AI, null) ?: return null
+        return runCatching {
+            val json = JSONObject(raw)
+            AiGenerationResult(
+                leetcodePythonCode = json.optString("leetcodePythonCode"),
+                testcaseValidation = json.optString("testcaseValidation"),
+                explanation = json.optString("explanation"),
+                rawResponse = json.optString("rawResponse"),
+                debugLog = json.optString("debugLog")
+            )
+        }.getOrNull()
+    }
 }

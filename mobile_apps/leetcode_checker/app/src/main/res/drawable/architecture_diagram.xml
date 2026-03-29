@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="512dp"
+    android:height="768dp"
+    android:viewportWidth="512"
+    android:viewportHeight="768">
+
+    <!-- Background -->
+    <path
+        android:fillColor="#FFF5F5F5"
+        android:pathData="M0,0h512v768H0z" />
+
+    <!-- Title bar -->
+    <path
+        android:fillColor="#FF1976D2"
+        android:pathData="M16,16h480v48H16z" />
+
+    <!-- Layer 1: Mobile App -->
+    <path
+        android:fillColor="#FF1976D2"
+        android:pathData="M156,80h200v50H156z" />
+    <path
+        android:fillColor="#FF90CAF9"
+        android:pathData="M160,84h192v42H160z" />
+
+    <!-- Arrow 1 -->
+    <path
+        android:fillColor="#FF5F6368"
+        android:pathData="M253,130v20h6v-20z" />
+    <path
+        android:fillColor="#FF5F6368"
+        android:pathData="M256,155l-8,-10h16z" />
+
+    <!-- Layer 2: REST API -->
+    <path
+        android:fillColor="#FF388E3C"
+        android:pathData="M106,160h300v50H106z" />
+    <path
+        android:fillColor="#FFA5D6A7"
+        android:pathData="M110,164h292v42H110z" />
+
+    <!-- Arrow 2 -->
+    <path
+        android:fillColor="#FF5F6368"
+        android:pathData="M253,210v20h6v-20z" />
+    <path
+        android:fillColor="#FF5F6368"
+        android:pathData="M256,235l-8,-10h16z" />
+
+    <!-- Layer 3: Backend -->
+    <path
+        android:fillColor="#FFF57C00"
+        android:pathData="M86,240h340v50H86z" />
+    <path
+        android:fillColor="#FFFFCC80"
+        android:pathData="M90,244h332v42H90z" />
+
+    <!-- Arrow 3 -->
+    <path
+        android:fillColor="#FF5F6368"
+        android:pathData="M253,290v20h6v-20z" />
+    <path
+        android:fillColor="#FF5F6368"
+        android:pathData="M256,315l-8,-10h16z" />
+
+    <!-- Layer 4: Chat Modes (3 boxes) -->
+    <path
+        android:fillColor="#FF7B1FA2"
+        android:pathData="M26,320h140v60H26z" />
+    <path
+        android:fillColor="#FFCE93D8"
+        android:pathData="M30,324h132v52H30z" />
+
+    <path
+        android:fillColor="#FF7B1FA2"
+        android:pathData="M186,320h140v60H186z" />
+    <path
+        android:fillColor="#FFCE93D8"
+        android:pathData="M190,324h132v52H190z" />
+
+    <path
+        android:fillColor="#FF7B1FA2"
+        android:pathData="M346,320h140v60H346z" />
+    <path
+        android:fillColor="#FFCE93D8"
+        android:pathData="M350,324h132v52H350z" />
+
+    <!-- Arrow 4 -->
+    <path
+        android:fillColor="#FF5F6368"
+        android:pathData="M253,380v20h6v-20z" />
+    <path
+        android:fillColor="#FF5F6368"
+        android:pathData="M256,405l-8,-10h16z" />
+
+    <!-- Layer 5: Agentic Pipeline -->
+    <path
+        android:fillColor="#FFC62828"
+        android:pathData="M56,410h400v50H56z" />
+    <path
+        android:fillColor="#FFEF9A9A"
+        android:pathData="M60,414h392v42H60z" />
+
+    <!-- Arrow 5 -->
+    <path
+        android:fillColor="#FF5F6368"
+        android:pathData="M253,460v20h6v-20z" />
+    <path
+        android:fillColor="#FF5F6368"
+        android:pathData="M256,485l-8,-10h16z" />
+
+    <!-- Layer 6: RAG Pipeline -->
+    <path
+        android:fillColor="#FF00695C"
+        android:pathData="M76,490h360v50H76z" />
+    <path
+        android:fillColor="#FF80CBC4"
+        android:pathData="M80,494h352v42H80z" />
+
+    <!-- Arrow 6 -->
+    <path
+        android:fillColor="#FF5F6368"
+        android:pathData="M253,540v20h6v-20z" />
+    <path
+        android:fillColor="#FF5F6368"
+        android:pathData="M256,565l-8,-10h16z" />
+
+    <!-- Layer 7: External Services -->
+    <path
+        android:fillColor="#FF37474F"
+        android:pathData="M96,570h320v50H96z" />
+    <path
+        android:fillColor="#FFB0BEC5"
+        android:pathData="M100,574h312v42H100z" />
+
+    <!-- Return arrow (right side) -->
+    <path
+        android:fillColor="#FF1976D2"
+        android:pathData="M440,595h20v-510h-6v504h-14z" />
+    <path
+        android:fillColor="#FF1976D2"
+        android:pathData="M454,80l10,8v-16z" />
+
+    <!-- Legend box -->
+    <path
+        android:fillColor="#FFECEFF1"
+        android:pathData="M16,640h480v112H16z" />
+    <path
+        android:fillColor="#FF455A64"
+        android:pathData="M16,640h480v2H16z" />
+
+    <!-- Legend color indicators -->
+    <path android:fillColor="#FF1976D2" android:pathData="M30,660h16v12H30z" />
+    <path android:fillColor="#FF388E3C" android:pathData="M30,680h16v12H30z" />
+    <path android:fillColor="#FFF57C00" android:pathData="M30,700h16v12H30z" />
+    <path android:fillColor="#FF7B1FA2" android:pathData="M30,720h16v12H30z" />
+
+    <path android:fillColor="#FFC62828" android:pathData="M270,660h16v12H270z" />
+    <path android:fillColor="#FF00695C" android:pathData="M270,680h16v12H270z" />
+    <path android:fillColor="#FF37474F" android:pathData="M270,700h16v12H270z" />
+    <path android:fillColor="#FF1976D2" android:pathData="M270,720h16v12H270z" />
+</vector>

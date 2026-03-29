@@ -17,6 +17,18 @@ android {
     if (localPropertiesFile.exists()) {
         localPropertiesFile.inputStream().use { localProperties.load(it) }
     }
+
+    // Load chatbot's separate API key from usecase_4 .env file
+    val chatbotEnvFile = file("../../../agentic_ai/usecase_4_strategic_chatbot/.env")
+    val chatbotGeminiKey = if (chatbotEnvFile.exists()) {
+        chatbotEnvFile.readLines()
+            .filter { it.trim().startsWith("GEMINI_API_KEY") && !it.trim().startsWith("#") }
+            .map { it.substringAfter("=").trim().trim('"', '\'') }
+            .firstOrNull() ?: ""
+    } else {
+        localProperties.getProperty("CHATBOT_GEMINI_API_KEY", "")
+    }.replace("\\\\", "\\\\\\\\").replace("\"", "\\\"")
+
     val geminiApiKey = localProperties.getProperty("GEMINI_API_KEY", "")
         .replace("\\", "\\\\")
         .replace("\"", "\\\"")
@@ -36,6 +48,14 @@ android {
         .replace("\\", "\\\\")
         .replace("\"", "\\\"")
 
+    // Ollama configuration (defaults to local loopback)
+    val ollamaBaseUrl = localProperties.getProperty("OLLAMA_BASE_URL", "http://127.0.0.1:11434")
+        .replace("\\", "\\\\")
+        .replace("\"", "\\\"")
+    val ollamaModel = localProperties.getProperty("OLLAMA_MODEL", "qwen2.5:3b")
+        .replace("\\", "\\\\")
+        .replace("\"", "\\\"")
+
     namespace = "com.vignesh.leetcodechecker"
     compileSdk = 35
 
@@ -46,11 +66,14 @@ android {
         versionCode = 1
         versionName = "1.0"
         buildConfigField("String", "GEMINI_API_KEY", "\"$geminiApiKey\"")
+        buildConfigField("String", "CHATBOT_GEMINI_API_KEY", "\"$chatbotGeminiKey\"")
         buildConfigField("String", "GITHUB_TOKEN", "\"$githubToken\"")
         buildConfigField("String", "GITHUB_OWNER", "\"$githubOwner\"")
         buildConfigField("String", "GITHUB_REPO", "\"$githubRepo\"")
         buildConfigField("String", "GITHUB_BRANCH", "\"$githubBranch\"")
         buildConfigField("String", "SETTINGS_UPDATE_PASSWORD", "\"$settingsUpdatePassword\"")
+        buildConfigField("String", "OLLAMA_BASE_URL", "\"$ollamaBaseUrl\"")
+        buildConfigField("String", "OLLAMA_MODEL", "\"$ollamaModel\"")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
