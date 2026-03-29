@@ -1,0 +1,51 @@
+Date: 2026-03-29
+Title: Check if Strings Can be Made Equal With Operations I
+URL: https://leetcode.com/problems/check-if-strings-can-be-made-equal-with-operations-i/
+
+LLM Explanation:
+### Method Explanation
+
+The problem allows swapping characters at indices `i` and `j` in a 4-character string, provided that `j - i = 2`. This constraint defines two possible swaps:
+1.  Swap character at index 0 with character at index 2.
+2.  Swap character at index 1 with character at index 3.
+
+This operation effectively partitions the string's indices into two independent groups:
+-   **Even Indices Group:** `{0, 2}`
+-   **Odd Indices Group:** `{1, 3}`
+
+Characters can be freely swapped within their respective groups, but a character from an even-indexed position can never move to an odd-indexed position, and vice-versa.
+
+For string `s1` to be transformable into `s2`, the collection of characters (multiset) at the even indices of `s1` must be identical to the multiset of characters at the even indices of `s2`. The same condition must hold for the characters at the odd indices.
+
+To implement this check, we can:
+1.  Extract the characters at even indices (`s1[0]`, `s1[2]`) from `s1` and (`s2[0]`, `s2[2]`) from `s2`. To check if these form the same multiset, we can sort them and compare the results.
+2.  Do the same for the characters at odd indices (`s1[1]`, `s1[3]`) and (`s2[1]`, `s2[3]`).
+3.  If both the even-indexed and odd-indexed character groups match, the strings can be made equal. Otherwise, they cannot.
+
+For example, with `s1 = "abcd"` and `s2 = "cdab"`:
+-   Even indices: `sorted(['a', 'c'])` for `s1` equals `sorted(['c', 'a'])` for `s2`. Both are `['a', 'c']`.
+-   Odd indices: `sorted(['b', 'd'])` for `s1` equals `sorted(['d', 'b'])` for `s2`. Both are `['b', 'd']`.
+Since both groups match, the function returns `true`.
+
+### Complexity Analysis
+
+-   **Time Complexity:** `O(1)`. The length of the strings is fixed at 4. The operations involve a constant number of index accesses, list creations, sorting of 2-element lists, and comparisons, all of which take constant time.
+-   **Space Complexity:** `O(1)`. We use a small, constant amount of extra space to store the two-character lists for sorting.
+
+LLM Testcase Validation:
+s1 = "abcd"
+s2 = "cdab"
+# Expected: true
+# s1 even indices: {'a', 'c'}, s2 even indices: {'c', 'a'}. Multisets are equal.
+# s1 odd indices: {'b', 'd'}, s2 odd indices: {'d', 'b'}. Multisets are equal.
+# Both match, so result is true.
+sol = Solution()
+print(f"Testcase 1: s1='{s1}', s2='{s2}', Output: {sol.canBeEqual(s1, s2)}")
+
+s1 = "abcd"
+s2 = "dacb"
+# Expected: false
+# s1 even indices: {'a', 'c'}, s2 even indices: {'d', 'c'}. Multisets are not equal.
+# The function should return false.
+sol = Solution()
+print(f"Testcase 2: s1='{s1}', s2='{s2}', Output: {sol.canBeEqual(s1, s2)}")
