@@ -1,6 +1,7 @@
 package com.vignesh.leetcodechecker.data
 
 import android.util.Log
+import com.vignesh.leetcodechecker.pipeline.PipelineCostGuard
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -304,6 +305,13 @@ class LoggingGeminiApi(
     private val logger: ChatbotLogger
 ) : GeminiApi {
 
+    /**
+     * Optional cost guard — when set, every generateContent call
+     * automatically records token usage from Gemini's usageMetadata.
+     * Set this before running the pipeline so costs are tracked.
+     */
+    var costGuard: PipelineCostGuard? = null
+
     override suspend fun listModels(apiKey: String): GeminiModelListResponse {
         logger.logInfo("Listing available Gemini models")
         val start = System.currentTimeMillis()
@@ -350,6 +358,20 @@ class LoggingGeminiApi(
                 durationMs = elapsed,
                 finishReason = finishReason
             )
+
+            // ── Auto-record cost from actual Gemini usage metadata ──
+            response.usageMetadata?.let { meta ->
+                val inputTokens = meta.promptTokenCount ?: 0
+                val outputTokens = meta.candidatesTokenCount ?: 0
+                costGuard?.let { guard ->
+                    val callCost = guard.record(inputTokens, outputTokens, model)
+                    logger.logCostUpdate(
+                        totalCost = guard.totalCostUsd,
+                        apiCalls = guard.apiCalls,
+                        callCost = callCost
+                    )
+                }
+            }
 
             response
         } catch (e: Exception) {

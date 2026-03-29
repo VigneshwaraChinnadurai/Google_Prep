@@ -68,6 +68,11 @@ class DeepAnalysisPipeline(
     val apiCallCount get() = costGuard.apiCalls
     val memoryEdgeCount get() = memory.allEdges().size
 
+    /** Wire cost guard to the LoggingGeminiApi wrapper (if present) */
+    private fun wireCostGuard() {
+        (geminiApi as? LoggingGeminiApi)?.costGuard = costGuard
+    }
+
     /**
      * Run the full deep analysis pipeline.
      * Emits PipelineStatus updates as a Flow.
@@ -79,6 +84,9 @@ class DeepAnalysisPipeline(
             accumulated += text + "\n"
             return PipelineStatus(step = "", message = accumulated)
         }
+
+        // Wire cost guard so every LLM call auto-records token usage
+        wireCostGuard()
 
         try {
             // ── Step 0: Query Planning ──────────────────────────
@@ -245,15 +253,22 @@ class DeepAnalysisPipeline(
             accumulated += "## 📄 Executive Summary\n\n$summary\n\n"
             accumulated += "## ⚡ Key Analysis\n\n$threat\n\n"
             accumulated += "## 💡 Strategies\n\n"
-            for ((i, s) in strategies.withIndex()) {
-                accumulated += "### ${i + 1}. ${s["name"] ?: "?"}\n"
-                val actions = s["actions"] as? List<*>
-                actions?.forEach { a -> accumulated += "- $a\n" }
-                accumulated += "\n**Cost:** ${s["cost"] ?: "?"} | " +
-                        "**Outcome:** ${s["expected_outcome"] ?: "?"}\n\n"
+            if (strategies.isEmpty()) {
+                accumulated += "*No structured strategies could be generated. " +
+                        "See the Key Analysis section above for strategic insights.*\n\n"
+            } else {
+                for ((i, s) in strategies.withIndex()) {
+                    accumulated += "### ${i + 1}. ${s["name"] ?: "?"}\n"
+                    val actions = s["actions"] as? List<*>
+                    actions?.forEach { a -> accumulated += "- $a\n" }
+                    accumulated += "\n**Cost:** ${s["cost"] ?: "?"} | " +
+                            "**Outcome:** ${s["expected_outcome"] ?: "?"}\n\n"
+                }
             }
             accumulated += "\n---\n*💰 Total cost: \$${String.format("%.4f", costGuard.totalCostUsd)} " +
-                    "(${costGuard.apiCalls} API calls)*"
+                    "(${costGuard.apiCalls} API calls) | " +
+                    "${costGuard.totalInputTokens} input tokens, " +
+                    "${costGuard.totalOutputTokens} output tokens*"
 
             emit(PipelineStatus(
                 step = "complete",
@@ -286,6 +301,9 @@ class DeepAnalysisPipeline(
             accumulated += text + "\n"
             return PipelineStatus(step = "", message = accumulated)
         }
+
+        // Wire cost guard for follow-up calls
+        wireCostGuard()
 
         if (!indexBuilt || retrievalPipeline == null) {
             emit(PipelineStatus(

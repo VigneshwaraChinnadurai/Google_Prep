@@ -438,7 +438,7 @@ Focus on competitive relationships, growth drivers, and strategic linkages. Extr
                 ),
                 generationConfig = GeminiGenerationConfig(
                     temperature = 0.2,
-                    maxOutputTokens = 1024,
+                    maxOutputTokens = 4096,
                     responseMimeType = "text/plain"
                 )
             )
@@ -600,7 +600,7 @@ Focus on competitive relationships, growth drivers, and strategic linkages. Extr
                 ),
                 generationConfig = GeminiGenerationConfig(
                     temperature = 0.2,
-                    maxOutputTokens = 1024,
+                    maxOutputTokens = 4096,
                     responseMimeType = "text/plain"
                 )
             )
@@ -689,7 +689,8 @@ Return ONLY JSON: {"queries": ["query 1", "query 2"]}"""
                 "answer the following strategic question:\n\n" +
                 "**${p.primaryQuestion}**\n\n" +
                 "Be specific: name the product lines, market segments, and dynamics.\n" +
-                "Keep the response under 300 words."
+                "Provide a comprehensive, detailed analysis with specific data points and evidence-backed reasoning.\n" +
+                "Structure your analysis with clear sections and cite specific numbers where available."
     }
 
     private fun buildStrategySystem(p: PipelineSearchPlan): String {
@@ -709,9 +710,11 @@ Return ONLY JSON: {"queries": ["query 1", "query 2"]}"""
 
     private fun buildSynthesisSystem(p: PipelineSearchPlan): String {
         return "You are an executive report writer. Given all the analysis components " +
-                "about the ${p.domain} industry, synthesise a concise executive " +
-                "summary (150-200 words) suitable for ${p.perspective}.\n\n" +
-                "Cover: the key findings, why they matter, and recommended actions."
+                "about the ${p.domain} industry, synthesise a thorough executive " +
+                "summary suitable for ${p.perspective}.\n\n" +
+                "Cover: the key findings with specific data points, why they matter " +
+                "for strategic positioning, market dynamics, and recommended actions " +
+                "with expected impact. Be detailed and evidence-backed."
     }
 
     private fun cleanJsonText(text: String): String {
