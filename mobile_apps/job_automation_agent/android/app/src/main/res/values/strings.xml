@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Job Automation</string>
+    
+    <!-- Navigation -->
+    <string name="nav_dashboard">Dashboard</string>
+    <string name="nav_applications">Applications</string>
+    <string name="nav_companies">Companies</string>
+    <string name="nav_profile">Profile</string>
+    <string name="nav_settings">Settings</string>
+    
+    <!-- Dashboard -->
+    <string name="jobs_found">Jobs Found</string>
+    <string name="applications">Applications</string>
+    <string name="interviews">Interviews</string>
+    <string name="api_cost">API Cost</string>
+    <string name="quick_actions">Quick Actions</string>
+    <string name="find_jobs">Find Jobs</string>
+    <string name="analyze">Analyze</string>
+    <string name="auto_apply">Auto Apply</string>
+    <string name="sync_emails">Sync Emails</string>
+    <string name="ask_agent">Ask Your Agent</string>
+    <string name="chat_hint">What\'s the status of my job hunt?</string>
+    <string name="recent_activity">Recent Activity</string>
+    
+    <!-- Applications -->
+    <string name="no_applications">No applications yet</string>
+    <string name="start_applying">Start by applying to some jobs!</string>
+    <string name="total">Total</string>
+    <string name="active">Active</string>
+    <string name="rejected">Rejected</string>
+    <string name="generate_interview_prep">Generate Interview Prep</string>
+    
+    <!-- Companies -->
+    <string name="no_companies">No companies yet</string>
+    <string name="add_defaults">Add Default Companies</string>
+    <string name="add_company">Add Company</string>
+    <string name="company_name">Company Name</string>
+    <string name="company_type">Type</string>
+    <string name="careers_page">Careers Page URL</string>
+    <string name="priority">Priority</string>
+    <string name="allowed">Allowed</string>
+    <string name="blocked">Blocked</string>
+    
+    <!-- Profile -->
+    <string name="setup_profile">Set Up Your Profile</string>
+    <string name="profile_help">Your profile helps the agent find and apply to matching jobs.</string>
+    <string name="create_profile">Create Profile</string>
+    <string name="edit_profile">Edit Profile</string>
+    <string name="professional_summary">Professional Summary</string>
+    <string name="skills">Skills</string>
+    <string name="experience">Experience</string>
+    <string name="target_preferences">Target Preferences</string>
+    <string name="target_roles">Target Roles</string>
+    <string name="preferred_locations">Preferred Locations</string>
+    <string name="salary_expectations">Salary Expectations</string>
+    
+    <!-- Settings -->
+    <string name="connected">Connected</string>
+    <string name="disconnected">Disconnected</string>
+    <string name="backend_url">Backend URL</string>
+    <string name="agent_status">Agent Status</string>
+    <string name="api_usage">API Usage</string>
+    <string name="todays_cost">Today\'s Cost</string>
+    <string name="budget">Budget</string>
+    <string name="api_calls">API Calls</string>
+    <string name="remaining">Remaining</string>
+    <string name="notifications">Notifications</string>
+    <string name="auto_apply_rules">Auto-Apply Rules</string>
+    <string name="about">About</string>
+    <string name="version">Version</string>
+    <string name="github">GitHub</string>
+    <string name="documentation">Documentation</string>
+    
+    <!-- Actions -->
+    <string name="add">Add</string>
+    <string name="cancel">Cancel</string>
+    <string name="close">Close</string>
+    <string name="ok">OK</string>
+    <string name="refresh">Refresh</string>
+    <string name="send">Send</string>
+</resources>

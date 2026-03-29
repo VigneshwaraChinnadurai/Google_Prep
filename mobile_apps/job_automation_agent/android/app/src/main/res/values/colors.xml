@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="purple_200">#FFBB86FC</color>
+    <color name="purple_500">#FF6200EE</color>
+    <color name="purple_700">#FF3700B3</color>
+    <color name="teal_200">#FF03DAC5</color>
+    <color name="teal_700">#FF018786</color>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    
+    <!-- Primary Colors -->
+    <color name="primary">#1976D2</color>
+    <color name="primary_variant">#1565C0</color>
+    <color name="on_primary">#FFFFFF</color>
+    
+    <!-- Secondary Colors -->
+    <color name="secondary">#03DAC6</color>
+    <color name="secondary_variant">#018786</color>
+    <color name="on_secondary">#000000</color>
+    
+    <!-- Background -->
+    <color name="background">#FAFAFA</color>
+    <color name="surface">#FFFFFF</color>
+    <color name="error">#B00020</color>
+    
+    <!-- Status Colors -->
+    <color name="status_submitted">#FFA726</color>
+    <color name="status_confirmed">#66BB6A</color>
+    <color name="status_interview">#42A5F5</color>
+    <color name="status_offer">#4CAF50</color>
+    <color name="status_rejected">#EF5350</color>
+    
+    <!-- Company Types -->
+    <color name="company_maang">#4285F4</color>
+    <color name="company_product">#34A853</color>
+    <color name="company_startup">#FBBC04</color>
+</resources>

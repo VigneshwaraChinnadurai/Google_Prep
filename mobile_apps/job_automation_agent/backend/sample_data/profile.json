@@ -1,0 +1,98 @@
+{
+  "summary": "Data Scientist with 8+ years of experience in machine learning, deep learning, and GenAI. Expert in building end-to-end ML pipelines, RAG systems, and LLM applications. Strong background in Python, SQL, and cloud platforms. Proven track record of delivering impactful data science solutions in enterprise environments.",
+  "skills": {
+    "programming": ["Python", "SQL", "PySpark", "R", "Scala"],
+    "gen_ai": ["LLMs", "RAG", "LangChain", "Fine-Tuning", "Prompt Engineering", "Vector Databases"],
+    "deep_learning": ["TensorFlow", "PyTorch", "Transformers", "Computer Vision", "NLP"],
+    "machine_learning": ["Scikit-learn", "XGBoost", "Feature Engineering", "MLOps"],
+    "cloud": ["AWS SageMaker", "Azure Databricks", "GCP Vertex AI", "AWS Lambda"],
+    "data_engineering": ["Apache Spark", "Airflow", "dbt", "Kafka"],
+    "tools": ["Git", "Docker", "Kubernetes", "MLflow", "Weights & Biases"]
+  },
+  "experience": [
+    {
+      "company": "Deloitte",
+      "title": "Senior Consultant - Data Science",
+      "start_date": "2022-01-01",
+      "end_date": "Present",
+      "description": "Led a team to build GenAI solutions using Databricks Genie and LangChain. Developed RAG pipelines for enterprise knowledge management. Implemented MLOps best practices reducing model deployment time by 60%."
+    },
+    {
+      "company": "Accenture",
+      "title": "Data Scientist",
+      "start_date": "2019-06-01",
+      "end_date": "2021-12-31",
+      "description": "Built predictive models for customer churn and demand forecasting. Developed NLP solutions for document classification. Managed end-to-end ML pipeline on AWS SageMaker."
+    },
+    {
+      "company": "TCS",
+      "title": "Machine Learning Engineer",
+      "start_date": "2016-07-01",
+      "end_date": "2019-05-31",
+      "description": "Implemented computer vision solutions for quality inspection. Built recommendation systems using collaborative filtering. Created data pipelines using PySpark and Airflow."
+    }
+  ],
+  "education": [
+    {
+      "institution": "University of XYZ",
+      "degree": "Master of Science",
+      "field": "Computer Science - Machine Learning",
+      "graduation_year": 2016
+    },
+    {
+      "institution": "ABC Institute of Technology",
+      "degree": "Bachelor of Technology",
+      "field": "Computer Science and Engineering",
+      "graduation_year": 2014
+    }
+  ],
+  "projects": [
+    {
+      "name": "Enterprise RAG System",
+      "description": "Built a production RAG system using LangChain and Pinecone for enterprise document Q&A. Handles 10K+ queries daily with 95% relevance accuracy.",
+      "technologies": ["LangChain", "Pinecone", "FastAPI", "Azure OpenAI"]
+    },
+    {
+      "name": "Autonomous Strategic Analysis Agent",
+      "description": "Multi-agent AI system for automated market research and competitive analysis using Gemini API.",
+      "technologies": ["Python", "Gemini API", "ChromaDB", "Gradio"]
+    },
+    {
+      "name": "Real-time Fraud Detection",
+      "description": "Streaming ML pipeline for credit card fraud detection processing 100K+ transactions/minute.",
+      "technologies": ["Kafka", "Spark Streaming", "XGBoost", "MLflow"]
+    }
+  ],
+  "certifications": [
+    {
+      "name": "AWS Certified Machine Learning - Specialty",
+      "issuer": "Amazon Web Services",
+      "year": 2023
+    },
+    {
+      "name": "Google Cloud Professional Data Engineer",
+      "issuer": "Google Cloud",
+      "year": 2022
+    },
+    {
+      "name": "Databricks Certified ML Professional",
+      "issuer": "Databricks",
+      "year": 2023
+    }
+  ],
+  "desired_roles": [
+    "Senior Data Scientist",
+    "Machine Learning Engineer",
+    "AI/ML Lead",
+    "GenAI Engineer",
+    "Staff Data Scientist"
+  ],
+  "desired_locations": [
+    "Remote",
+    "San Francisco Bay Area",
+    "Seattle",
+    "New York"
+  ],
+  "min_salary": 180000,
+  "max_salary": 280000
+}
