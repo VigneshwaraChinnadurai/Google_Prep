@@ -18,8 +18,8 @@ class Settings(BaseSettings):
     
     # Database
     database_url: str = Field(
-        default="postgresql://postgres:postgres@localhost:5432/job_automation",
-        description="PostgreSQL connection URL"
+        default="sqlite:///./job_automation.db",
+        description="Database connection URL (SQLite for development, PostgreSQL for production)"
     )
     
     # Gemini API
