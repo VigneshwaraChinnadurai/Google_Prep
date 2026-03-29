@@ -1,0 +1,38 @@
+Date: 2026-03-29
+Question ID: 2839
+Title: Check if Strings Can be Made Equal With Operations I
+Difficulty: Easy
+Tags: String
+URL: https://leetcode.com/problems/check-if-strings-can-be-made-equal-with-operations-i/
+
+Question:
+You are given two strings s1 and s2 , both of length 4 , consisting of lowercase English letters. You can apply the following operation on any of the two strings any number of times: Choose any two indices i and j such that j - i = 2 , then swap the two characters at those indices in the string. Return true if you can make the strings s1 and s2 equal, and false otherwise . Example 1: Input: s1 = &quot;abcd&quot;, s2 = &quot;cdab&quot; Output: true Explanation: We can do the following operations on s1: - Choose the indices i = 0, j = 2. The resulting string is s1 = &quot;cbad&quot;. - Choose the indices i = 1, j = 3. The resulting string is s1 = &quot;cdab&quot; = s2. Example 2: Input: s1 = &quot;abcd&quot;, s2 = &quot;dacb&quot; Output: false Explanation: It is not possible to make the two strings equal. Constraints: s1.length == s2.length == 4 s1 and s2 consist only of lowercase English letters.
+
+Starter Code (Python3):
+class Solution:
+    def canBeEqual(self, s1: str, s2: str) -> bool:
+        
+
+Testcases:
+"abcd"
+"cdab"
+"abcd"
+"dacb"
+
+Expected Output / Validation:
+s1 = "abcd"
+s2 = "cdab"
+# Expected: true
+# s1 even indices: {'a', 'c'}, s2 even indices: {'c', 'a'}. Multisets are equal.
+# s1 odd indices: {'b', 'd'}, s2 odd indices: {'d', 'b'}. Multisets are equal.
+# Both match, so result is true.
+sol = Solution()
+print(f"Testcase 1: s1='{s1}', s2='{s2}', Output: {sol.canBeEqual(s1, s2)}")
+
+s1 = "abcd"
+s2 = "dacb"
+# Expected: false
+# s1 even indices: {'a', 'c'}, s2 even indices: {'d', 'c'}. Multisets are not equal.
+# The function should return false.
+sol = Solution()
+print(f"Testcase 2: s1='{s1}', s2='{s2}', Output: {sol.canBeEqual(s1, s2)}")

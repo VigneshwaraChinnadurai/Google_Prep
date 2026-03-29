@@ -1,0 +1,41 @@
+Date: 2026-03-28
+Title: Find the String with LCP
+URL: https://leetcode.com/problems/find-the-string-with-lcp/
+
+LLM Explanation:
+The problem asks for the lexicographically smallest string `word` that corresponds to a given `n x n` Longest Common Prefix (LCP) matrix. If no such string exists, we should return an empty string.
+
+The core idea is a two-step process: greedy construction followed by verification.
+
+### 1. Greedy Construction
+To find the lexicographically smallest string, we should use the smallest characters ('a', 'b', 'c', ...) as early as possible. We can build the string `word` from left to right (index `i` from 0 to `n-1`).
+
+- We maintain an array, `word`, to store the characters of our string (initially represented by numbers 1-26, with 0 for unassigned).
+- We iterate from `i = 0` to `n-1`. At each index `i`, if `word[i]` has not been assigned a character yet, we assign it the next available character (e.g., 'a' for the first group, 'b' for the second, and so on).
+- The `lcp` matrix provides crucial constraints: if `lcp[i][j] > 0`, it means the suffixes starting at `i` and `j` have a common prefix, which implies `word[i]` must be equal to `word[j]`.
+- After assigning a character to `word[i]`, we iterate through all `j > i`. If `lcp[i][j] > 0`, we enforce that `word[j]` must have the same character as `word[i]`.
+- During this process, if we find a contradiction (e.g., `word[j]` is required to be the same as `word[i]`, but it was already assigned a different character due to a constraint from an earlier index `k < i`), it means the `lcp` matrix is inconsistent, and no solution exists. In this case, we can immediately return an empty string.
+
+This greedy construction yields a single candidate string. By its nature, this string is the lexicographically smallest one that satisfies all the character equality constraints imposed by the `lcp` matrix.
+
+### 2. Verification
+The candidate string from Step 1 is our only possibility for the answer. Now, we must verify if this string is actually valid, i.e., if its LCP matrix is identical to the input `lcp` matrix.
+
+- We can compute the LCP matrix for our `candidate_word` from scratch. This can be done efficiently using dynamic programming. The recurrence relation is:
+  - If `word[i] == word[j]`, then `lcp[i][j] = 1 + lcp[i+1][j+1]`.
+  - If `word[i] != word[j]`, then `lcp[i][j] = 0`.
+- We iterate `i` and `j` from `n-1` down to `0` to fill the computed LCP matrix.
+- Finally, we compare the `lcp_computed` matrix with the input `lcp` matrix.
+  - If they are identical, our `candidate_word` is the correct answer.
+  - If they differ, it means the input `lcp` matrix is inconsistent (e.g., `lcp[i][i] != n-i`, it's not symmetric, or it violates the LCP recurrence property). In this case, no valid string exists, so we return an empty string.
+
+### Complexity
+- **Time Complexity:** `O(n^2)`. The greedy construction phase involves a nested loop, taking `O(n^2)`. The verification phase also requires computing an `n x n` matrix, which takes `O(n^2)`.
+- **Space Complexity:** `O(n^2)`. We need to store the computed LCP matrix for verification. The `word` array takes `O(n)` space.
+
+LLM Testcase Validation:
+```
+[[4,0,2,0],[0,3,0,1],[2,0,2,0],[0,1,0,1]]
+[[4,3,2,1],[3,3,2,1],[2,2,2,1],[1,1,1,1]]
+[[4,3,2,1],[3,3,2,1],[2,2,2,1],[1,1,1,3]]
+```

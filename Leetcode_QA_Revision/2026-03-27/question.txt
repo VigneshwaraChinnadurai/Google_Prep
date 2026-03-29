@@ -1,0 +1,60 @@
+Date: 2026-03-27
+Question ID: 2946
+Title: Matrix Similarity After Cyclic Shifts
+Difficulty: Easy
+Tags: Array, Math, Matrix, Simulation
+URL: https://leetcode.com/problems/matrix-similarity-after-cyclic-shifts/
+
+Question:
+You are given an m x n integer matrix mat and an integer k . The matrix rows are 0-indexed. The following proccess happens k times: Even-indexed rows (0, 2, 4, ...) are cyclically shifted to the left. Odd-indexed rows (1, 3, 5, ...) are cyclically shifted to the right. Return true if the final modified matrix after k steps is identical to the original matrix, and false otherwise. Example 1: Input: mat = [[1,2,3],[4,5,6],[7,8,9]], k = 4 Output: false Explanation: In each step left shift is applied to rows 0 and 2 (even indices), and right shift to row 1 (odd index). Example 2: Input: mat = [[1,2,1,2],[5,5,5,5],[6,3,6,3]], k = 2 Output: true Explanation: Example 3: Input: mat = [[2,2],[2,2]], k = 3 Output: true Explanation: As all the values are equal in the matrix, even after performing cyclic shifts the matrix will remain the same. Constraints: 1 &lt;= mat.length &lt;= 25 1 &lt;= mat[i].length &lt;= 25 1 &lt;= mat[i][j] &lt;= 25 1 &lt;= k &lt;= 50
+
+Starter Code (Python3):
+class Solution:
+    def areSimilar(self, mat: List[List[int]], k: int) -> bool:
+        
+
+Testcases:
+[[1,2,3],[4,5,6],[7,8,9]]
+4
+[[1,2,1,2],[5,5,5,5],[6,3,6,3]]
+2
+[[2,2],[2,2]]
+3
+
+Expected Output / Validation:
+Testcases:
+[[1,2,3],[4,5,6],[7,8,9]]
+4
+[[1,2,1,2],[5,5,5,5],[6,3,6,3]]
+2
+[[2,2],[2,2]]
+3
+
+Testcase 1:
+Input: mat = [[1,2,3],[4,5,6],[7,8,9]], k = 4
+m = 3, n = 3
+effective_k = 4 % 3 = 1
+Row 0 (even): [1,2,3] -> left shift by 1 -> [2,3,1]. Not equal to [1,2,3].
+Expected output: false
+My code output: false. Correct.
+
+Testcase 2:
+Input: mat = [[1,2,1,2],[5,5,5,5],[6,3,6,3]], k = 2
+m = 3, n = 4
+effective_k = 2 % 4 = 2
+Row 0 (even): [1,2,1,2] -> left shift by 2 -> [1,2,1,2]. Equal.
+Row 1 (odd): [5,5,5,5] -> right shift by 2 -> [5,5,5,5]. Equal.
+Row 2 (even): [6,3,6,3] -> left shift by 2 -> [6,3,6,3]. Equal.
+All rows are equal to their original state.
+Expected output: true
+My code output: true. Correct.
+
+Testcase 3:
+Input: mat = [[2,2],[2,2]], k = 3
+m = 2, n = 2
+effective_k = 3 % 2 = 1
+Row 0 (even): [2,2] -> left shift by 1 -> [2,2]. Equal.
+Row 1 (odd): [2,2] -> right shift by 1 -> [2,2]. Equal.
+All rows are equal to their original state.
+Expected output: true
+My code output: true. Correct.
