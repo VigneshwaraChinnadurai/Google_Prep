@@ -1,0 +1,39 @@
+Date: 2026-03-30
+Title: Check if Strings Can be Made Equal With Operations II
+URL: https://leetcode.com/problems/check-if-strings-can-be-made-equal-with-operations-ii/
+
+LLM Explanation:
+### Core Insight
+The problem allows swapping characters at any two indices `i` and `j` as long as their difference `j - i` is even. This condition holds if and only if `i` and `j` have the same parity (i.e., both are even or both are odd). This key observation means that the operation partitions the string's characters into two independent groups:
+1. Characters at even indices (`0, 2, 4, ...`).
+2. Characters at odd indices (`1, 3, 5, ...`).
+
+Within each group, we can perform any number of swaps. The ability to swap any two elements in a set allows us to achieve any permutation of that set. Therefore, we can arbitrarily rearrange all characters at even positions among themselves, and similarly, arbitrarily rearrange all characters at odd positions among themselves.
+
+### Condition for Equality
+For string `s1` to be transformable into `s2`, they must belong to the same "equivalence class" defined by these operations. This means two conditions must be met:
+1. The multiset of characters at even indices in `s1` must be identical to the multiset of characters at even indices in `s2`.
+2. The multiset of characters at odd indices in `s1` must be identical to the multiset of characters at odd indices in `s2`.
+
+A multiset is a collection where the count of each element matters. The easiest way to check if two multisets are identical is to compare their character frequency counts.
+
+### Algorithm
+We can verify the two conditions above efficiently in a single pass through the strings.
+
+1.  Initialize a 2D array, `counts`, of size `2x26` with all zeros. `counts[0]` will track character frequencies for even indices, and `counts[1]` for odd indices.
+2.  Iterate through the strings from index `i = 0` to `n-1`, where `n` is the length of the strings.
+3.  For each index `i`, determine its parity (`i % 2`).
+4.  For the character `s1[i]`, increment the corresponding count in `counts[parity]`.
+5.  For the character `s2[i]`, decrement the corresponding count in `counts[parity]`.
+6.  After iterating through both strings, if the multisets for each parity were identical, both `counts[0]` and `counts[1]` will consist of all zeros.
+7.  The function returns `true` if both frequency arrays are all zeros, and `false` otherwise.
+
+### Complexity Analysis
+-   **Time Complexity:** O(N), where N is the length of the strings. We perform a single pass through the strings.
+-   **Space Complexity:** O(1), as the `counts` array has a fixed size of `2 * 26`, which is constant and does not depend on the input string length.
+
+LLM Testcase Validation:
+"abcdba"
+"cabdab"
+"abe"
+"bea"
