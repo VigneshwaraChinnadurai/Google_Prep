@@ -6,7 +6,10 @@ import androidx.lifecycle.viewModelScope
 import com.vignesh.leetcodechecker.AppSettings
 import com.vignesh.leetcodechecker.AppSettingsStore
 import com.vignesh.leetcodechecker.ConsistencyStorage
+import com.vignesh.leetcodechecker.SavedOllamaHost
+import com.vignesh.leetcodechecker.SavedOllamaHostsStore
 import com.vignesh.leetcodechecker.data.*
+import com.vignesh.leetcodechecker.llm.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -32,7 +35,14 @@ data class OllamaUiState(
     val installedModels: List<OllamaModelInfo> = emptyList(),
     val catalogModels: List<OllamaModelInfo> = emptyList(),
     val isModelActionLoading: Boolean = false,
-    val modelDownloadProgress: String? = null
+    val modelDownloadProgress: String? = null,
+    // Local GGUF model management
+    val downloadedLocalModels: List<DownloadedModel> = emptyList(),
+    val localModelDownloadProgress: DownloadProgress? = null,
+    val showModelManager: Boolean = false,
+    // Saved Ollama hosts
+    val savedHosts: List<SavedOllamaHost> = emptyList(),
+    val showAddHostDialog: Boolean = false
 )
 
 /**
@@ -43,6 +53,7 @@ class OllamaViewModel(application: Application) : AndroidViewModel(application) 
 
     private val appContext = application.applicationContext
     private val repository = OllamaRepository(appContext)
+    private val modelDownloadManager = ModelDownloadManager(appContext)
 
     private val _uiState = MutableStateFlow(
         OllamaUiState(settings = AppSettingsStore.load(appContext))
@@ -52,14 +63,28 @@ class OllamaViewModel(application: Application) : AndroidViewModel(application) 
     init {
         // Load cached challenge if available
         loadCachedState()
+        // Load saved hosts
+        loadSavedHosts()
         // Refresh model lists on startup
         refreshInstalledModels()
         refreshCatalogModels()
+        // Refresh local models
+        refreshLocalModels()
         // Observe live debug log from repository
         viewModelScope.launch {
             repository.liveDebugLog.collectLatest { logText ->
                 if (logText.isNotBlank()) {
                     _uiState.value = _uiState.value.copy(aiDebugLog = logText)
+                }
+            }
+        }
+        // Observe local model download progress
+        viewModelScope.launch {
+            modelDownloadManager.downloadProgress.collectLatest { progress ->
+                _uiState.value = _uiState.value.copy(localModelDownloadProgress = progress)
+                // Auto-refresh when download completes
+                if (progress?.status == DownloadStatus.COMPLETED) {
+                    refreshLocalModels()
                 }
             }
         }
@@ -290,16 +315,27 @@ class OllamaViewModel(application: Application) : AndroidViewModel(application) 
     // Ollama Settings
     // ════════════════════════════════════════════════════════════════════════
 
-    fun saveOllamaSettings(baseUrl: String, models: String) {
+    fun saveOllamaSettings(
+        baseUrl: String, 
+        models: String, 
+        backend: String = "ollama",
+        localModelPath: String = "",
+        localContextSize: Int = 2048,
+        localMaxTokens: Int = 512
+    ) {
         val current = _uiState.value.settings
         val updated = current.copy(
             ollamaBaseUrl = baseUrl.trim(),
-            ollamaPreferredModels = models.trim()
+            ollamaPreferredModels = models.trim(),
+            ollamaBackend = backend.trim(),
+            localModelPath = localModelPath.trim(),
+            localContextSize = localContextSize.coerceIn(512, 8192),
+            localMaxTokens = localMaxTokens.coerceIn(64, 4096)
         )
         AppSettingsStore.save(appContext, updated)
         _uiState.value = _uiState.value.copy(
             settings = updated,
-            infoMessage = "Ollama settings saved."
+            infoMessage = if (backend == "local") "Local LLM settings saved." else "Ollama settings saved."
         )
     }
 
@@ -318,4 +354,145 @@ class OllamaViewModel(application: Application) : AndroidViewModel(application) 
     fun clearError() {
         _uiState.value = _uiState.value.copy(error = null, aiError = null)
     }
+
+    // ════════════════════════════════════════════════════════════════════════
+    // Saved Ollama Hosts Management
+    // ════════════════════════════════════════════════════════════════════════
+
+    private fun loadSavedHosts() {
+        val hosts = SavedOllamaHostsStore.loadHosts(appContext)
+        _uiState.value = _uiState.value.copy(savedHosts = hosts)
+    }
+
+    fun showAddHostDialog() {
+        _uiState.value = _uiState.value.copy(showAddHostDialog = true)
+    }
+
+    fun hideAddHostDialog() {
+        _uiState.value = _uiState.value.copy(showAddHostDialog = false)
+    }
+
+    fun addSavedHost(name: String, url: String, preferredModels: String) {
+        if (name.isBlank() || url.isBlank()) {
+            _uiState.value = _uiState.value.copy(infoMessage = "Name and URL are required.")
+            return
+        }
+        val host = SavedOllamaHost(
+            name = name.trim(),
+            url = url.trim(),
+            preferredModels = preferredModels.trim().ifBlank { "qwen2.5:3b" }
+        )
+        SavedOllamaHostsStore.addHost(appContext, host)
+        loadSavedHosts()
+        _uiState.value = _uiState.value.copy(
+            showAddHostDialog = false,
+            infoMessage = "Host '${host.name}' saved."
+        )
+    }
+
+    fun deleteSavedHost(hostId: String) {
+        val hosts = _uiState.value.savedHosts
+        val host = hosts.find { it.id == hostId }
+        if (hosts.size <= 1 && host != null) {
+            _uiState.value = _uiState.value.copy(infoMessage = "Cannot delete the last host.")
+            return
+        }
+        SavedOllamaHostsStore.deleteHost(appContext, hostId)
+        loadSavedHosts()
+        _uiState.value = _uiState.value.copy(
+            infoMessage = host?.let { "Host '${it.name}' deleted." } ?: "Host deleted."
+        )
+    }
+
+    fun selectSavedHost(host: SavedOllamaHost) {
+        // Update current settings with selected host's URL and models
+        val current = _uiState.value.settings
+        val updated = current.copy(
+            ollamaBaseUrl = host.url,
+            ollamaPreferredModels = host.preferredModels
+        )
+        AppSettingsStore.save(appContext, updated)
+        _uiState.value = _uiState.value.copy(
+            settings = updated,
+            infoMessage = "Switched to '${host.name}'"
+        )
+        // Refresh models list with new connection
+        refreshInstalledModels()
+    }
+
+    fun updateSavedHost(host: SavedOllamaHost) {
+        SavedOllamaHostsStore.updateHost(appContext, host)
+        loadSavedHosts()
+        _uiState.value = _uiState.value.copy(infoMessage = "Host '${host.name}' updated.")
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
+    // Local GGUF Model Management
+    // ════════════════════════════════════════════════════════════════════════
+
+    fun showModelManager() {
+        refreshLocalModels()
+        _uiState.value = _uiState.value.copy(showModelManager = true)
+    }
+
+    fun hideModelManager() {
+        _uiState.value = _uiState.value.copy(showModelManager = false)
+        modelDownloadManager.clearProgress()
+    }
+
+    fun refreshLocalModels() {
+        val downloaded = modelDownloadManager.getDownloadedModels()
+        _uiState.value = _uiState.value.copy(downloadedLocalModels = downloaded)
+    }
+
+    fun downloadLocalModel(modelId: String) {
+        viewModelScope.launch {
+            modelDownloadManager.downloadModel(modelId)
+                .onSuccess { modelPath ->
+                    _uiState.value = _uiState.value.copy(
+                        infoMessage = "Model downloaded successfully!"
+                    )
+                    refreshLocalModels()
+                    // Auto-select this model
+                    selectLocalModel(modelPath)
+                }
+                .onFailure { error ->
+                    _uiState.value = _uiState.value.copy(
+                        infoMessage = "Download failed: ${error.message}"
+                    )
+                }
+        }
+    }
+
+    fun deleteLocalModel(fileName: String) {
+        val success = modelDownloadManager.deleteModel(fileName)
+        if (success) {
+            refreshLocalModels()
+            _uiState.value = _uiState.value.copy(
+                infoMessage = "Model deleted."
+            )
+            // Clear selection if deleted model was selected
+            val current = _uiState.value.settings
+            if (current.localModelPath.contains(fileName)) {
+                val updated = current.copy(localModelPath = "")
+                AppSettingsStore.save(appContext, updated)
+                _uiState.value = _uiState.value.copy(settings = updated)
+            }
+        }
+    }
+
+    fun selectLocalModel(modelPath: String) {
+        val current = _uiState.value.settings
+        val updated = current.copy(
+            localModelPath = modelPath,
+            ollamaBackend = "local"  // Auto-switch to local backend
+        )
+        AppSettingsStore.save(appContext, updated)
+        _uiState.value = _uiState.value.copy(
+            settings = updated,
+            infoMessage = "Model selected. Backend switched to Local."
+        )
+    }
+
+    fun getAvailableModels() = ModelDownloadManager.AVAILABLE_MODELS
 }

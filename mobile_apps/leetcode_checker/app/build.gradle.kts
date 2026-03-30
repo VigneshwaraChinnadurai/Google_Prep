@@ -58,11 +58,28 @@ android {
 
     namespace = "com.vignesh.leetcodechecker"
     compileSdk = 35
+    ndkVersion = "26.1.10909125"
 
     defaultConfig {
         applicationId = "com.vignesh.leetcodechecker"
         minSdk = 24
         targetSdk = 35
+        
+        // NDK configuration for llama.cpp (64-bit only)
+        ndk {
+            abiFilters += listOf("arm64-v8a", "x86_64")
+        }
+        
+        externalNativeBuild {
+            cmake {
+                cppFlags += "-std=c++17 -fexceptions -frtti -O3"
+                arguments += listOf(
+                    "-DANDROID_STL=c++_shared",
+                    "-DGGML_NATIVE=OFF",
+                    "-DGGML_OPENMP=OFF"
+                )
+            }
+        }
         versionCode = 1
         versionName = "1.0"
         buildConfigField("String", "GEMINI_API_KEY", "\"$geminiApiKey\"")
@@ -105,6 +122,13 @@ android {
                 keyAlias = keystoreProperties.getProperty("keyAlias")
                 keyPassword = keystoreProperties.getProperty("keyPassword")
             }
+        }
+    }
+
+    externalNativeBuild {
+        cmake {
+            path = file("src/main/cpp/CMakeLists.txt")
+            version = "3.22.1"
         }
     }
 

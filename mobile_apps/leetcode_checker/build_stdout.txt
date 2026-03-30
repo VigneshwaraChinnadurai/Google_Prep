@@ -1,0 +1,50 @@
+Starting a Gradle Daemon, 2 busy and 4 stopped Daemons could not be reused, use --status for details
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:mergeDebugNativeDebugMetadata NO-SOURCE
+> Task :app:checkKotlinGradlePluginConfigurationErrors
+> Task :app:generateDebugBuildConfig UP-TO-DATE
+> Task :app:checkDebugAarMetadata UP-TO-DATE
+> Task :app:generateDebugResValues UP-TO-DATE
+> Task :app:mapDebugSourceSetPaths UP-TO-DATE
+> Task :app:generateDebugResources UP-TO-DATE
+> Task :app:mergeDebugResources UP-TO-DATE
+> Task :app:packageDebugResources UP-TO-DATE
+> Task :app:parseDebugLocalResources UP-TO-DATE
+> Task :app:createDebugCompatibleScreenManifests UP-TO-DATE
+> Task :app:extractDeepLinksDebug UP-TO-DATE
+> Task :app:processDebugMainManifest UP-TO-DATE
+> Task :app:processDebugManifest UP-TO-DATE
+> Task :app:javaPreCompileDebug UP-TO-DATE
+> Task :app:mergeDebugShaders UP-TO-DATE
+> Task :app:compileDebugShaders NO-SOURCE
+> Task :app:generateDebugAssets UP-TO-DATE
+> Task :app:mergeDebugAssets UP-TO-DATE
+> Task :app:compressDebugAssets UP-TO-DATE
+> Task :app:desugarDebugFileDependencies UP-TO-DATE
+> Task :app:checkDebugDuplicateClasses UP-TO-DATE
+> Task :app:mergeExtDexDebug UP-TO-DATE
+> Task :app:mergeLibDexDebug UP-TO-DATE
+
+> Task :app:configureCMakeDebug[arm64-v8a]
+C/C++: CMAKE_BUILD_TYPE=Debug
+
+> Task :app:processDebugManifestForPackage
+> Task :app:buildCMakeDebug[arm64-v8a]
+
+> Task :app:configureCMakeDebug[armeabi-v7a]
+C/C++: CMAKE_BUILD_TYPE=Debug
+
+> Task :app:buildCMakeDebug[armeabi-v7a]
+C/C++: ninja: Entering directory `C:\Users\vichinnadurai\Documents\Vignesh\Personal Enrichment\Personal Work\Google_Prep\mobile_apps\leetcode_checker\app\.cxx\Debug\3e1f5c5j\armeabi-v7a'
+C/C++: C:\Users\vichinnadurai\AppData\Local\Android\Sdk\ndk\26.1.10909125\toolchains\llvm\prebuilt\windows-x86_64\bin\clang++.exe --target=armv7-none-linux-androideabi24 --sysroot=C:/Users/vichinnadurai/AppData/Local/Android/Sdk/ndk/26.1.10909125/toolchains/llvm/prebuilt/windows-x86_64/sysroot -DGGML_SCHED_MAX_COPIES=4 -DGGML_USE_CPU_REPACK -DGGML_USE_LLAMAFILE -D_GNU_SOURCE -D_XOPEN_SOURCE=600 -I"C:/Users/vichinnadurai/Documents/Vignesh/Personal Enrichment/Personal Work/Google_Prep/mobile_apps/leetcode_checker/app/src/main/cpp/llama.cpp/ggml/src/.." -I"C:/Users/vichinnadurai/Documents/Vignesh/Personal Enrichment/Personal Work/Google_Prep/mobile_apps/leetcode_checker/app/src/main/cpp/llama.cpp/ggml/src/." -I"C:/Users/vichinnadurai/Documents/Vignesh/Personal Enrichment/Personal Work/Google_Prep/mobile_apps/leetcode_checker/app/src/main/cpp/llama.cpp/ggml/src/ggml-cpu" -I"C:/Users/vichinnadurai/Documents/Vignesh/Personal Enrichment/Personal Work/Google_Prep/mobile_apps/leetcode_checker/app/src/main/cpp/llama.cpp/ggml/src/../include" -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -march=armv7-a -mthumb -Wformat -Werror=format-security  -std=c++17 -fexceptions -frtti -O3 -fexceptions -frtti -fno-limit-debug-info  -fPIC -Wmissing-declarations -Wmissing-noreturn -Wall -Wextra -Wpedantic -Wcast-qual -Wno-unused-function -Wunreachable-code-break -Wunreachable-code-return -Wmissing-prototypes -Wextra-semi -std=c++17 -MD -MT llama.cpp/ggml/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/llamafile/sgemm.cpp.o -MF llama.cpp\ggml\src\CMakeFiles\ggml-cpu.dir\ggml-cpu\llamafile\sgemm.cpp.o.d -o llama.cpp/ggml/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/llamafile/sgemm.cpp.o -c "C:/Users/vichinnadurai/Documents/Vignesh/Personal Enrichment/Personal Work/Google_Prep/mobile_apps/leetcode_checker/app/src/main/cpp/llama.cpp/ggml/src/ggml-cpu/llamafile/sgemm.cpp"
+C/C++: C:/Users/vichinnadurai/Documents/Vignesh/Personal Enrichment/Personal Work/Google_Prep/mobile_apps/leetcode_checker/app/src/main/cpp/llama.cpp/ggml/src/ggml-cpu/llamafile/sgemm.cpp:306:12: error: use of undeclared identifier 'vld1q_f16'
+C/C++:     return vld1q_f16((const float16_t *)p);
+C/C++:            ^
+C/C++: C:/Users/vichinnadurai/Documents/Vignesh/Personal Enrichment/Personal Work/Google_Prep/mobile_apps/leetcode_checker/app/src/main/cpp/llama.cpp/ggml/src/ggml-cpu/llamafile/sgemm.cpp:309:25: error: use of undeclared identifier 'vld1_f16'
+C/C++:     return vcvt_f32_f16(vld1_f16((const float16_t *)p));
+C/C++:                         ^
+C/C++: 2 errors generated.
+
+> Task :app:buildCMakeDebug[armeabi-v7a] FAILED
+26 actionable tasks: 6 executed, 20 up-to-date

@@ -7,6 +7,10 @@ import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import com.vignesh.leetcodechecker.AppSettings
 import com.vignesh.leetcodechecker.AppSettingsStore
 import com.vignesh.leetcodechecker.BuildConfig
+import com.vignesh.leetcodechecker.llm.LlmBackend
+import com.vignesh.leetcodechecker.llm.LlmConfig
+import com.vignesh.leetcodechecker.llm.LlmProviderFactory
+import com.vignesh.leetcodechecker.llm.LlmResult
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -102,6 +106,91 @@ class OllamaRepository(private val context: Context) {
 
     fun defaultConfiguredModel(): String {
         return BuildConfig.OLLAMA_MODEL.trim().ifBlank { "qwen2.5:3b" }
+    }
+
+    /**
+     * Create LlmConfig from current settings
+     */
+    private fun createLlmConfig(settings: AppSettings): LlmConfig {
+        val backend = when (settings.ollamaBackend.lowercase()) {
+            "local" -> LlmBackend.LOCAL
+            else -> LlmBackend.OLLAMA
+        }
+        return LlmConfig(
+            backend = backend,
+            ollamaBaseUrl = settings.ollamaBaseUrl.ifBlank { BuildConfig.OLLAMA_BASE_URL },
+            ollamaModel = settings.ollamaPreferredModels.split(',').firstOrNull()?.trim()
+                ?: defaultConfiguredModel(),
+            localModelPath = settings.localModelPath,
+            localContextSize = settings.localContextSize.coerceIn(512, 8192),
+            localMaxTokens = settings.localMaxTokens.coerceIn(64, 4096),
+            networkTimeoutMinutes = settings.networkTimeoutMinutes.coerceIn(1, 60)
+        )
+    }
+
+    /**
+     * Check if local LLM backend is available
+     */
+    fun isLocalBackendAvailable(): Boolean = LlmProviderFactory.isLocalAvailable()
+
+    /**
+     * Safely check if local backend can be used without risking native crashes.
+     * This checks if native library is loaded without calling any JNI functions.
+     */
+    private fun isLocalBackendSafe(): Boolean {
+        return try {
+            LlmProviderFactory.isLocalAvailable()
+        } catch (e: Exception) {
+            Log.e(TAG, "isLocalBackendSafe check failed", e)
+            false
+        } catch (e: Error) {
+            Log.e(TAG, "isLocalBackendSafe check failed with Error", e)
+            false
+        }
+    }
+
+    /**
+     * Fall back to Ollama HTTP backend for generation.
+     */
+    private suspend fun fallbackToOllamaHttp(
+        debug: StringBuilder,
+        preferredModels: List<String>,
+        boundedSystem: String,
+        boundedUser: String,
+        maxModelRetries: Int,
+        maxOutputTokens: Int
+    ): String {
+        logDebug(debug, "Using OLLAMA backend (HTTP)")
+        
+        val availableModels = runCatching {
+            ollamaApi().listTags().models.orEmpty()
+                .mapNotNull { it.name?.trim() }
+                .filter { it.isNotBlank() }
+        }.getOrDefault(emptyList())
+
+        val selectedModel = preferredModels.firstOrNull { preferred ->
+            availableModels.any { it.equals(preferred, ignoreCase = true) }
+        } ?: preferredModels.first()
+
+        logDebug(debug, "Selected model: $selectedModel")
+        ensureModelAvailable(selectedModel, debug)
+        
+        return try {
+            generateWithRetry(
+                model = selectedModel,
+                systemPrompt = boundedSystem,
+                userPrompt = boundedUser,
+                maxModelRetries = maxModelRetries,
+                maxOutputTokens = maxOutputTokens,
+                debug = debug
+            )
+        } catch (error: Throwable) {
+            logDebug(debug, "Model failed: $selectedModel -> ${error.message}")
+            throw PipelineException(
+                message = error.message ?: "Ollama generation failed.",
+                debugLog = debug.toString().trim()
+            )
+        }
     }
 
     // ════════════════════════════════════════════════════════════════════════
@@ -337,22 +426,9 @@ class OllamaRepository(private val context: Context) {
                 logDebug(debug, "Forcing refresh for ${challenge.titleSlug}")
             }
 
-            logDebug(debug, "Starting Ollama pipeline for ${challenge.titleSlug}")
+            logDebug(debug, "Starting LLM pipeline for ${challenge.titleSlug}")
             logDebug(debug, "Token limits: maxInput=$maxInputTokens, maxOutput=$maxOutputTokens")
-            logDebug(debug, "Ollama base URL: ${resolveOllamaBaseUrl()}")
-
-            val availableModels = runCatching {
-                ollamaApi().listTags().models.orEmpty()
-                    .mapNotNull { it.name?.trim() }
-                    .filter { it.isNotBlank() }
-            }.getOrDefault(emptyList())
-
-            val selectedModel = preferredModels.firstOrNull { preferred ->
-                availableModels.any { it.equals(preferred, ignoreCase = true) }
-            } ?: preferredModels.first()
-
-            logDebug(debug, "Selected model: $selectedModel")
-            ensureModelAvailable(selectedModel, debug)
+            logDebug(debug, "Backend: ${settings.ollamaBackend}")
 
             val systemPrompt = """
 You are LC-Ollama-Solver ($promptName).
@@ -389,21 +465,58 @@ ${challenge.exampleTestcases.ifBlank { "Not provided" }}
             val boundedSystem = truncateToApproxTokenLimit(systemPrompt, maxInputTokens / 2)
             val boundedUser = truncateToApproxTokenLimit(userPrompt, maxInputTokens / 2)
 
-            val generatedText = try {
-                generateWithRetry(
-                    model = selectedModel,
-                    systemPrompt = boundedSystem,
-                    userPrompt = boundedUser,
-                    maxModelRetries = maxModelRetries,
-                    maxOutputTokens = maxOutputTokens,
-                    debug = debug
-                )
-            } catch (error: Throwable) {
-                logDebug(debug, "Model failed: $selectedModel -> ${error.message}")
-                throw PipelineException(
-                    message = error.message ?: "Ollama generation failed.",
-                    debugLog = debug.toString().trim()
-                )
+            // Check if using local llama.cpp backend
+            val llmConfig = createLlmConfig(settings)
+            
+            // Validate local backend before attempting to use it
+            val useLocalBackend = llmConfig.backend == LlmBackend.LOCAL 
+                && llmConfig.localModelPath.isNotBlank()
+                && isLocalBackendSafe()
+            
+            val generatedText = if (useLocalBackend) {
+                logDebug(debug, "Using LOCAL backend (llama.cpp)")
+                logDebug(debug, "Model path: ${llmConfig.localModelPath}")
+                
+                try {
+                    val provider = LlmProviderFactory.create(llmConfig)
+                    val result = provider.generate(
+                        systemPrompt = boundedSystem,
+                        userPrompt = boundedUser,
+                        maxTokens = llmConfig.localMaxTokens,
+                        temperature = 0.2f
+                    )
+                
+                when (result) {
+                    is LlmResult.Success -> {
+                        logDebug(debug, "Local generation completed (${result.response.length} chars)")
+                        result.response
+                    }
+                    is LlmResult.Error -> {
+                        logDebug(debug, "Local generation failed: ${result.message}")
+                        throw PipelineException(
+                            message = result.message,
+                            debugLog = debug.toString().trim()
+                        )
+                    }
+                }
+                } catch (e: Exception) {
+                    // Native library crash - fall back to Ollama HTTP
+                    logDebug(debug, "Local backend crashed, falling back to Ollama HTTP: ${e.message}")
+                    Log.e(TAG, "Local backend exception", e)
+                    fallbackToOllamaHttp(debug, preferredModels, boundedSystem, boundedUser, maxModelRetries, maxOutputTokens)
+                }
+            } else {
+                // Backend is not LOCAL, or LOCAL not available - use Ollama HTTP
+                if (llmConfig.backend == LlmBackend.LOCAL) {
+                    logDebug(debug, "LOCAL backend configured but not available - falling back to Ollama HTTP")
+                    if (llmConfig.localModelPath.isBlank()) {
+                        logDebug(debug, "Reason: No model path configured")
+                    } else if (!isLocalBackendSafe()) {
+                        logDebug(debug, "Reason: Native library not available")
+                    }
+                }
+                
+                fallbackToOllamaHttp(debug, preferredModels, boundedSystem, boundedUser, maxModelRetries, maxOutputTokens)
             }
 
             if (generatedText.isBlank()) {

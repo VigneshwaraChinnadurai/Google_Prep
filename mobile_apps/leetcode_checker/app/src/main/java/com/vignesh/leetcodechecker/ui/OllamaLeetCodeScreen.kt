@@ -18,6 +18,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
+import androidx.compose.material3.RadioButton
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
@@ -36,7 +37,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.vignesh.leetcodechecker.AppSettings
 import com.vignesh.leetcodechecker.R
+import com.vignesh.leetcodechecker.SavedOllamaHost
 import com.vignesh.leetcodechecker.data.OllamaModelInfo
+import com.vignesh.leetcodechecker.llm.DownloadedModel
+import com.vignesh.leetcodechecker.llm.DownloadProgress
 import com.vignesh.leetcodechecker.viewmodel.OllamaUiState
 import com.vignesh.leetcodechecker.viewmodel.OllamaViewModel
 import kotlinx.coroutines.delay
@@ -339,8 +343,16 @@ fun OllamaLeetCodeScreen(
                 item {
                     OllamaFullSettingsSection(
                         state = state,
-                        onSaveOllama = { url, models -> viewModel.saveOllamaSettings(url, models) },
-                        onSaveFull = { settings -> viewModel.saveFullSettings(settings) }
+                        downloadedLocalModels = state.downloadedLocalModels,
+                        savedHosts = state.savedHosts,
+                        onSaveOllama = { url, models, backend, modelPath, contextSize, maxTokens -> 
+                            viewModel.saveOllamaSettings(url, models, backend, modelPath, contextSize, maxTokens) 
+                        },
+                        onSaveFull = { settings -> viewModel.saveFullSettings(settings) },
+                        onShowModelManager = { viewModel.showModelManager() },
+                        onSelectHost = { host -> viewModel.selectSavedHost(host) },
+                        onAddHost = { name, url, models -> viewModel.addSavedHost(name, url, models) },
+                        onDeleteHost = { hostId -> viewModel.deleteSavedHost(hostId) }
                     )
                 }
             }
@@ -374,6 +386,19 @@ fun OllamaLeetCodeScreen(
             // Spacing at bottom
             item { Spacer(Modifier.height(16.dp)) }
         }
+    }
+    
+    // Model Manager Bottom Sheet
+    if (state.showModelManager) {
+        ModelManagerScreen(
+            downloadedModels = state.downloadedLocalModels,
+            selectedModelPath = state.settings.localModelPath,
+            downloadProgress = state.localModelDownloadProgress,
+            onDownloadModel = { modelId -> viewModel.downloadLocalModel(modelId) },
+            onDeleteModel = { fileName -> viewModel.deleteLocalModel(fileName) },
+            onSelectModel = { modelPath -> viewModel.selectLocalModel(modelPath) },
+            onDismiss = { viewModel.hideModelManager() }
+        )
     }
 }
 
@@ -741,11 +766,23 @@ private fun ModelRow(
 @Composable
 private fun OllamaFullSettingsSection(
     state: OllamaUiState,
-    onSaveOllama: (String, String) -> Unit,
-    onSaveFull: (AppSettings) -> Unit
+    downloadedLocalModels: List<DownloadedModel>,
+    savedHosts: List<SavedOllamaHost>,
+    onSaveOllama: (String, String, String, String, Int, Int) -> Unit,
+    onSaveFull: (AppSettings) -> Unit,
+    onShowModelManager: () -> Unit,
+    onSelectHost: (SavedOllamaHost) -> Unit,
+    onAddHost: (String, String, String) -> Unit,
+    onDeleteHost: (String) -> Unit
 ) {
     var baseUrl by rememberSaveable { mutableStateOf(state.settings.ollamaBaseUrl) }
     var preferredModels by rememberSaveable { mutableStateOf(state.settings.ollamaPreferredModels) }
+    
+    // Local LLM settings
+    var selectedBackend by rememberSaveable { mutableStateOf(state.settings.ollamaBackend) }
+    var localModelPath by rememberSaveable { mutableStateOf(state.settings.localModelPath) }
+    var localContextSize by rememberSaveable { mutableStateOf(state.settings.localContextSize.toString()) }
+    var localMaxTokens by rememberSaveable { mutableStateOf(state.settings.localMaxTokens.toString()) }
 
     // Full app settings
     var settingsModelsCsv by rememberSaveable { mutableStateOf(state.settings.preferredModelsCsv) }
@@ -762,11 +799,21 @@ private fun OllamaFullSettingsSection(
     var settingsGithubBranch by rememberSaveable { mutableStateOf(state.settings.githubBranchOverride) }
     var showPasswordDialog by rememberSaveable { mutableStateOf(false) }
     var passwordInput by rememberSaveable { mutableStateOf("") }
+    
+    // Add host dialog state
+    var showAddHostDialog by rememberSaveable { mutableStateOf(false) }
+    var newHostName by rememberSaveable { mutableStateOf("") }
+    var newHostUrl by rememberSaveable { mutableStateOf("") }
+    var newHostModels by rememberSaveable { mutableStateOf("qwen2.5:3b") }
 
     // Sync when settings reload
     LaunchedEffect(state.settings) {
         baseUrl = state.settings.ollamaBaseUrl
         preferredModels = state.settings.ollamaPreferredModels
+        selectedBackend = state.settings.ollamaBackend
+        localModelPath = state.settings.localModelPath
+        localContextSize = state.settings.localContextSize.toString()
+        localMaxTokens = state.settings.localMaxTokens.toString()
         settingsModelsCsv = state.settings.preferredModelsCsv
         settingsMaxRetries = state.settings.maxModelRetries.toString()
         settingsMaxInput = state.settings.maxInputTokens.toString()
@@ -792,40 +839,308 @@ private fun OllamaFullSettingsSection(
                 fontWeight = FontWeight.Bold
             )
 
-            // ── Ollama Connection ──
-            Text("Ollama Connection", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
-
-            OutlinedTextField(
-                value = preferredModels,
-                onValueChange = { preferredModels = it },
+            // ── Backend Selection ──
+            Text("LLM Backend", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+            
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                label = { Text("Preferred Models CSV") },
-                placeholder = { Text("qwen2.5:3b,llama3.2:3b") },
-                singleLine = true,
-                textStyle = LocalTextStyle.current.copy(fontSize = 12.sp)
-            )
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.clickable { selectedBackend = "ollama" }
+                ) {
+                    RadioButton(
+                        selected = selectedBackend == "ollama",
+                        onClick = { selectedBackend = "ollama" }
+                    )
+                    Text("Ollama (HTTP)", fontSize = 12.sp)
+                }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.clickable { selectedBackend = "local" }
+                ) {
+                    RadioButton(
+                        selected = selectedBackend == "local",
+                        onClick = { selectedBackend = "local" }
+                    )
+                    Text("Local (llama.cpp)", fontSize = 12.sp)
+                }
+            }
+            
+            // ── Ollama Settings (shown when ollama backend selected) ──
+            if (selectedBackend == "ollama") {
+                Text("Ollama Connection", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
 
-            OutlinedTextField(
-                value = baseUrl,
-                onValueChange = { baseUrl = it },
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text("Ollama Base URL") },
-                placeholder = { Text("http://127.0.0.1:11434") },
-                singleLine = true,
-                textStyle = LocalTextStyle.current.copy(fontSize = 12.sp)
-            )
+                // ── Saved Hosts Section ──
+                if (savedHosts.isNotEmpty()) {
+                    Text(
+                        text = "Saved Hosts",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    
+                    savedHosts.forEach { host ->
+                        val isSelected = host.url == state.settings.ollamaBaseUrl
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { 
+                                    onSelectHost(host)
+                                    baseUrl = host.url
+                                    preferredModels = host.preferredModels
+                                },
+                            colors = CardDefaults.cardColors(
+                                containerColor = if (isSelected) 
+                                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+                                else 
+                                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                            )
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        if (isSelected) {
+                                            Text(
+                                                text = "✓ ",
+                                                color = MaterialTheme.colorScheme.primary,
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 12.sp
+                                            )
+                                        }
+                                        Text(
+                                            text = host.name,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                            fontSize = 13.sp
+                                        )
+                                    }
+                                    Text(
+                                        text = host.url,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        fontSize = 10.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                // Delete button (only if not the only host)
+                                if (savedHosts.size > 1) {
+                                    IconButton(
+                                        onClick = { onDeleteHost(host.id) },
+                                        modifier = Modifier.size(32.dp)
+                                    ) {
+                                        Text("🗑️", fontSize = 14.sp)
+                                    }
+                                }
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
+                    }
+                    
+                    // Add new host button
+                    OutlinedButton(
+                        onClick = { showAddHostDialog = true },
+                        modifier = Modifier.fillMaxWidth(),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
+                    ) {
+                        Text("➕ Add New Host", fontSize = 12.sp)
+                    }
+                    
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                }
 
-            Text(
-                text = "Tip: If Ollama runs on your PC, use 'adb reverse tcp:11434 tcp:11434' or set URL to your PC's IP.",
-                style = MaterialTheme.typography.bodySmall,
-                fontSize = 10.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+                OutlinedTextField(
+                    value = preferredModels,
+                    onValueChange = { preferredModels = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("Preferred Models CSV") },
+                    placeholder = { Text("qwen2.5:3b,llama3.2:3b") },
+                    singleLine = true,
+                    textStyle = LocalTextStyle.current.copy(fontSize = 12.sp)
+                )
+
+                OutlinedTextField(
+                    value = baseUrl,
+                    onValueChange = { baseUrl = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("Ollama Base URL") },
+                    placeholder = { Text("http://127.0.0.1:11434") },
+                    singleLine = true,
+                    textStyle = LocalTextStyle.current.copy(fontSize = 12.sp)
+                )
+
+                Text(
+                    text = "Tip: If Ollama runs on your PC, use 'adb reverse tcp:11434 tcp:11434' or set URL to your PC's IP.",
+                    style = MaterialTheme.typography.bodySmall,
+                    fontSize = 10.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            
+            // ── Add Host Dialog ──
+            if (showAddHostDialog) {
+                AlertDialog(
+                    onDismissRequest = { showAddHostDialog = false },
+                    title = { Text("Add New Host") },
+                    text = {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            OutlinedTextField(
+                                value = newHostName,
+                                onValueChange = { newHostName = it },
+                                label = { Text("Host Name") },
+                                placeholder = { Text("e.g., Home PC, Mobile, Office") },
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            OutlinedTextField(
+                                value = newHostUrl,
+                                onValueChange = { newHostUrl = it },
+                                label = { Text("Ollama URL") },
+                                placeholder = { Text("http://192.168.1.100:11434") },
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            OutlinedTextField(
+                                value = newHostModels,
+                                onValueChange = { newHostModels = it },
+                                label = { Text("Preferred Models (optional)") },
+                                placeholder = { Text("qwen2.5:3b") },
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                    },
+                    confirmButton = {
+                        Button(
+                            onClick = {
+                                onAddHost(newHostName, newHostUrl, newHostModels)
+                                showAddHostDialog = false
+                                newHostName = ""
+                                newHostUrl = ""
+                                newHostModels = "qwen2.5:3b"
+                            },
+                            enabled = newHostName.isNotBlank() && newHostUrl.isNotBlank()
+                        ) {
+                            Text("Save")
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showAddHostDialog = false }) {
+                            Text("Cancel")
+                        }
+                    }
+                )
+            }
+            
+            // ── Local LLM Settings (shown when local backend selected) ──
+            if (selectedBackend == "local") {
+                Text("Local LLM (llama.cpp)", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                
+                // Model Manager Button
+                FilledTonalButton(
+                    onClick = onShowModelManager,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("⬇️", modifier = Modifier.padding(end = 4.dp))
+                    Text("Download & Manage Models")
+                }
+                
+                // Show selected model info
+                if (downloadedLocalModels.isNotEmpty()) {
+                    val selectedModel = downloadedLocalModels.firstOrNull { 
+                        localModelPath.contains(it.file.name) 
+                    }
+                    if (selectedModel != null) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+                            )
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "✓ Selected: ${selectedModel.name}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontWeight = FontWeight.Medium,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                                Spacer(Modifier.weight(1f))
+                                Text(
+                                    text = selectedModel.sizeFormatted,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                } else if (localModelPath.isBlank()) {
+                    Text(
+                        text = "No model selected. Tap above to download models.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+                
+                // Manual path input (advanced)
+                OutlinedTextField(
+                    value = localModelPath,
+                    onValueChange = { localModelPath = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("Model Path (auto-set or manual)") },
+                    placeholder = { Text("/data/.../models/qwen2.5-0.5b.gguf") },
+                    singleLine = true,
+                    textStyle = LocalTextStyle.current.copy(fontSize = 11.sp)
+                )
+                
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = localContextSize,
+                        onValueChange = { localContextSize = it },
+                        modifier = Modifier.weight(1f),
+                        label = { Text("Context Size") },
+                        placeholder = { Text("2048") },
+                        singleLine = true,
+                        textStyle = LocalTextStyle.current.copy(fontSize = 12.sp)
+                    )
+                    OutlinedTextField(
+                        value = localMaxTokens,
+                        onValueChange = { localMaxTokens = it },
+                        modifier = Modifier.weight(1f),
+                        label = { Text("Max Tokens") },
+                        placeholder = { Text("512") },
+                        singleLine = true,
+                        textStyle = LocalTextStyle.current.copy(fontSize = 12.sp)
+                    )
+                }
+                
+                Text(
+                    text = "Download models directly or place a GGUF file manually. Models are stored in app data.",
+                    style = MaterialTheme.typography.bodySmall,
+                    fontSize = 10.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
 
             Button(
-                onClick = { onSaveOllama(baseUrl, preferredModels) },
+                onClick = { 
+                    onSaveOllama(
+                        baseUrl, 
+                        preferredModels, 
+                        selectedBackend,
+                        localModelPath,
+                        localContextSize.toIntOrNull() ?: 2048,
+                        localMaxTokens.toIntOrNull() ?: 512
+                    ) 
+                },
                 modifier = Modifier.fillMaxWidth()
-            ) { Text("Save Ollama Settings") }
+            ) { Text("Save LLM Settings") }
 
             HorizontalDivider()
 
