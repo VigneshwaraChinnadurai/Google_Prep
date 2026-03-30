@@ -1,0 +1,92 @@
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':app:buildCMakeDebug[armeabi-v7a]'.
+> com.android.ide.common.process.ProcessException: ninja: Entering directory `C:\Users\vichinnadurai\Documents\Vignesh\Personal Enrichment\Personal Work\Google_Prep\mobile_apps\leetcode_checker\app\.cxx\Debug\3e1f5c5j\armeabi-v7a'
+  [1/99] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/models/deepseek2.cpp.o
+  [2/99] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/models/delta-net-base.cpp.o
+  [3/99] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/models/ernie4-5-moe.cpp.o
+  [4/99] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/models/dots1.cpp.o
+  [5/99] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/models/deepseek.cpp.o
+  [6/99] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/models/dream.cpp.o
+  [7/99] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/models/exaone4.cpp.o
+  [8/99] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/models/exaone.cpp.o
+  [9/99] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/models/ernie4-5.cpp.o
+  [10/99] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/models/falcon-h1.cpp.o
+  [11/99] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/models/gemma.cpp.o
+  [12/99] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/models/gemma3.cpp.o
+  [13/99] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/models/gemma3n-iswa.cpp.o
+  [14/99] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/models/falcon.cpp.o
+  [15/99] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/models/gemma2-iswa.cpp.o
+  [16/99] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/models/gemma-embedding.cpp.o
+  [17/99] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/models/gpt2.cpp.o
+  [18/99] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/models/granite-hybrid.cpp.o
+  [19/99] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/models/glm4.cpp.o
+  [20/99] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/llama-quant.cpp.o
+  [21/99] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/models/glm4-moe.cpp.o
+  [22/99] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/models/gptneox.cpp.o
+  [23/99] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/models/grovemoe.cpp.o
+  [24/99] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/models/hunyuan-moe.cpp.o
+  [25/99] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/models/grok.cpp.o
+  [26/99] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/models/granite.cpp.o
+  [27/99] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/unicode.cpp.o
+  [28/99] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/models/hunyuan-dense.cpp.o
+  [29/99] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/models/jais2.cpp.o
+  [30/99] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/models/jais.cpp.o
+  [31/99] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/models/internlm2.cpp.o
+  [32/99] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/models/kimi-linear.cpp.o
+  [33/99] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/models/jamba.cpp.o
+  [34/99] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/models/lfm2.cpp.o
+  [35/99] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/models/llada-moe.cpp.o
+  [36/99] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/models/llama-iswa.cpp.o
+  [37/99] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/models/llada.cpp.o
+  [38/99] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/models/mamba.cpp.o
+  [39/99] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/models/maincoder.cpp.o
+  [40/99] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/models/mamba-base.cpp.o
+  [41/99] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/models/mimo2-iswa.cpp.o
+  [42/99] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/models/llama.cpp.o
+  [43/99] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/models/modern-bert.cpp.o
+  [44/99] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/models/mpt.cpp.o
+  [45/99] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/models/minicpm3.cpp.o
+  [46/99] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/models/minimax-m2.cpp.o
+  [47/99] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/models/mistral3.cpp.o
+  [48/99] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/models/nemotron-h.cpp.o
+  [49/99] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/models/olmo.cpp.o
+  [50/99] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/models/olmoe.cpp.o
+  [51/99] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/models/neo-bert.cpp.o
+  [52/99] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/models/nemotron.cpp.o
+  [53/99] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/models/olmo2.cpp.o
+  [54/99] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/models/openelm.cpp.o
+  [55/99] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/models/paddleocr.cpp.o
+  [56/99] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/models/orion.cpp.o
+  [57/99] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/models/pangu-embedded.cpp.o
+  [58/99] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/models/openai-moe-iswa.cpp.o
+  [59/99] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/models/phi2.cpp.o
+  [60/99] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/models/plamo.cpp.o
+  [61/99] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/models/phi3.cpp.o
+  [62/99] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/models/smollm3.cpp.o
+  [63/99] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/models/rwkv7-base.cpp.o
+  [64/99] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/models/rwkv7.cpp.o
+  [65/99] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/models/smallthinker.cpp.o
+  [66/99] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/models/seed-oss.cpp.o
+  [67/99] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/models/plamo2.cpp.o
+  [68/99] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/models/plamo3.cpp.o
+  [69/99] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/models/plm.cpp.o
+  [70/99] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/models/qwen2.cpp.o
+  
+  C++ build system [build] failed while executing:
+      @echo off
+      "C:\\Users\\vichinnadurai\\AppData\\Local\\Android\\Sdk\\cmake\\3.22.1\\bin\\ninja.exe" ^
+        -C ^
+        "C:\\Users\\vichinnadurai\\Documents\\Vignesh\\Personal Enrichment\\Personal Work\\Google_Prep\\mobile_apps\\leetcode_checker\\app\\.cxx\\Debug\\3e1f5c5j\\armeabi-v7a" ^
+        llama_jni
+    from C:\Users\vichinnadurai\Documents\Vignesh\Personal Enrichment\Personal Work\Google_Prep\mobile_apps\leetcode_checker\app
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 4m 39s
