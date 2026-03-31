@@ -1,6 +1,8 @@
 package com.vignesh.leetcodechecker.viewmodel
 
 import android.app.Application
+import android.os.PowerManager
+import android.content.Context
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.vignesh.leetcodechecker.AppSettings
@@ -54,6 +56,32 @@ class OllamaViewModel(application: Application) : AndroidViewModel(application) 
     private val appContext = application.applicationContext
     private val repository = OllamaRepository(appContext)
     private val modelDownloadManager = ModelDownloadManager(appContext)
+    
+    // Wake lock to keep CPU running during LLM inference
+    private val powerManager = appContext.getSystemService(Context.POWER_SERVICE) as PowerManager
+    private var wakeLock: PowerManager.WakeLock? = null
+    
+    private fun acquireWakeLock() {
+        if (wakeLock == null) {
+            wakeLock = powerManager.newWakeLock(
+                PowerManager.PARTIAL_WAKE_LOCK,
+                "LeetCodeChecker:OllamaWakeLock"
+            )
+        }
+        wakeLock?.let {
+            if (!it.isHeld) {
+                it.acquire(30 * 60 * 1000L) // 30 minutes max
+            }
+        }
+    }
+    
+    private fun releaseWakeLock() {
+        wakeLock?.let {
+            if (it.isHeld) {
+                it.release()
+            }
+        }
+    }
 
     private val _uiState = MutableStateFlow(
         OllamaUiState(settings = AppSettingsStore.load(appContext))
@@ -162,29 +190,37 @@ class OllamaViewModel(application: Application) : AndroidViewModel(application) 
             infoMessage = "Generating Ollama answer..."
         )
 
+        // Acquire wake lock to prevent sleep during LLM inference
+        acquireWakeLock()
+        
         viewModelScope.launch {
-            repository.generateDetailedAnswer(challenge, forceRefresh = true)
-                .onSuccess { answer ->
-                    _uiState.value = _uiState.value.copy(
-                        aiCode = answer.leetcodePythonCode,
-                        aiTestcaseValidation = answer.testcaseValidation,
-                        aiExplanation = answer.explanation,
-                        isAiLoading = false,
-                        aiError = null,
-                        aiDebugLog = answer.debugLog,
-                        infoMessage = "Ollama answer generated."
-                    )
-                    ConsistencyStorage.saveOllamaAi(appContext, answer)
-                }
-                .onFailure { throwable ->
-                    val pipelineError = throwable as? PipelineException
-                    _uiState.value = _uiState.value.copy(
-                        isAiLoading = false,
-                        aiError = throwable.message ?: "Ollama generation failed",
-                        aiDebugLog = pipelineError?.debugLog ?: _uiState.value.aiDebugLog,
-                        infoMessage = null
-                    )
-                }
+            try {
+                repository.generateDetailedAnswer(challenge, forceRefresh = true)
+                    .onSuccess { answer ->
+                        _uiState.value = _uiState.value.copy(
+                            aiCode = answer.leetcodePythonCode,
+                            aiTestcaseValidation = answer.testcaseValidation,
+                            aiExplanation = answer.explanation,
+                            isAiLoading = false,
+                            aiError = null,
+                            aiDebugLog = answer.debugLog,
+                            infoMessage = "Ollama answer generated."
+                        )
+                        ConsistencyStorage.saveOllamaAi(appContext, answer)
+                    }
+                    .onFailure { throwable ->
+                        val pipelineError = throwable as? PipelineException
+                        _uiState.value = _uiState.value.copy(
+                            isAiLoading = false,
+                            aiError = throwable.message ?: "Ollama generation failed",
+                            aiDebugLog = pipelineError?.debugLog ?: _uiState.value.aiDebugLog,
+                            infoMessage = null
+                        )
+                    }
+            } finally {
+                // Always release wake lock when done
+                releaseWakeLock()
+            }
         }
     }
 
@@ -495,4 +531,9 @@ class OllamaViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun getAvailableModels() = ModelDownloadManager.AVAILABLE_MODELS
+    
+    override fun onCleared() {
+        super.onCleared()
+        releaseWakeLock()
+    }
 }

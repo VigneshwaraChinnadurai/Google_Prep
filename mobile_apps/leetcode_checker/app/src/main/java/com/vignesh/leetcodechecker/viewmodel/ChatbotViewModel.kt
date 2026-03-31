@@ -1,6 +1,8 @@
 package com.vignesh.leetcodechecker.viewmodel
 
 import android.app.Application
+import android.content.Context
+import android.os.PowerManager
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -118,6 +120,32 @@ If the user asks for detailed data-backed analysis with live data (news, SEC fil
     private var turnCount = 0
 
     private val appContext get() = getApplication<Application>().applicationContext
+    
+    // Wake lock to keep CPU running during LLM inference
+    private val powerManager = getApplication<Application>().getSystemService(Context.POWER_SERVICE) as PowerManager
+    private var wakeLock: PowerManager.WakeLock? = null
+    
+    private fun acquireWakeLock() {
+        if (wakeLock == null) {
+            wakeLock = powerManager.newWakeLock(
+                PowerManager.PARTIAL_WAKE_LOCK,
+                "LeetCodeChecker:ChatbotWakeLock"
+            )
+        }
+        wakeLock?.let {
+            if (!it.isHeld) {
+                it.acquire(30 * 60 * 1000L) // 30 minutes max
+            }
+        }
+    }
+    
+    private fun releaseWakeLock() {
+        wakeLock?.let {
+            if (it.isHeld) {
+                it.release()
+            }
+        }
+    }
 
     init {
         chatbotLogger.logInfo("ChatbotViewModel initializing",
@@ -186,13 +214,22 @@ If the user asks for detailed data-backed analysis with live data (news, SEC fil
         chatbotLogger.logInfo("User message [${currentChatMode.name}]",
             "MODE: ${currentChatMode.name}\nMESSAGE: $message")
         refreshLogEntries()
+        
+        // Acquire wake lock to prevent sleep during LLM inference
+        acquireWakeLock()
+        
         viewModelScope.launch {
-            when (currentChatMode) {
-                ChatMode.QUICK_CHAT -> sendQuickChat(message)
-                ChatMode.DEEP_ANALYSIS -> sendDeepAnalysis(message)
-                ChatMode.FOLLOW_UP -> sendFollowUp(message)
+            try {
+                when (currentChatMode) {
+                    ChatMode.QUICK_CHAT -> sendQuickChat(message)
+                    ChatMode.DEEP_ANALYSIS -> sendDeepAnalysis(message)
+                    ChatMode.FOLLOW_UP -> sendFollowUp(message)
+                }
+                refreshLogEntries()
+            } finally {
+                // Always release wake lock when done
+                releaseWakeLock()
             }
-            refreshLogEntries()
         }
     }
 
@@ -781,4 +818,9 @@ If the user asks for detailed data-backed analysis with live data (news, SEC fil
         "What are the latest trends in AI and machine learning?",
         "Evaluate semiconductor industry outlook for 2025"
     )
+    
+    override fun onCleared() {
+        super.onCleared()
+        releaseWakeLock()
+    }
 }

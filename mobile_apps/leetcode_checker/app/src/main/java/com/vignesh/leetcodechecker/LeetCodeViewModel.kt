@@ -1,6 +1,8 @@
 package com.vignesh.leetcodechecker
 
 import android.app.Application
+import android.content.Context
+import android.os.PowerManager
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -56,6 +58,33 @@ class LeetCodeViewModel(
 
     private val appContext = application.applicationContext
     private val initialSettings = AppSettingsStore.load(appContext)
+    
+    // Wake lock to keep CPU running during LLM inference
+    private val powerManager = appContext.getSystemService(Context.POWER_SERVICE) as PowerManager
+    private var wakeLock: PowerManager.WakeLock? = null
+    
+    private fun acquireWakeLock() {
+        if (wakeLock == null) {
+            wakeLock = powerManager.newWakeLock(
+                PowerManager.PARTIAL_WAKE_LOCK,
+                "LeetCodeChecker:GeminiWakeLock"
+            )
+        }
+        wakeLock?.let {
+            if (!it.isHeld) {
+                it.acquire(30 * 60 * 1000L) // 30 minutes max
+            }
+        }
+    }
+    
+    private fun releaseWakeLock() {
+        wakeLock?.let {
+            if (it.isHeld) {
+                it.release()
+            }
+        }
+    }
+    
     private val _uiState = MutableStateFlow(
         LeetCodeUiState(
             isCompletedToday = ConsistencyStorage.isCompletedToday(appContext),
@@ -177,30 +206,38 @@ class LeetCodeViewModel(
             infoMessage = "Refreshing LLM answer (manual confirmation accepted)."
         )
 
+        // Acquire wake lock to prevent sleep during LLM inference
+        acquireWakeLock()
+        
         viewModelScope.launch {
-            repository.generateDetailedAnswer(challenge, forceRefresh = true)
-                .onSuccess { answer ->
-                    applyAiResult(answer)
-                    ConsistencyStorage.saveAi(appContext, answer)
-                    saveRevisionFilesLocally(
-                        challenge = challenge,
-                        aiCode = answer.leetcodePythonCode,
-                        aiExplanation = answer.explanation,
-                        aiValidation = answer.testcaseValidation
-                    )
-                    _uiState.value = _uiState.value.copy(
-                        infoMessage = "LLM response refreshed and stored locally."
-                    )
-                }
-                .onFailure { throwable ->
-                    val pipelineError = throwable as? PipelineException
-                    _uiState.value = _uiState.value.copy(
-                        isAiLoading = false,
-                        aiError = throwable.message ?: "Could not refresh LLM answer",
-                        aiDebugLog = pipelineError?.debugLog ?: _uiState.value.aiDebugLog,
-                        infoMessage = null
-                    )
-                }
+            try {
+                repository.generateDetailedAnswer(challenge, forceRefresh = true)
+                    .onSuccess { answer ->
+                        applyAiResult(answer)
+                        ConsistencyStorage.saveAi(appContext, answer)
+                        saveRevisionFilesLocally(
+                            challenge = challenge,
+                            aiCode = answer.leetcodePythonCode,
+                            aiExplanation = answer.explanation,
+                            aiValidation = answer.testcaseValidation
+                        )
+                        _uiState.value = _uiState.value.copy(
+                            infoMessage = "LLM response refreshed and stored locally."
+                        )
+                    }
+                    .onFailure { throwable ->
+                        val pipelineError = throwable as? PipelineException
+                        _uiState.value = _uiState.value.copy(
+                            isAiLoading = false,
+                            aiError = throwable.message ?: "Could not refresh LLM answer",
+                            aiDebugLog = pipelineError?.debugLog ?: _uiState.value.aiDebugLog,
+                            infoMessage = null
+                        )
+                    }
+            } finally {
+                // Always release wake lock when done
+                releaseWakeLock()
+            }
         }
     }
 
@@ -390,5 +427,10 @@ class LeetCodeViewModel(
         }
 
         return ownerTrimmed.substringAfterLast('/').ifBlank { ownerTrimmed }
+    }
+    
+    override fun onCleared() {
+        super.onCleared()
+        releaseWakeLock()
     }
 }

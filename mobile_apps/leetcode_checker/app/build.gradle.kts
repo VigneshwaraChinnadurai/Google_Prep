@@ -65,21 +65,21 @@ android {
         minSdk = 24
         targetSdk = 35
         
-        // NDK configuration for llama.cpp (64-bit only)
-        ndk {
-            abiFilters += listOf("arm64-v8a", "x86_64")
-        }
-        
-        externalNativeBuild {
-            cmake {
-                cppFlags += "-std=c++17 -fexceptions -frtti -O3"
-                arguments += listOf(
-                    "-DANDROID_STL=c++_shared",
-                    "-DGGML_NATIVE=OFF",
-                    "-DGGML_OPENMP=OFF"
-                )
-            }
-        }
+        // NDK configuration for llama.cpp (64-bit only) - DISABLED
+        // ndk {
+        //     abiFilters += listOf("arm64-v8a", "x86_64")
+        // }
+        // 
+        // externalNativeBuild {
+        //     cmake {
+        //         cppFlags += "-std=c++17 -fexceptions -frtti -O3"
+        //         arguments += listOf(
+        //             "-DANDROID_STL=c++_shared",
+        //             "-DGGML_NATIVE=OFF",
+        //             "-DGGML_OPENMP=OFF"
+        //         )
+        //     }
+        // }
         versionCode = 1
         versionName = "1.0"
         buildConfigField("String", "GEMINI_API_KEY", "\"$geminiApiKey\"")
@@ -125,12 +125,12 @@ android {
         }
     }
 
-    externalNativeBuild {
-        cmake {
-            path = file("src/main/cpp/CMakeLists.txt")
-            version = "3.22.1"
-        }
-    }
+    // externalNativeBuild {
+    //     cmake {
+    //         path = file("src/main/cpp/CMakeLists.txt")
+    //         version = "3.22.1"
+    //     }
+    // }
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
