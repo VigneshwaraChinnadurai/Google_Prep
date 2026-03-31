@@ -1,29 +1,24 @@
 class Solution:
-    def generateString(self, s: str, t: str) -> str:
-        n, m = len(s), len(t)
-        ans = ["a"] * (n + m - 1)
-        fixed = [False] * (n + m - 1)
-
-        for i, b in enumerate(s):
-            if b != "T":
-                continue
-            for j, c in enumerate(t):
-                k = i + j
-                if fixed[k] and ans[k] != c:
-                    return ""
-                ans[k] = c
-                fixed[k] = True
-
-        for i, b in enumerate(s):
-            if b != "F":
-                continue
-            if "".join(ans[i : i + m]) != t:
-                continue
-            for j in range(i + m - 1, i - 1, -1):
-                if not fixed[j]:
-                    ans[j] = "b"
-                    break
-            else:
-                return ""
-
-        return "".join(ans)
+    def checkStrings(self, s1: str, s2: str) -> bool:
+        # We use a 2D array for frequency counts.
+        # counts[0] will store counts for even-indexed characters.
+        # counts[1] will store counts for odd-indexed characters.
+        # We increment for characters from s1 and decrement for characters from s2.
+        # If the multisets for each parity are equal, the final counts for all 
+        # characters will be zero.
+        counts = [[0] * 26, [0] * 26]
+        
+        for i in range(len(s1)):
+            parity = i % 2
+            
+            # Update counts based on s1's character
+            counts[parity][ord(s1[i]) - ord('a')] += 1
+            
+            # Update counts based on s2's character
+            counts[parity][ord(s2[i]) - ord('a')] -= 1
+            
+        # Check if all counts are zero for both parities.
+        # A list of all zeros to compare against.
+        zero_counts = [0] * 26
+        
+        return counts[0] == zero_counts and counts[1] == zero_counts
