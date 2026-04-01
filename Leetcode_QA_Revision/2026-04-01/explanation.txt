@@ -1,0 +1,40 @@
+Date: 2026-04-01
+Title: Robot Collisions
+URL: https://leetcode.com/problems/robot-collisions/
+
+LLM Explanation:
+The problem asks for the health of surviving robots after a series of collisions. A key observation is that collisions only occur between a robot moving right ('R') and a robot moving left ('L') that is initially positioned to its right. Robots moving in the same direction or away from each other will never collide.
+
+This structure suggests processing the robots based on their position. The optimal approach is to sort the robots by their initial positions and then simulate the collisions. A stack is an ideal data structure for this simulation.
+
+The overall algorithm is as follows:
+
+1.  **Combine and Sort:** First, we combine the information for each robot (position, health, direction, and its original index) into a single data structure. We need the original index to format the output correctly. Then, we sort this list of robots based on their positions. This allows us to process robots from left to right.
+
+2.  **Stack-based Simulation:** We iterate through the sorted list of robots. We use a stack to keep track of robots moving to the right ('R') that we have encountered so far.
+    *   If the current robot is moving **right ('R')**, it cannot collide with any robots already on the stack (as they are to its left and also moving right). We push it onto the stack, as it might collide with left-moving robots we encounter later.
+    *   If the current robot is moving **left ('L')**, it will move towards all the right-moving robots currently on the stack. A series of collisions will occur. We repeatedly collide the current left-moving robot with the robot at the top of the stack until either the left-moving robot is destroyed, or it has destroyed all right-moving robots on the stack.
+        *   If the robot on the stack has more health, the current robot is destroyed, and the stack robot's health decreases by one.
+        *   If the current robot has more health, the stack robot is destroyed (popped from the stack), and the current robot's health decreases by one. It then proceeds to collide with the next robot on the stack.
+        *   If they have equal health, both are destroyed.
+
+3.  **Collect Survivors:** After iterating through all robots, the `robots` list will have the updated healths for every robot (0 if destroyed). We iterate through this list one last time to collect all robots with health greater than 0.
+
+4.  **Format Output:** The collected survivors are not in the required output order. We stored the original index for each robot at the beginning. We sort the list of survivors based on their original indices and then extract their healths to produce the final result.
+
+**Complexity Analysis:**
+*   **Time Complexity:** O(N log N), dominated by the initial sorting of robots. The simulation part is O(N) because each robot is pushed onto and popped from the stack at most once.
+*   **Space Complexity:** O(N) to store the combined robot data and for the stack in the worst-case scenario (e.g., all robots moving right).
+
+LLM Testcase Validation:
+```
+[5,4,3,2,1]
+[2,17,9,15,10]
+"RRRRR"
+[3,5,2,6]
+[10,10,15,12]
+"RLRL"
+[1,2,5,6]
+[10,10,11,11]
+"RLRL"
+```
