@@ -446,6 +446,24 @@ fun LeetCodeScreen(
                         }
                     )
                 }
+
+                // ════════════════════════════════════════════════════════════
+                // Problem Statement (Expandable) - LeetCode-style rendering
+                // ════════════════════════════════════════════════════════════
+                if (challenge.htmlContent.isNotBlank()) {
+                    item {
+                        LeetCodeCollapsibleSection(
+                            title = "📋 Problem Statement",
+                            isExpanded = expandedSection == "problem",
+                            onToggle = { expandedSection = if (expandedSection == "problem") "" else "problem" }
+                        ) {
+                            LeetCodeHtmlText(
+                                htmlContent = challenge.htmlContent,
+                                modifier = Modifier.padding(12.dp)
+                            )
+                        }
+                    }
+                }
             }
 
             // ════════════════════════════════════════════════════════════

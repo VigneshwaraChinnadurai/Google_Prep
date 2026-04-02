@@ -28,6 +28,7 @@ object ConsistencyStorage {
             .put("url", challenge.url)
             .put("descriptionPreview", challenge.descriptionPreview)
             .put("fullStatement", challenge.fullStatement)
+            .put("htmlContent", challenge.htmlContent)
             .put("pythonStarterCode", challenge.pythonStarterCode)
             .put("exampleTestcases", challenge.exampleTestcases)
             .toString()
@@ -48,6 +49,7 @@ object ConsistencyStorage {
                 url = json.optString("url"),
                 descriptionPreview = json.optString("descriptionPreview"),
                 fullStatement = json.optString("fullStatement"),
+                htmlContent = json.optString("htmlContent"),
                 pythonStarterCode = json.optString("pythonStarterCode"),
                 exampleTestcases = json.optString("exampleTestcases")
             )
@@ -125,6 +127,7 @@ object ConsistencyStorage {
             .put("url", challenge.url)
             .put("descriptionPreview", challenge.descriptionPreview)
             .put("fullStatement", challenge.fullStatement)
+            .put("htmlContent", challenge.htmlContent)
             .put("pythonStarterCode", challenge.pythonStarterCode)
             .put("exampleTestcases", challenge.exampleTestcases)
             .toString()
@@ -145,6 +148,7 @@ object ConsistencyStorage {
                 url = json.optString("url"),
                 descriptionPreview = json.optString("descriptionPreview"),
                 fullStatement = json.optString("fullStatement"),
+                htmlContent = json.optString("htmlContent"),
                 pythonStarterCode = json.optString("pythonStarterCode"),
                 exampleTestcases = json.optString("exampleTestcases")
             )

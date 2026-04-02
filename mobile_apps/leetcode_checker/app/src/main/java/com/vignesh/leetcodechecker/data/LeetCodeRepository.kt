@@ -37,6 +37,7 @@ data class DailyChallengeUiModel(
     val url: String,
     val descriptionPreview: String,
     val fullStatement: String,
+    val htmlContent: String,  // Raw HTML from LeetCode for proper rendering
     val pythonStarterCode: String,
     val exampleTestcases: String
 )
@@ -185,12 +186,15 @@ class LeetCodeRepository(
             val questionDetails = detailsResponse.data?.question
                 ?: error("Question details are not available")
 
-            val content = questionDetails.content
-                ?.replace(Regex("<[^>]*>"), " ")
-                ?.replace("&nbsp;", " ")
-                ?.replace(Regex("\\s+"), " ")
-                ?.trim()
-                .orEmpty()
+            // Keep raw HTML for proper rendering
+            val rawHtmlContent = questionDetails.content.orEmpty()
+
+            // Plain text for preview and search
+            val plainTextContent = rawHtmlContent
+                .replace(Regex("<[^>]*>"), " ")
+                .replace("&nbsp;", " ")
+                .replace(Regex("\\s+"), " ")
+                .trim()
 
             val pythonStarter = questionDetails.codeSnippets
                 ?.firstOrNull { it.langSlug.equals("python3", ignoreCase = true) }
@@ -209,8 +213,9 @@ class LeetCodeRepository(
                 questionId = daily.question.questionFrontendId,
                 tags = daily.question.topicTags.map { it.name },
                 url = "https://leetcode.com${daily.link}",
-                descriptionPreview = content.take(500),
-                fullStatement = content,
+                descriptionPreview = plainTextContent.take(500),
+                fullStatement = plainTextContent,
+                htmlContent = rawHtmlContent,
                 pythonStarterCode = pythonStarter,
                 exampleTestcases = exampleTestcases
             )
