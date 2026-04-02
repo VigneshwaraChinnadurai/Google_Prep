@@ -207,6 +207,8 @@ class OllamaViewModel(application: Application) : AndroidViewModel(application) 
                             infoMessage = "Ollama answer generated."
                         )
                         ConsistencyStorage.saveOllamaAi(appContext, answer)
+                        // Also save to persistent history for offline mode
+                        ConsistencyStorage.saveProblemToHistory(appContext, challenge, "Ollama", answer)
                     }
                     .onFailure { throwable ->
                         val pipelineError = throwable as? PipelineException

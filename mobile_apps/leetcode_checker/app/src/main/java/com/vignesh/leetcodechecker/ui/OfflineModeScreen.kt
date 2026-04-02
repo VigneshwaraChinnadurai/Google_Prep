@@ -20,10 +20,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.vignesh.leetcodechecker.ConsistencyStorage
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import com.vignesh.leetcodechecker.data.DailyChallengeUiModel
 
 /**
- * Offline Mode Screen - View cached problems and solutions
+ * Offline Mode Screen - View persistently saved problems and solutions
+ * Uses permanent storage that survives app restarts and doesn't get cleared automatically
  */
 @Composable
 fun OfflineModeScreen(
@@ -31,64 +31,75 @@ fun OfflineModeScreen(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val cachedChallenge = remember { ConsistencyStorage.loadChallenge(context) }
-    val cachedAi = remember { ConsistencyStorage.loadAi(context) }
-    val ollamaChallenge = remember { ConsistencyStorage.loadOllamaChallenge(context) }
-    val ollamaAi = remember { ConsistencyStorage.loadOllamaAi(context) }
-    
-    val scrollState = rememberScrollState()
+    var savedProblems by remember { mutableStateOf(ConsistencyStorage.loadSavedProblemsHistory(context)) }
+    var showDeleteConfirm by remember { mutableStateOf<String?>(null) }
     
     Column(
         modifier = modifier
             .fillMaxSize()
             .background(Color(0xFF0D1117))
-            .verticalScroll(scrollState)
             .padding(16.dp)
     ) {
         // Header
         Row(
-            verticalAlignment = Alignment.CenterVertically
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            IconButton(onClick = onBackClick) {
-                Icon(
-                    Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back",
-                    tint = Color(0xFF58A6FF)
-                )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = onBackClick) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Back",
+                        tint = Color(0xFF58A6FF)
+                    )
+                }
+                Text(text = "💾", fontSize = 28.sp)
+                Spacer(modifier = Modifier.width(8.dp))
+                Column {
+                    Text(
+                        text = "Saved Problems",
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFFE6EDF3)
+                    )
+                    Text(
+                        text = "Persists across app restarts",
+                        fontSize = 12.sp,
+                        color = Color(0xFF8B949E)
+                    )
+                }
             }
-            Text(text = "📱", fontSize = 28.sp)
-            Spacer(modifier = Modifier.width(8.dp))
-            Column {
-                Text(
-                    text = "Offline Mode",
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFFE6EDF3)
-                )
-                Text(
-                    text = "Access cached problems without internet",
-                    fontSize = 12.sp,
-                    color = Color(0xFF8B949E)
-                )
+            
+            // Problem Count Badge
+            if (savedProblems.isNotEmpty()) {
+                Surface(
+                    shape = RoundedCornerShape(20.dp),
+                    color = Color(0xFF238636)
+                ) {
+                    Text(
+                        text = "${savedProblems.size}",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                    )
+                }
             }
         }
         
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(16.dp))
         
-        // Status Card
-        StatusCard(
-            hasGeminiChallenge = cachedChallenge != null,
-            hasGeminiSolution = cachedAi != null,
-            hasOllamaChallenge = ollamaChallenge != null,
-            hasOllamaSolution = ollamaAi != null
-        )
+        // Status Summary Card
+        StatusSummaryCard(savedProblems = savedProblems)
         
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(16.dp))
         
-        // Cached Challenges
-        if (cachedChallenge != null || ollamaChallenge != null) {
+        if (savedProblems.isEmpty()) {
+            EmptyStorageCard()
+        } else {
             Text(
-                text = "📋 Cached Problems",
+                text = "📚 Your Saved Problems",
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Medium,
                 color = Color(0xFFE6EDF3)
@@ -96,96 +107,116 @@ fun OfflineModeScreen(
             
             Spacer(modifier = Modifier.height(12.dp))
             
-            cachedChallenge?.let { challenge ->
-                CachedProblemCard(
-                    challenge = challenge,
-                    source = "Gemini",
-                    hasSolution = cachedAi != null
-                )
-                Spacer(modifier = Modifier.height(12.dp))
+            // Saved Problems List
+            LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.weight(1f)
+            ) {
+                items(savedProblems, key = { it.id }) { problem ->
+                    SavedProblemCard(
+                        problem = problem,
+                        onDelete = { showDeleteConfirm = problem.titleSlug }
+                    )
+                }
+                
+                item {
+                    Spacer(modifier = Modifier.height(80.dp))
+                }
             }
-            
-            ollamaChallenge?.let { challenge ->
-                CachedProblemCard(
-                    challenge = challenge,
-                    source = "Ollama",
-                    hasSolution = ollamaAi != null
-                )
-            }
-        } else {
-            EmptyOfflineCard()
         }
-        
-        Spacer(modifier = Modifier.height(20.dp))
-        
-        // Tips Card
-        OfflineTipsCard()
-        
-        Spacer(modifier = Modifier.height(80.dp))
+    }
+    
+    // Delete Confirmation Dialog
+    if (showDeleteConfirm != null) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirm = null },
+            containerColor = Color(0xFF161B22),
+            title = {
+                Text(
+                    text = "Delete Problem?",
+                    color = Color(0xFFE6EDF3),
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Text(
+                    text = "This will permanently remove this saved problem.",
+                    color = Color(0xFF8B949E)
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showDeleteConfirm?.let { slug ->
+                            ConsistencyStorage.deleteSavedProblem(context, slug)
+                            savedProblems = ConsistencyStorage.loadSavedProblemsHistory(context)
+                        }
+                        showDeleteConfirm = null
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF85149))
+                ) {
+                    Text("Delete")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirm = null }) {
+                    Text("Cancel", color = Color(0xFF8B949E))
+                }
+            }
+        )
     }
 }
 
 @Composable
-private fun StatusCard(
-    hasGeminiChallenge: Boolean,
-    hasGeminiSolution: Boolean,
-    hasOllamaChallenge: Boolean,
-    hasOllamaSolution: Boolean
-) {
-    val totalCached = listOf(hasGeminiChallenge, hasOllamaChallenge).count { it }
-    val totalSolutions = listOf(hasGeminiSolution, hasOllamaSolution).count { it }
+private fun StatusSummaryCard(savedProblems: List<ConsistencyStorage.SavedProblem>) {
+    val withSolutions = savedProblems.count { it.solution != null }
+    val easyCount = savedProblems.count { it.difficulty.lowercase() == "easy" }
+    val mediumCount = savedProblems.count { it.difficulty.lowercase() == "medium" }
+    val hardCount = savedProblems.count { it.difficulty.lowercase() == "hard" }
     
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22))
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            StatusItem(
-                icon = "📄",
-                value = "$totalCached",
-                label = "Problems",
-                color = Color(0xFF58A6FF)
-            )
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                StatItem(
+                    icon = "📄",
+                    value = "${savedProblems.size}",
+                    label = "Total",
+                    color = Color(0xFF58A6FF)
+                )
+                
+                StatItem(
+                    icon = "💡",
+                    value = "$withSolutions",
+                    label = "With Solutions",
+                    color = Color(0xFF39D353)
+                )
+            }
             
-            Divider(
-                modifier = Modifier
-                    .height(50.dp)
-                    .width(1.dp),
-                color = Color(0xFF30363D)
-            )
+            Spacer(modifier = Modifier.height(12.dp))
+            HorizontalDivider(color = Color(0xFF30363D))
+            Spacer(modifier = Modifier.height(12.dp))
             
-            StatusItem(
-                icon = "💡",
-                value = "$totalSolutions",
-                label = "Solutions",
-                color = Color(0xFF39D353)
-            )
-            
-            Divider(
-                modifier = Modifier
-                    .height(50.dp)
-                    .width(1.dp),
-                color = Color(0xFF30363D)
-            )
-            
-            StatusItem(
-                icon = if (totalCached > 0) "✅" else "⚠️",
-                value = if (totalCached > 0) "Ready" else "Empty",
-                label = "Status",
-                color = if (totalCached > 0) Color(0xFF39D353) else Color(0xFFF0883E)
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                DifficultyCount("Easy", easyCount, Color(0xFF00B8A3))
+                DifficultyCount("Medium", mediumCount, Color(0xFFFFC01E))
+                DifficultyCount("Hard", hardCount, Color(0xFFFF375F))
+            }
         }
     }
 }
 
 @Composable
-private fun StatusItem(
+private fun StatItem(
     icon: String,
     value: String,
     label: String,
@@ -196,7 +227,7 @@ private fun StatusItem(
         Spacer(modifier = Modifier.height(4.dp))
         Text(
             text = value,
-            fontSize = 18.sp,
+            fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
             color = color
         )
@@ -209,46 +240,98 @@ private fun StatusItem(
 }
 
 @Composable
-private fun CachedProblemCard(
-    challenge: DailyChallengeUiModel,
-    source: String,
-    hasSolution: Boolean
+private fun DifficultyCount(label: String, count: Int, color: Color) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Box(
+            modifier = Modifier
+                .size(8.dp)
+                .clip(RoundedCornerShape(4.dp))
+                .background(color)
+        )
+        Spacer(modifier = Modifier.width(6.dp))
+        Text(
+            text = "$label: $count",
+            fontSize = 12.sp,
+            color = Color(0xFF8B949E)
+        )
+    }
+}
+
+@Composable
+private fun SavedProblemCard(
+    problem: ConsistencyStorage.SavedProblem,
+    onDelete: () -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
+    
+    val difficultyColor = when (problem.difficulty.lowercase()) {
+        "easy" -> Color(0xFF00B8A3)
+        "medium" -> Color(0xFFFFC01E)
+        "hard" -> Color(0xFFFF375F)
+        else -> Color(0xFF8B949E)
+    }
     
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22))
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
+        Column(modifier = Modifier.padding(16.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    DifficultyBadge(difficulty = challenge.difficulty)
+                    // Difficulty Badge
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = difficultyColor.copy(alpha = 0.2f)
+                    ) {
+                        Text(
+                            text = problem.difficulty,
+                            fontSize = 11.sp,
+                            color = difficultyColor,
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        )
+                    }
+                    
                     Spacer(modifier = Modifier.width(8.dp))
+                    
+                    // Source Badge
                     Text(
-                        text = source,
-                        fontSize = 11.sp,
-                        color = Color(0xFF6E7681)
+                        text = problem.source,
+                        fontSize = 10.sp,
+                        color = if (problem.source == "Gemini") Color(0xFF00B8A3) else Color(0xFF58A6FF)
                     )
                 }
                 
-                if (hasSolution) {
-                    Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = Color(0xFF238636).copy(alpha = 0.2f)
+                Row {
+                    if (problem.solution != null) {
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = Color(0xFF238636).copy(alpha = 0.2f)
+                        ) {
+                            Text(
+                                text = "✓ Solution",
+                                fontSize = 10.sp,
+                                color = Color(0xFF39D353),
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                    }
+                    
+                    IconButton(
+                        onClick = onDelete,
+                        modifier = Modifier.size(24.dp)
                     ) {
-                        Text(
-                            text = "✓ Has Solution",
-                            fontSize = 11.sp,
-                            color = Color(0xFF39D353),
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        Icon(
+                            Icons.Filled.Delete,
+                            contentDescription = "Delete",
+                            tint = Color(0xFFF85149),
+                            modifier = Modifier.size(18.dp)
                         )
                     }
                 }
@@ -257,89 +340,108 @@ private fun CachedProblemCard(
             Spacer(modifier = Modifier.height(8.dp))
             
             Text(
-                text = challenge.title,
-                fontSize = 16.sp,
+                text = "#${problem.questionId}. ${problem.title}",
+                fontSize = 15.sp,
                 fontWeight = FontWeight.Medium,
                 color = Color(0xFFE6EDF3)
             )
             
             Text(
-                text = "Date: ${challenge.date}",
-                fontSize = 12.sp,
-                color = Color(0xFF8B949E)
+                text = "Saved: ${problem.date}",
+                fontSize = 11.sp,
+                color = Color(0xFF6E7681)
             )
             
-            if (challenge.tags.isNotEmpty()) {
+            // Tags
+            if (problem.tags.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(8.dp))
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    challenge.tags.take(3).forEach { tag ->
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    problem.tags.take(4).forEach { tag ->
                         Surface(
-                            shape = RoundedCornerShape(12.dp),
+                            shape = RoundedCornerShape(10.dp),
                             color = Color(0xFF30363D)
                         ) {
                             Text(
                                 text = tag,
-                                fontSize = 10.sp,
+                                fontSize = 9.sp,
                                 color = Color(0xFF8B949E),
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                             )
                         }
                     }
                 }
             }
             
-            // Expandable description
-            Spacer(modifier = Modifier.height(8.dp))
-            
+            // Expand/Collapse
             TextButton(
-                onClick = { expanded = !expanded }
+                onClick = { expanded = !expanded },
+                modifier = Modifier.padding(top = 4.dp)
             ) {
+                Icon(
+                    if (expanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
+                    contentDescription = null,
+                    tint = Color(0xFF58A6FF),
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
                 Text(
-                    text = if (expanded) "Hide Description" else "Show Description",
+                    text = if (expanded) "Less" else "More Details",
                     color = Color(0xFF58A6FF),
                     fontSize = 12.sp
                 )
             }
             
-            if (expanded && challenge.descriptionPreview.isNotBlank()) {
-                Text(
-                    text = challenge.descriptionPreview,
-                    fontSize = 13.sp,
-                    color = Color(0xFF8B949E),
-                    modifier = Modifier.padding(top = 8.dp)
-                )
+            if (expanded) {
+                Spacer(modifier = Modifier.height(8.dp))
+                HorizontalDivider(color = Color(0xFF30363D))
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                if (problem.descriptionPreview.isNotBlank()) {
+                    Text(
+                        text = "📝 Problem:",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color(0xFFE6EDF3)
+                    )
+                    Text(
+                        text = problem.descriptionPreview.take(500) + if (problem.descriptionPreview.length > 500) "..." else "",
+                        fontSize = 12.sp,
+                        color = Color(0xFF8B949E),
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                }
+                
+                if (problem.solution != null) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        text = "💡 Solution:",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color(0xFF39D353)
+                    )
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 4.dp),
+                        shape = RoundedCornerShape(8.dp),
+                        color = Color(0xFF0D1117)
+                    ) {
+                        Text(
+                            text = problem.solution.take(800) + if (problem.solution.length > 800) "\n..." else "",
+                            fontSize = 11.sp,
+                            color = Color(0xFFE6EDF3),
+                            modifier = Modifier.padding(8.dp),
+                            fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+                        )
+                    }
+                }
             }
         }
     }
 }
 
 @Composable
-private fun DifficultyBadge(difficulty: String) {
-    val color = when (difficulty.lowercase()) {
-        "easy" -> Color(0xFF00B8A3)
-        "medium" -> Color(0xFFFFC01E)
-        "hard" -> Color(0xFFFF375F)
-        else -> Color(0xFF8B949E)
-    }
-    
-    Surface(
-        shape = RoundedCornerShape(12.dp),
-        color = color.copy(alpha = 0.2f)
-    ) {
-        Text(
-            text = difficulty,
-            fontSize = 11.sp,
-            color = color,
-            fontWeight = FontWeight.Medium,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-        )
-    }
-}
-
-@Composable
-private fun EmptyOfflineCard() {
+private fun EmptyStorageCard() {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
@@ -351,58 +453,41 @@ private fun EmptyOfflineCard() {
                 .padding(32.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(text = "📭", fontSize = 48.sp)
-            Spacer(modifier = Modifier.height(12.dp))
+            Text(text = "📭", fontSize = 64.sp)
+            Spacer(modifier = Modifier.height(16.dp))
             Text(
-                text = "No Cached Problems",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Medium,
+                text = "No Saved Problems",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
                 color = Color(0xFFE6EDF3)
             )
+            Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "Fetch a challenge while online to cache it",
+                text = "Problems are automatically saved when you generate solutions in the LeetCode or Ollama tabs",
                 fontSize = 14.sp,
                 color = Color(0xFF8B949E),
                 textAlign = TextAlign.Center
             )
-        }
-    }
-}
-
-@Composable
-private fun OfflineTipsCard() {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22))
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-            Text(
-                text = "💡 Offline Tips",
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Medium,
-                color = Color(0xFFE6EDF3)
-            )
-            
-            Spacer(modifier = Modifier.height(12.dp))
-            
-            val tips = listOf(
-                "• Problems are cached when you fetch daily challenges",
-                "• AI solutions are saved after generation",
-                "• Use 'Fetch Challenge' while online to prepare",
-                "• Flashcards work offline for review",
-                "• Focus mode timer works without internet"
-            )
-            
-            tips.forEach { tip ->
-                Text(
-                    text = tip,
-                    fontSize = 13.sp,
-                    color = Color(0xFF8B949E),
-                    modifier = Modifier.padding(vertical = 2.dp)
-                )
+            Spacer(modifier = Modifier.height(16.dp))
+            Card(
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF21262D)),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Column(modifier = Modifier.padding(12.dp)) {
+                    Text(
+                        text = "💡 How to save problems:",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color(0xFFE6EDF3)
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = "1. Go to LeetCode or Ollama tab\n2. Fetch a daily challenge\n3. Generate AI solution\n4. Problem is auto-saved here!",
+                        fontSize = 12.sp,
+                        color = Color(0xFF8B949E),
+                        lineHeight = 20.sp
+                    )
+                }
             }
         }
     }

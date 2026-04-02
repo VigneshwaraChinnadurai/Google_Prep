@@ -215,6 +215,8 @@ class LeetCodeViewModel(
                     .onSuccess { answer ->
                         applyAiResult(answer)
                         ConsistencyStorage.saveAi(appContext, answer)
+                        // Also save to persistent history for offline mode
+                        ConsistencyStorage.saveProblemToHistory(appContext, challenge, "Gemini", answer)
                         saveRevisionFilesLocally(
                             challenge = challenge,
                             aiCode = answer.leetcodePythonCode,

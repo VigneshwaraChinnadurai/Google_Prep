@@ -44,6 +44,21 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/widget_leetcode_info" />
         </receiver>
+        
+        <!-- Device Admin for Uninstall Protection -->
+        <receiver
+            android:name=".security.LeetCodeDeviceAdmin"
+            android:exported="true"
+            android:description="@string/device_admin_description"
+            android:label="@string/device_admin_label"
+            android:permission="android.permission.BIND_DEVICE_ADMIN">
+            <meta-data
+                android:name="android.app.device_admin"
+                android:resource="@xml/device_admin" />
+            <intent-filter>
+                <action android:name="android.app.action.DEVICE_ADMIN_ENABLED" />
+            </intent-filter>
+        </receiver>
     </application>
 
 </manifest>

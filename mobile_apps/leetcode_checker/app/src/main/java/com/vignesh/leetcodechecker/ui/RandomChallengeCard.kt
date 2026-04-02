@@ -1,5 +1,7 @@
 package com.vignesh.leetcodechecker.ui
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -354,11 +356,28 @@ fun RandomChallengeCard(
                         color = Color(0xFF8B949E),
                         textAlign = TextAlign.Center
                     )
+                    
+                    Spacer(modifier = Modifier.height(8.dp))
+                    
+                    Text(
+                        text = "Clicking 'Accept' opens LeetCode with filters applied",
+                        fontSize = 12.sp,
+                        color = Color(0xFF58A6FF),
+                        textAlign = TextAlign.Center
+                    )
                 }
             },
             confirmButton = {
+                val context = LocalContext.current
                 Button(
                     onClick = {
+                        // Open LeetCode problemset with filters
+                        val topicSlug = selectedTopic!!.lowercase().replace(" ", "-")
+                        val difficultyParam = selectedDifficulty!!.uppercase()
+                        val url = "https://leetcode.com/problemset/?topicSlugs=$topicSlug&difficulty=$difficultyParam"
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                        context.startActivity(intent)
+                        
                         onStartChallenge(selectedTopic!!, selectedDifficulty!!)
                         showChallengeDialog = false
                         selectedTopic = null
@@ -366,7 +385,9 @@ fun RandomChallengeCard(
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF238636))
                 ) {
-                    Text("Accept Challenge")
+                    Icon(Icons.Filled.PlayArrow, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Open LeetCode")
                 }
             },
             dismissButton = {

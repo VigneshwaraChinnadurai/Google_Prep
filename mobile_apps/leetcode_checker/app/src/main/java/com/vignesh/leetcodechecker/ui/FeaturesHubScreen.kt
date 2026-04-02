@@ -115,7 +115,8 @@ fun FeaturesHubScreen(
             FeatureItem("Focus Mode", "🎧", Color(0xFFF0883E), FeatureDestination.FOCUS),
             FeatureItem("Interview", "🎤", Color(0xFF00B8A3), FeatureDestination.INTERVIEW),
             FeatureItem("Leaderboard", "📈", Color(0xFFC0C0C0), FeatureDestination.LEADERBOARD),
-            FeatureItem("Offline", "📱", Color(0xFF6E7681), FeatureDestination.OFFLINE)
+            FeatureItem("Offline", "📱", Color(0xFF6E7681), FeatureDestination.OFFLINE),
+            FeatureItem("Protection", "🔒", Color(0xFFF85149), FeatureDestination.PROTECTION)
         )
         
         LazyVerticalGrid(
@@ -326,5 +327,6 @@ enum class FeatureDestination {
     FOCUS,
     INTERVIEW,
     LEADERBOARD,
-    OFFLINE
+    OFFLINE,
+    PROTECTION
 }

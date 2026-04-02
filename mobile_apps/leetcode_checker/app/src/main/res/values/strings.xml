@@ -1,4 +1,6 @@
 <resources>
     <string name="app_name">Vignesh Personal Development</string>
     <string name="widget_description">Shows your LeetCode streak, today\'s completion status, and current challenge</string>
+    <string name="device_admin_label">LeetCode Uninstall Protection</string>
+    <string name="device_admin_description">Prevents accidental uninstallation. Password required to disable.</string>
 </resources>

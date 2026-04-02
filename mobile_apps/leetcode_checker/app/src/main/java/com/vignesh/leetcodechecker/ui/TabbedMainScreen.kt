@@ -39,7 +39,8 @@ enum class FeatureScreen {
     FOCUS,
     INTERVIEW,
     LEADERBOARD,
-    OFFLINE
+    OFFLINE,
+    PROTECTION
 }
 
 /**
@@ -131,6 +132,7 @@ fun TabbedMainScreen(
                                     FeatureDestination.INTERVIEW -> FeatureScreen.INTERVIEW
                                     FeatureDestination.LEADERBOARD -> FeatureScreen.LEADERBOARD
                                     FeatureDestination.OFFLINE -> FeatureScreen.OFFLINE
+                                    FeatureDestination.PROTECTION -> FeatureScreen.PROTECTION
                                 }
                             }
                         )
@@ -156,6 +158,9 @@ fun TabbedMainScreen(
                             onBackClick = { featureScreen = FeatureScreen.HUB }
                         )
                         FeatureScreen.OFFLINE -> OfflineModeScreen(
+                            onBackClick = { featureScreen = FeatureScreen.HUB }
+                        )
+                        FeatureScreen.PROTECTION -> UninstallProtectionScreen(
                             onBackClick = { featureScreen = FeatureScreen.HUB }
                         )
                     }
