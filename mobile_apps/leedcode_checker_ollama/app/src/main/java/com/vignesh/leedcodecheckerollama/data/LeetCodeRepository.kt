@@ -34,6 +34,7 @@ data class DailyChallengeUiModel(
     val url: String,
     val descriptionPreview: String,
     val fullStatement: String,
+    val htmlContent: String = "",  // Added for HTML rendering
     val pythonStarterCode: String,
     val exampleTestcases: String
 )
@@ -310,6 +311,9 @@ class LeetCodeRepository(
             val exampleTestcases = questionDetails.exampleTestcases
                 ?.trim()
                 .orEmpty()
+            
+            // Store raw HTML content for proper rendering
+            val htmlContent = questionDetails.content.orEmpty()
 
             DailyChallengeUiModel(
                 date = daily.date,
@@ -321,6 +325,7 @@ class LeetCodeRepository(
                 url = "https://leetcode.com${daily.link}",
                 descriptionPreview = content.take(500),
                 fullStatement = content,
+                htmlContent = htmlContent,
                 pythonStarterCode = pythonStarter,
                 exampleTestcases = exampleTestcases
             )

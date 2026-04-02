@@ -1,4 +1,8 @@
 ﻿<resources>
     <string name="app_name">LeedCode Checker Ollama</string>
+    
+    <!-- Device Admin strings for uninstall protection -->
+    <string name="device_admin_label">LeetCode Protection</string>
+    <string name="device_admin_description">Enables uninstall protection for the LeetCode Checker app to maintain your consistency streak.</string>
 </resources>
 

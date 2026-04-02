@@ -99,11 +99,19 @@ class MainActivity : ComponentActivity() {
         ConsistencyReminderScheduler.ensureHourlyReminder(this)
         setContent {
             val darkTheme = isSystemInDarkTheme()
+            val application = applicationContext as Application
             MaterialTheme(colorScheme = if (darkTheme) AppDarkColors else AppLightColors) {
-                LeetCodeCheckerScreen(
-                    onOpenLink = { url ->
-                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
-                        startActivity(intent)
+                val viewModel: LeetCodeViewModel = viewModel(factory = LeetCodeViewModel.factory(application))
+                com.vignesh.leedcodecheckerollama.ui.TabbedMainScreen(
+                    application = application,
+                    viewModel = viewModel,
+                    ollamaContent = {
+                        LeetCodeCheckerScreen(
+                            onOpenLink = { url ->
+                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                                startActivity(intent)
+                            }
+                        )
                     }
                 )
             }
