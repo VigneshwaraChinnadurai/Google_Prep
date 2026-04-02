@@ -228,3 +228,4 @@ mobile_apps/leetcode_checker/.gradle/
 mobile_apps/leedcode_checker_ollama/.gradle/
 mobile_apps/leetcode_checker/local.properties
 mobile_apps/job_automation_standalone/local.properties
+/mobile_apps/job_automation_standalone/local.properties
