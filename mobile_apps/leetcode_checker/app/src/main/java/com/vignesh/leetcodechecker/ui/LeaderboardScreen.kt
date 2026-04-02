@@ -367,7 +367,7 @@ private suspend fun fetchLeaderboardData(
         val globalResponse = api.getGlobalRanking(
             GraphQLRequest(
                 query = globalQuery,
-                variables = mapOf("page" to "1")
+                variables = mapOf("page" to 1)
             )
         )
         

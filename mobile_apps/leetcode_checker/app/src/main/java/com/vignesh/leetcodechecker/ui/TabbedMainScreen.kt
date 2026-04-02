@@ -40,7 +40,9 @@ enum class FeatureScreen {
     INTERVIEW,
     LEADERBOARD,
     OFFLINE,
-    PROTECTION
+    PROTECTION,
+    AI_NEWS,
+    AI_NEWS_SETTINGS
 }
 
 /**
@@ -133,6 +135,8 @@ fun TabbedMainScreen(
                                     FeatureDestination.LEADERBOARD -> FeatureScreen.LEADERBOARD
                                     FeatureDestination.OFFLINE -> FeatureScreen.OFFLINE
                                     FeatureDestination.PROTECTION -> FeatureScreen.PROTECTION
+                                    FeatureDestination.AI_NEWS -> FeatureScreen.AI_NEWS
+                                    FeatureDestination.AI_NEWS_SETTINGS -> FeatureScreen.AI_NEWS_SETTINGS
                                 }
                             }
                         )
@@ -162,6 +166,13 @@ fun TabbedMainScreen(
                         )
                         FeatureScreen.PROTECTION -> UninstallProtectionScreen(
                             onBackClick = { featureScreen = FeatureScreen.HUB }
+                        )
+                        FeatureScreen.AI_NEWS -> AINewsScreen(
+                            onBackClick = { featureScreen = FeatureScreen.HUB },
+                            onSettingsClick = { featureScreen = FeatureScreen.AI_NEWS_SETTINGS }
+                        )
+                        FeatureScreen.AI_NEWS_SETTINGS -> AINewsSettingsScreen(
+                            onBackClick = { featureScreen = FeatureScreen.AI_NEWS }
                         )
                     }
                 }

@@ -116,6 +116,7 @@ fun FeaturesHubScreen(
             FeatureItem("Interview", "🎤", Color(0xFF00B8A3), FeatureDestination.INTERVIEW),
             FeatureItem("Leaderboard", "📈", Color(0xFFC0C0C0), FeatureDestination.LEADERBOARD),
             FeatureItem("Offline", "📱", Color(0xFF6E7681), FeatureDestination.OFFLINE),
+            FeatureItem("AI/ML News", "🤖", Color(0xFF9C27B0), FeatureDestination.AI_NEWS),
             FeatureItem("Protection", "🔒", Color(0xFFF85149), FeatureDestination.PROTECTION)
         )
         
@@ -328,5 +329,7 @@ enum class FeatureDestination {
     INTERVIEW,
     LEADERBOARD,
     OFFLINE,
-    PROTECTION
+    PROTECTION,
+    AI_NEWS,
+    AI_NEWS_SETTINGS
 }

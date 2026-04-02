@@ -5,7 +5,7 @@ import retrofit2.http.POST
 
 data class GraphQLRequest(
     val query: String,
-    val variables: Map<String, String>? = null
+    val variables: Map<String, Any>? = null
 )
 
 data class DailyChallengeResponse(

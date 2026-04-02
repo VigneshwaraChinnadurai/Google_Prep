@@ -23,28 +23,31 @@ import kotlin.random.Random
 
 /**
  * Problem topics available for challenges
+ * Each entry: display name, emoji, LeetCode tag slug
  */
+private data class ProblemTopic(val name: String, val emoji: String, val slug: String)
+
 private val PROBLEM_TOPICS = listOf(
-    "Array" to "📊",
-    "String" to "📝",
-    "Dynamic Programming" to "🧠",
-    "Tree" to "🌳",
-    "Graph" to "🔗",
-    "Hash Table" to "#️⃣",
-    "Binary Search" to "🔍",
-    "Linked List" to "🔗",
-    "Stack" to "📚",
-    "Queue" to "📤",
-    "Heap" to "⛰️",
-    "Greedy" to "💰",
-    "Backtracking" to "↩️",
-    "Sorting" to "📈",
-    "Math" to "🔢",
-    "Bit Manipulation" to "💻",
-    "Two Pointers" to "👆👆",
-    "Sliding Window" to "🪟",
-    "Recursion" to "🔄",
-    "Matrix" to "🔲"
+    ProblemTopic("Array", "📊", "array"),
+    ProblemTopic("String", "📝", "string"),
+    ProblemTopic("Dynamic Programming", "🧠", "dynamic-programming"),
+    ProblemTopic("Tree", "🌳", "tree"),
+    ProblemTopic("Graph", "🔗", "graph"),
+    ProblemTopic("Hash Table", "#️⃣", "hash-table"),
+    ProblemTopic("Binary Search", "🔍", "binary-search"),
+    ProblemTopic("Linked List", "🔗", "linked-list"),
+    ProblemTopic("Stack", "📚", "stack"),
+    ProblemTopic("Queue", "📤", "queue"),
+    ProblemTopic("Heap", "⛰️", "heap-priority-queue"),
+    ProblemTopic("Greedy", "💰", "greedy"),
+    ProblemTopic("Backtracking", "↩️", "backtracking"),
+    ProblemTopic("Sorting", "📈", "sorting"),
+    ProblemTopic("Math", "🔢", "math"),
+    ProblemTopic("Bit Manipulation", "💻", "bit-manipulation"),
+    ProblemTopic("Two Pointers", "👆👆", "two-pointers"),
+    ProblemTopic("Sliding Window", "🪟", "sliding-window"),
+    ProblemTopic("Recursion", "🔄", "recursion"),
+    ProblemTopic("Matrix", "🔲", "matrix")
 )
 
 /**
@@ -166,14 +169,14 @@ fun RandomChallengeCard(
                         .heightIn(max = 400.dp)
                         .verticalScroll(rememberScrollState())
                 ) {
-                    PROBLEM_TOPICS.forEach { (topic, emoji) ->
-                        val isWeak = weakTopics.contains(topic)
+                    PROBLEM_TOPICS.forEach { topic ->
+                        val isWeak = weakTopics.contains(topic.name)
                         Surface(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(vertical = 4.dp)
                                 .clickable {
-                                    selectedTopic = topic
+                                    selectedTopic = topic.name
                                     showTopicSelector = false
                                     showDifficultySelector = true
                                 },
@@ -188,10 +191,10 @@ fun RandomChallengeCard(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(text = emoji, fontSize = 20.sp)
+                                    Text(text = topic.emoji, fontSize = 20.sp)
                                     Spacer(modifier = Modifier.width(12.dp))
                                     Text(
-                                        text = topic,
+                                        text = topic.name,
                                         color = Color(0xFFE6EDF3),
                                         fontSize = 14.sp
                                     )
@@ -372,7 +375,9 @@ fun RandomChallengeCard(
                 Button(
                     onClick = {
                         // Open LeetCode problemset with filters
-                        val topicSlug = selectedTopic!!.lowercase().replace(" ", "-")
+                        // Look up the proper slug from the topic name
+                        val topicSlug = PROBLEM_TOPICS.find { it.name == selectedTopic }?.slug 
+                            ?: selectedTopic!!.lowercase().replace(" ", "-")
                         val difficultyParam = selectedDifficulty!!.uppercase()
                         val url = "https://leetcode.com/problemset/?topicSlugs=$topicSlug&difficulty=$difficultyParam"
                         val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
@@ -393,7 +398,7 @@ fun RandomChallengeCard(
             dismissButton = {
                 TextButton(onClick = { 
                     // Pick another random but keep topic
-                    val newTopic = PROBLEM_TOPICS.random().first
+                    val newTopic = PROBLEM_TOPICS.random().name
                     val newDifficulty = listOf("Easy", "Medium", "Hard").random()
                     selectedTopic = newTopic
                     selectedDifficulty = newDifficulty
