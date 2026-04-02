@@ -1,0 +1,57 @@
+Date: 2026-04-02
+Title: Maximum Amount of Money Robot Can Earn
+URL: https://leetcode.com/problems/maximum-amount-of-money-robot-can-earn/
+
+LLM Explanation:
+This problem asks for the maximum profit on a path from the top-left to the bottom-right of a grid, where we can neutralize up to two "robber" cells (negative values). This is a classic grid traversal problem that can be solved efficiently using dynamic programming.
+
+The core idea is to extend the standard DP state. Instead of just tracking the position `(i, j)`, we also need to track the number of neutralizations used.
+
+Let `dp[i][j][k]` be the maximum profit to reach cell `(i, j)` using exactly `k` neutralizations, where `k` can be 0, 1, or 2.
+
+The DP table will have dimensions `m x n x 3` and is initialized with a very small number (negative infinity) to represent unreachable states.
+
+**Base Case:**
+The robot starts at `(0, 0)`.
+- If `coins[0][0]` is non-negative, the profit is `coins[0][0]` with 0 neutralizations: `dp[0][0][0] = coins[0][0]`.
+- If `coins[0][0]` is negative (a robber), the robot has two choices:
+    1. Don't neutralize: Profit is `coins[0][0]` with 0 neutralizations. `dp[0][0][0] = coins[0][0]`.
+    2. Neutralize: Profit is 0 with 1 neutralization. `dp[0][0][1] = 0`.
+
+**Transitions:**
+We iterate through the grid from `(0, 0)` to `(m-1, n-1)`. For each cell `(i, j)`, we compute `dp[i][j][k]` for `k = 0, 1, 2`. A robot can reach `(i, j)` only from `(i-1, j)` (down) or `(i, j-1)` (right).
+
+For each `k`, the maximum profit to reach a predecessor cell is `max(dp[i-1][j][k], dp[i][j-1][k])`.
+
+The transition depends on the value of `coins[i][j]`:
+1.  **If `coins[i][j] >= 0`:** The robot gains coins. No neutralization can be used. The number of neutralizations `k` is carried over from the previous cell.
+    `dp[i][j][k] = max(dp[i-1][j][k], dp[i][j-1][k]) + coins[i][j]`
+
+2.  **If `coins[i][j] < 0` (Robber):** The robot has two choices at `(i, j)`.
+    a. **Don't neutralize:** The robot loses coins. It must have arrived with `k` neutralizations.
+       Profit = `max(dp[i-1][j][k], dp[i][j-1][k]) + coins[i][j]`
+    b. **Neutralize:** The robot uses one of its neutralizations. This is only possible if `k > 0`. It must have arrived with `k-1` neutralizations. The loss is avoided (profit from this cell is 0).
+       Profit = `max(dp[i-1][j][k-1], dp[i][j-1][k-1])`
+    We take the maximum of these two choices:
+    `dp[i][j][k] = max(profit_from_choice_a, profit_from_choice_b)`
+
+**Final Result:**
+After filling the entire DP table, the maximum profit at the destination `(m-1, n-1)` is the maximum value among all possible neutralization counts.
+`result = max(dp[m-1][n-1][0], dp[m-1][n-1][1], dp[m-1][n-1][2])`
+
+**Complexity:**
+-   **Time Complexity:** O(m * n). We iterate through each of the `m * n` cells, and for each cell, we perform a constant number of operations (for `k=0, 1, 2`).
+-   **Space Complexity:** O(m * n). We use a 3D DP table of size `m x n x 3`.
+
+LLM Testcase Validation:
+```
+Input: coins = [[0,1,-1],[1,-2,3],[2,-3,4]]
+Output: 8
+My output: 8
+The trace in the thought process confirms this. The path (0,0)->(0,1)->(1,1)->(1,2)->(2,2) with one neutralization at (1,1) yields 0+1+0+3+4 = 8.
+
+Input: coins = [[10,10,10],[10,10,10]]
+Output: 40
+My output: 40
+The trace in the thought process confirms this. Since all coins are positive, no neutralizations are used. The path sum is simply the sum of coins on any valid path. For example, (0,0)->(0,1)->(0,2)->(1,2) gives 10+10+10+10 = 40.
+```
