@@ -11,6 +11,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -28,13 +29,17 @@ import com.vignesh.leetcodechecker.data.LeetCodeActivityStorage
 
 /**
  * Analytics Dashboard showing comprehensive LeetCode statistics
+ * Data is tracked from:
+ * 1. Local completions (when you mark problems complete in LeetCode/Ollama tabs)
+ * 2. Can be synced with GitHub revision history (problems pushed to GitHub)
  */
 @Composable
 fun AnalyticsDashboard(
+    onBackClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val stats = remember { LeetCodeActivityStorage.loadProblemStats(context) }
+    var stats by remember { mutableStateOf(LeetCodeActivityStorage.loadProblemStats(context)) }
     val achievements = remember { LeetCodeActivityStorage.loadAchievements(context) }
     val profile = remember { LeetCodeActivityStorage.loadUserProfile(context) }
     
@@ -47,15 +52,64 @@ fun AnalyticsDashboard(
             .verticalScroll(scrollState)
             .padding(16.dp)
     ) {
-        // Header
-        Text(
-            text = "📊 Analytics Dashboard",
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color(0xFFE6EDF3)
-        )
+        // Header with back button
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = onBackClick) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Back",
+                        tint = Color(0xFF58A6FF)
+                    )
+                }
+                Text(
+                    text = "📊 Analytics Dashboard",
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFFE6EDF3)
+                )
+            }
+            IconButton(onClick = { 
+                stats = LeetCodeActivityStorage.loadProblemStats(context)
+            }) {
+                Icon(
+                    Icons.Filled.Refresh,
+                    contentDescription = "Refresh",
+                    tint = Color(0xFF58A6FF)
+                )
+            }
+        }
         
-        Spacer(modifier = Modifier.height(20.dp))
+        // Data source info
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFF21262D)),
+            shape = RoundedCornerShape(8.dp)
+        ) {
+            Row(
+                modifier = Modifier.padding(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    Icons.Filled.Info,
+                    contentDescription = null,
+                    tint = Color(0xFF58A6FF),
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Data tracked from problems marked complete in LeetCode & Ollama tabs",
+                    fontSize = 11.sp,
+                    color = Color(0xFF8B949E)
+                )
+            }
+        }
+        
+        Spacer(modifier = Modifier.height(16.dp))
         
         // User Level Card
         UserLevelCard(profile = profile, stats = stats)

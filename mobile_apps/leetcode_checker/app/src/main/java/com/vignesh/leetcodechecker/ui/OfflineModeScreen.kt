@@ -19,6 +19,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.vignesh.leetcodechecker.ConsistencyStorage
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import com.vignesh.leetcodechecker.data.DailyChallengeUiModel
 
 /**
@@ -26,6 +27,7 @@ import com.vignesh.leetcodechecker.data.DailyChallengeUiModel
  */
 @Composable
 fun OfflineModeScreen(
+    onBackClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -47,18 +49,25 @@ fun OfflineModeScreen(
         Row(
             verticalAlignment = Alignment.CenterVertically
         ) {
+            IconButton(onClick = onBackClick) {
+                Icon(
+                    Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Back",
+                    tint = Color(0xFF58A6FF)
+                )
+            }
             Text(text = "📱", fontSize = 28.sp)
-            Spacer(modifier = Modifier.width(12.dp))
+            Spacer(modifier = Modifier.width(8.dp))
             Column {
                 Text(
                     text = "Offline Mode",
-                    fontSize = 24.sp,
+                    fontSize = 22.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFFE6EDF3)
                 )
                 Text(
                     text = "Access cached problems without internet",
-                    fontSize = 14.sp,
+                    fontSize = 12.sp,
                     color = Color(0xFF8B949E)
                 )
             }

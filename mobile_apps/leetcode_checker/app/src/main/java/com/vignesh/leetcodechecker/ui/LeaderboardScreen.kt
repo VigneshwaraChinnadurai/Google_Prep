@@ -20,13 +20,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import com.vignesh.leetcodechecker.data.LeetCodeActivityStorage
 
 /**
  * Leaderboard Screen - Compare with other users
+ * Note: Currently uses mock data for demonstration. Can be connected to a backend or GitHub leaderboard.
  */
 @Composable
 fun LeaderboardScreen(
+    onBackClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -41,12 +44,23 @@ fun LeaderboardScreen(
             .padding(16.dp)
     ) {
         // Header
-        Text(
-            text = "🏆 Leaderboard",
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color(0xFFE6EDF3)
-        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = onBackClick) {
+                Icon(
+                    Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Back",
+                    tint = Color(0xFF58A6FF)
+                )
+            }
+            Text(
+                text = "🏆 Leaderboard",
+                fontSize = 22.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFFE6EDF3)
+            )
+        }
         
         Spacer(modifier = Modifier.height(20.dp))
         

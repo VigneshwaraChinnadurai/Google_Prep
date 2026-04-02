@@ -11,13 +11,16 @@ import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -37,8 +40,15 @@ import com.vignesh.leetcodechecker.viewmodel.GitHubProfileViewModel
 fun GitHubProfileScreen(
     viewModel: GitHubProfileViewModel = viewModel()
 ) {
+    val context = LocalContext.current
     val state by viewModel.state.collectAsState()
     val scrollState = rememberScrollState()
+    
+    // Load saved username
+    var usernameInput by rememberSaveable { 
+        mutableStateOf(viewModel.getSavedUsername(context) ?: "") 
+    }
+    var showUsernameInput by rememberSaveable { mutableStateOf(state.user == null) }
     
     Column(
         modifier = Modifier
@@ -60,7 +70,7 @@ fun GitHubProfileScreen(
                 fontWeight = FontWeight.Bold
             )
             IconButton(
-                onClick = { viewModel.refresh() },
+                onClick = { viewModel.refresh(context) },
                 enabled = !state.isLoading
             ) {
                 Icon(
@@ -72,6 +82,65 @@ fun GitHubProfileScreen(
         }
         
         Spacer(modifier = Modifier.height(16.dp))
+        
+        // Username Input Card (always show if no user loaded or on error)
+        if (showUsernameInput || state.error != null || state.user == null) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22))
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = "Enter your GitHub Username",
+                        color = Color(0xFFE6EDF3),
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Text(
+                        text = "Not your email! Use your GitHub username (e.g., 'octocat')",
+                        color = Color(0xFF8B949E),
+                        fontSize = 12.sp
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    
+                    OutlinedTextField(
+                        value = usernameInput,
+                        onValueChange = { usernameInput = it.trim() },
+                        placeholder = { Text("GitHub username", color = Color(0xFF8B949E)) },
+                        singleLine = true,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = Color(0xFFE6EDF3),
+                            unfocusedTextColor = Color(0xFFE6EDF3),
+                            focusedBorderColor = Color(0xFF58A6FF),
+                            unfocusedBorderColor = Color(0xFF30363D),
+                            cursorColor = Color(0xFF58A6FF)
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    
+                    Spacer(modifier = Modifier.height(12.dp))
+                    
+                    Button(
+                        onClick = {
+                            if (usernameInput.isNotBlank()) {
+                                viewModel.saveAndLoadProfile(context, usernameInput)
+                                showUsernameInput = false
+                            }
+                        },
+                        enabled = usernameInput.isNotBlank() && !state.isLoading,
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF238636)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Filled.Search, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Load Profile")
+                    }
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+        }
         
         when {
             state.isLoading -> {
@@ -88,12 +157,20 @@ fun GitHubProfileScreen(
             state.error != null -> {
                 ErrorCard(
                     error = state.error!!,
-                    onRetry = { viewModel.refresh() }
+                    onRetry = { viewModel.refresh(context) }
                 )
             }
             
             state.user != null -> {
                 val user = state.user!!
+                
+                // Show change username button
+                TextButton(
+                    onClick = { showUsernameInput = true },
+                    modifier = Modifier.align(Alignment.End)
+                ) {
+                    Text("Change Username", color = Color(0xFF58A6FF), fontSize = 12.sp)
+                }
                 
                 // Profile Card
                 ProfileCard(

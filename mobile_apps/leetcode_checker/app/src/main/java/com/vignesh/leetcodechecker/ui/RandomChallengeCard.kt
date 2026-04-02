@@ -20,7 +20,33 @@ import com.vignesh.leetcodechecker.data.LeetCodeActivityStorage
 import kotlin.random.Random
 
 /**
- * Random Challenge Card Component - Pick a random problem from weak areas
+ * Problem topics available for challenges
+ */
+private val PROBLEM_TOPICS = listOf(
+    "Array" to "📊",
+    "String" to "📝",
+    "Dynamic Programming" to "🧠",
+    "Tree" to "🌳",
+    "Graph" to "🔗",
+    "Hash Table" to "#️⃣",
+    "Binary Search" to "🔍",
+    "Linked List" to "🔗",
+    "Stack" to "📚",
+    "Queue" to "📤",
+    "Heap" to "⛰️",
+    "Greedy" to "💰",
+    "Backtracking" to "↩️",
+    "Sorting" to "📈",
+    "Math" to "🔢",
+    "Bit Manipulation" to "💻",
+    "Two Pointers" to "👆👆",
+    "Sliding Window" to "🪟",
+    "Recursion" to "🔄",
+    "Matrix" to "🔲"
+)
+
+/**
+ * Random Challenge Card Component - Select topic first, then difficulty
  */
 @Composable
 fun RandomChallengeCard(
@@ -29,15 +55,20 @@ fun RandomChallengeCard(
 ) {
     val context = LocalContext.current
     val stats = remember { LeetCodeActivityStorage.loadProblemStats(context) }
-    var showDialog by remember { mutableStateOf(false) }
-    var selectedChallenge by remember { mutableStateOf<Pair<String, String>?>(null) }
+    
+    // State for selection flow
+    var selectedTopic by remember { mutableStateOf<String?>(null) }
+    var showTopicSelector by remember { mutableStateOf(false) }
+    var showDifficultySelector by remember { mutableStateOf(false) }
+    var showChallengeDialog by remember { mutableStateOf(false) }
+    var selectedDifficulty by remember { mutableStateOf<String?>(null) }
     
     // Identify weak areas (least solved topics)
     val weakTopics = stats.topicDistribution.entries
         .sortedBy { it.value }
         .take(5)
         .map { it.key }
-        .ifEmpty { listOf("Arrays", "Strings", "Dynamic Programming", "Trees", "Graphs") }
+        .ifEmpty { listOf("Array", "String", "Dynamic Programming") }
     
     Card(
         modifier = modifier.fillMaxWidth(),
@@ -71,41 +102,33 @@ fun RandomChallengeCard(
             
             Spacer(modifier = Modifier.height(16.dp))
             
-            // Quick challenge options
-            Row(
+            // Select Topic Button (Primary action)
+            Button(
+                onClick = { showTopicSelector = true },
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF238636)),
+                shape = RoundedCornerShape(8.dp)
             ) {
-                ChallengeButton(
-                    text = "Easy",
-                    color = Color(0xFF00B8A3),
-                    modifier = Modifier.weight(1f),
-                    onClick = {
-                        val topic = weakTopics.random()
-                        selectedChallenge = Pair(topic, "Easy")
-                        showDialog = true
-                    }
-                )
-                ChallengeButton(
-                    text = "Medium",
-                    color = Color(0xFFFFC01E),
-                    modifier = Modifier.weight(1f),
-                    onClick = {
-                        val topic = weakTopics.random()
-                        selectedChallenge = Pair(topic, "Medium")
-                        showDialog = true
-                    }
-                )
-                ChallengeButton(
-                    text = "Hard",
-                    color = Color(0xFFFF375F),
-                    modifier = Modifier.weight(1f),
-                    onClick = {
-                        val topic = weakTopics.random()
-                        selectedChallenge = Pair(topic, "Hard")
-                        showDialog = true
-                    }
-                )
+                Text("🎯 Select Problem Type", fontWeight = FontWeight.Medium)
+            }
+            
+            Spacer(modifier = Modifier.height(12.dp))
+            
+            // Quick random challenge button
+            OutlinedButton(
+                onClick = {
+                    val topic = weakTopics.random()
+                    val difficulty = listOf("Easy", "Medium", "Hard").random()
+                    selectedTopic = topic
+                    selectedDifficulty = difficulty
+                    showChallengeDialog = true
+                },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF58A6FF)),
+                border = BorderStroke(1.dp, Color(0xFF30363D)),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Text("🎲 Quick Random Challenge")
             }
             
             Spacer(modifier = Modifier.height(12.dp))
@@ -121,10 +144,161 @@ fun RandomChallengeCard(
         }
     }
     
-    // Challenge Dialog
-    if (showDialog && selectedChallenge != null) {
+    // Topic Selection Dialog
+    if (showTopicSelector) {
         AlertDialog(
-            onDismissRequest = { showDialog = false },
+            onDismissRequest = { showTopicSelector = false },
+            containerColor = Color(0xFF161B22),
+            title = {
+                Text(
+                    text = "Select Problem Type",
+                    color = Color(0xFFE6EDF3),
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 400.dp)
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    PROBLEM_TOPICS.forEach { (topic, emoji) ->
+                        val isWeak = weakTopics.contains(topic)
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp)
+                                .clickable {
+                                    selectedTopic = topic
+                                    showTopicSelector = false
+                                    showDifficultySelector = true
+                                },
+                            shape = RoundedCornerShape(8.dp),
+                            color = if (isWeak) Color(0xFF58A6FF).copy(alpha = 0.1f) else Color(0xFF21262D)
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(12.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(text = emoji, fontSize = 20.sp)
+                                    Spacer(modifier = Modifier.width(12.dp))
+                                    Text(
+                                        text = topic,
+                                        color = Color(0xFFE6EDF3),
+                                        fontSize = 14.sp
+                                    )
+                                }
+                                if (isWeak) {
+                                    Surface(
+                                        shape = RoundedCornerShape(4.dp),
+                                        color = Color(0xFF58A6FF).copy(alpha = 0.2f)
+                                    ) {
+                                        Text(
+                                            text = "Focus",
+                                            fontSize = 10.sp,
+                                            color = Color(0xFF58A6FF),
+                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { showTopicSelector = false }) {
+                    Text("Cancel", color = Color(0xFF8B949E))
+                }
+            }
+        )
+    }
+    
+    // Difficulty Selection Dialog
+    if (showDifficultySelector && selectedTopic != null) {
+        AlertDialog(
+            onDismissRequest = { 
+                showDifficultySelector = false
+                selectedTopic = null
+            },
+            containerColor = Color(0xFF161B22),
+            title = {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = selectedTopic!!,
+                        color = Color(0xFFE6EDF3),
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Select Difficulty",
+                        color = Color(0xFF8B949E),
+                        fontSize = 14.sp
+                    )
+                }
+            },
+            text = {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    DifficultyOptionButton(
+                        text = "Easy",
+                        color = Color(0xFF00B8A3),
+                        onClick = {
+                            selectedDifficulty = "Easy"
+                            showDifficultySelector = false
+                            showChallengeDialog = true
+                        }
+                    )
+                    DifficultyOptionButton(
+                        text = "Medium",
+                        color = Color(0xFFFFC01E),
+                        onClick = {
+                            selectedDifficulty = "Medium"
+                            showDifficultySelector = false
+                            showChallengeDialog = true
+                        }
+                    )
+                    DifficultyOptionButton(
+                        text = "Hard",
+                        color = Color(0xFFFF375F),
+                        onClick = {
+                            selectedDifficulty = "Hard"
+                            showDifficultySelector = false
+                            showChallengeDialog = true
+                        }
+                    )
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { 
+                    showDifficultySelector = false
+                    selectedTopic = null
+                }) {
+                    Text("Cancel", color = Color(0xFF8B949E))
+                }
+            }
+        )
+    }
+    
+    // Final Challenge Dialog
+    if (showChallengeDialog && selectedTopic != null && selectedDifficulty != null) {
+        AlertDialog(
+            onDismissRequest = { 
+                showChallengeDialog = false
+                selectedTopic = null
+                selectedDifficulty = null
+            },
             containerColor = Color(0xFF161B22),
             title = {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -143,10 +317,8 @@ fun RandomChallengeCard(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    val (topic, difficulty) = selectedChallenge!!
-                    
                     Text(
-                        text = topic,
+                        text = selectedTopic!!,
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFFE6EDF3)
@@ -156,16 +328,16 @@ fun RandomChallengeCard(
                     
                     Surface(
                         shape = RoundedCornerShape(16.dp),
-                        color = when (difficulty) {
+                        color = when (selectedDifficulty) {
                             "Easy" -> Color(0xFF00B8A3)
                             "Medium" -> Color(0xFFFFC01E)
                             else -> Color(0xFFFF375F)
                         }.copy(alpha = 0.2f)
                     ) {
                         Text(
-                            text = difficulty,
+                            text = selectedDifficulty!!,
                             fontSize = 14.sp,
-                            color = when (difficulty) {
+                            color = when (selectedDifficulty) {
                                 "Easy" -> Color(0xFF00B8A3)
                                 "Medium" -> Color(0xFFFFC01E)
                                 else -> Color(0xFFFF375F)
@@ -177,7 +349,7 @@ fun RandomChallengeCard(
                     Spacer(modifier = Modifier.height(16.dp))
                     
                     Text(
-                        text = "Go to LeetCode and find a $difficulty $topic problem to solve!",
+                        text = "Go to LeetCode and find a ${selectedDifficulty} ${selectedTopic} problem to solve!",
                         fontSize = 14.sp,
                         color = Color(0xFF8B949E),
                         textAlign = TextAlign.Center
@@ -187,8 +359,10 @@ fun RandomChallengeCard(
             confirmButton = {
                 Button(
                     onClick = {
-                        onStartChallenge(selectedChallenge!!.first, selectedChallenge!!.second)
-                        showDialog = false
+                        onStartChallenge(selectedTopic!!, selectedDifficulty!!)
+                        showChallengeDialog = false
+                        selectedTopic = null
+                        selectedDifficulty = null
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF238636))
                 ) {
@@ -197,10 +371,11 @@ fun RandomChallengeCard(
             },
             dismissButton = {
                 TextButton(onClick = { 
-                    // Pick another random challenge
-                    val topic = weakTopics.random()
-                    val difficulties = listOf("Easy", "Medium", "Hard")
-                    selectedChallenge = Pair(topic, difficulties.random())
+                    // Pick another random but keep topic
+                    val newTopic = PROBLEM_TOPICS.random().first
+                    val newDifficulty = listOf("Easy", "Medium", "Hard").random()
+                    selectedTopic = newTopic
+                    selectedDifficulty = newDifficulty
                 }) {
                     Text("🔄 Another", color = Color(0xFF58A6FF))
                 }
@@ -210,23 +385,23 @@ fun RandomChallengeCard(
 }
 
 @Composable
-private fun ChallengeButton(
+private fun DifficultyOptionButton(
     text: String,
     color: Color,
-    modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
     Button(
         onClick = onClick,
-        modifier = modifier,
+        modifier = Modifier.fillMaxWidth(),
         colors = ButtonDefaults.buttonColors(containerColor = color.copy(alpha = 0.2f)),
         shape = RoundedCornerShape(8.dp),
-        contentPadding = PaddingValues(vertical = 12.dp)
+        contentPadding = PaddingValues(vertical = 16.dp)
     ) {
         Text(
             text = text,
             color = color,
-            fontWeight = FontWeight.Medium
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Bold
         )
     }
 }

@@ -134,14 +134,30 @@ fun TabbedMainScreen(
                                 }
                             }
                         )
-                        FeatureScreen.ANALYTICS -> AnalyticsDashboard()
-                        FeatureScreen.GOALS -> GoalTrackingScreen()
-                        FeatureScreen.ACHIEVEMENTS -> AchievementsScreen()
-                        FeatureScreen.FLASHCARDS -> FlashcardScreen()
-                        FeatureScreen.FOCUS -> FocusModeScreen()
-                        FeatureScreen.INTERVIEW -> AIInterviewPrepScreen()
-                        FeatureScreen.LEADERBOARD -> LeaderboardScreen()
-                        FeatureScreen.OFFLINE -> OfflineModeScreen()
+                        FeatureScreen.ANALYTICS -> AnalyticsDashboard(
+                            onBackClick = { featureScreen = FeatureScreen.HUB }
+                        )
+                        FeatureScreen.GOALS -> GoalTrackingScreen(
+                            onBackClick = { featureScreen = FeatureScreen.HUB }
+                        )
+                        FeatureScreen.ACHIEVEMENTS -> AchievementsScreen(
+                            onBackClick = { featureScreen = FeatureScreen.HUB }
+                        )
+                        FeatureScreen.FLASHCARDS -> FlashcardScreen(
+                            onBackClick = { featureScreen = FeatureScreen.HUB }
+                        )
+                        FeatureScreen.FOCUS -> FocusModeScreen(
+                            onBackClick = { featureScreen = FeatureScreen.HUB }
+                        )
+                        FeatureScreen.INTERVIEW -> AIInterviewPrepScreen(
+                            onBackClick = { featureScreen = FeatureScreen.HUB }
+                        )
+                        FeatureScreen.LEADERBOARD -> LeaderboardScreen(
+                            onBackClick = { featureScreen = FeatureScreen.HUB }
+                        )
+                        FeatureScreen.OFFLINE -> OfflineModeScreen(
+                            onBackClick = { featureScreen = FeatureScreen.HUB }
+                        )
                     }
                 }
                 AppTab.STRATEGIC_CHATBOT -> {

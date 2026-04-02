@@ -20,6 +20,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.vignesh.leetcodechecker.data.LeetCodeActivityStorage
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import kotlinx.coroutines.delay
 
 /**
@@ -27,6 +28,7 @@ import kotlinx.coroutines.delay
  */
 @Composable
 fun FlashcardScreen(
+    onBackClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -34,6 +36,19 @@ fun FlashcardScreen(
     var currentIndex by remember { mutableStateOf(0) }
     var isFlipped by remember { mutableStateOf(false) }
     var showCompleted by remember { mutableStateOf(false) }
+    var showImportDialog by remember { mutableStateOf(false) }
+    
+    // Import from History Dialog
+    if (showImportDialog) {
+        ImportFromHistoryDialog(
+            onDismiss = { showImportDialog = false },
+            onImport = { count ->
+                importFlashcardsFromHistory(context, count)
+                flashcards = LeetCodeActivityStorage.getDueFlashcards(context)
+                showImportDialog = false
+            }
+        )
+    }
     
     Column(
         modifier = modifier
@@ -47,24 +62,44 @@ fun FlashcardScreen(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = "📚 Flashcards",
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFFE6EDF3)
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = onBackClick) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Back",
+                        tint = Color(0xFF58A6FF)
+                    )
+                }
+                Text(
+                    text = "📚 Flashcards",
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFFE6EDF3)
+                )
+            }
             
-            Text(
-                text = "${currentIndex + 1} / ${flashcards.size}",
-                fontSize = 16.sp,
-                color = Color(0xFF8B949E)
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = { showImportDialog = true }) {
+                    Icon(
+                        Icons.Filled.Add,
+                        contentDescription = "Import from History",
+                        tint = Color(0xFF58A6FF)
+                    )
+                }
+                Text(
+                    text = "${currentIndex + 1} / ${flashcards.size}",
+                    fontSize = 16.sp,
+                    color = Color(0xFF8B949E)
+                )
+            }
         }
         
         Spacer(modifier = Modifier.height(20.dp))
         
         if (flashcards.isEmpty()) {
-            EmptyFlashcardsPlaceholder()
+            EmptyFlashcardsPlaceholder(
+                onImportClick = { showImportDialog = true }
+            )
         } else if (showCompleted) {
             CompletedReviewPlaceholder(
                 onRestart = {
@@ -342,7 +377,14 @@ private fun TopicChip(topic: String) {
 }
 
 @Composable
-private fun EmptyFlashcardsPlaceholder() {
+private fun EmptyFlashcardsPlaceholder(
+    onImportClick: () -> Unit = {}
+) {
+    val context = LocalContext.current
+    val historyCount = remember {
+        LeetCodeActivityStorage.loadCompletionHistory(context).size
+    }
+    
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -370,6 +412,43 @@ private fun EmptyFlashcardsPlaceholder() {
             color = Color(0xFF6E7681),
             textAlign = TextAlign.Center
         )
+        
+        if (historyCount > 0) {
+            Spacer(modifier = Modifier.height(24.dp))
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "📖 Import from History",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color(0xFFE6EDF3)
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "You have $historyCount solved problems in your history",
+                        fontSize = 13.sp,
+                        color = Color(0xFF8B949E),
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Button(
+                        onClick = onImportClick,
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF238636))
+                    ) {
+                        Icon(Icons.Filled.Add, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Create Flashcards")
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -414,4 +493,192 @@ private fun moveToNext(total: Int, current: Int, callback: (Int, Boolean) -> Uni
     } else {
         callback(nextIndex, false)
     }
+}
+
+@Composable
+private fun ImportFromHistoryDialog(
+    onDismiss: () -> Unit,
+    onImport: (Int) -> Unit
+) {
+    val context = LocalContext.current
+    val history = remember { LeetCodeActivityStorage.loadCompletionHistory(context) }
+    val existingFlashcards = remember { LeetCodeActivityStorage.loadFlashcards(context) }
+    val existingIds = existingFlashcards.map { it.problemId }.toSet()
+    val newProblems = history.filter { it.problemId !in existingIds }
+    
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = Color(0xFF161B22),
+        title = {
+            Text(
+                text = "📖 Import from History",
+                color = Color(0xFFE6EDF3),
+                fontWeight = FontWeight.Bold
+            )
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(
+                    text = "Create flashcards from your solved problems",
+                    color = Color(0xFF8B949E),
+                    fontSize = 14.sp
+                )
+                
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF21262D)),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = "Total solved:",
+                                color = Color(0xFF8B949E),
+                                fontSize = 13.sp
+                            )
+                            Text(
+                                text = "${history.size}",
+                                color = Color(0xFFE6EDF3),
+                                fontSize = 13.sp
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = "Already have cards:",
+                                color = Color(0xFF8B949E),
+                                fontSize = 13.sp
+                            )
+                            Text(
+                                text = "${existingFlashcards.size}",
+                                color = Color(0xFFE6EDF3),
+                                fontSize = 13.sp
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = "New cards to create:",
+                                color = Color(0xFF8B949E),
+                                fontSize = 13.sp
+                            )
+                            Text(
+                                text = "${newProblems.size}",
+                                color = Color(0xFF39D353),
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 13.sp
+                            )
+                        }
+                    }
+                }
+                
+                if (newProblems.isEmpty()) {
+                    Text(
+                        text = "All your solved problems already have flashcards!",
+                        color = Color(0xFF58A6FF),
+                        fontSize = 13.sp
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { onImport(newProblems.size) },
+                enabled = newProblems.isNotEmpty(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF238636),
+                    disabledContainerColor = Color(0xFF30363D)
+                )
+            ) {
+                Text("Import ${newProblems.size} Cards")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel", color = Color(0xFF8B949E))
+            }
+        }
+    )
+}
+
+private fun importFlashcardsFromHistory(context: android.content.Context, count: Int) {
+    val history = LeetCodeActivityStorage.loadCompletionHistory(context)
+    val existingFlashcards = LeetCodeActivityStorage.loadFlashcards(context)
+    val existingIds = existingFlashcards.map { it.problemId }.toSet()
+    
+    // Filter out problems that already have flashcards
+    val newProblems = history.filter { it.problemId !in existingIds }
+    
+    // Create flashcards for each new problem
+    newProblems.forEach { entry ->
+        val flashcard = LeetCodeActivityStorage.Flashcard(
+            problemId = entry.problemId,
+            problemTitle = entry.problemTitle,
+            question = generateQuestionForProblem(entry),
+            answer = generateAnswerForProblem(entry),
+            difficulty = entry.difficulty,
+            topics = entry.topics,
+            lastReviewed = null,
+            nextReviewDate = null,
+            repetitions = 0,
+            easeFactor = 2.5f
+        )
+        LeetCodeActivityStorage.saveFlashcard(context, flashcard)
+    }
+}
+
+private fun generateQuestionForProblem(entry: LeetCodeActivityStorage.CompletionEntry): String {
+    val topicHint = if (entry.topics.isNotEmpty()) {
+        " (Topics: ${entry.topics.take(2).joinToString(", ")})"
+    } else ""
+    
+    return when (entry.difficulty.lowercase()) {
+        "easy" -> "What is the key insight to solve \"${entry.problemTitle}\"?$topicHint"
+        "medium" -> "Explain your approach to \"${entry.problemTitle}\" and its time complexity.$topicHint"
+        "hard" -> "Describe the optimal algorithm for \"${entry.problemTitle}\" including edge cases.$topicHint"
+        else -> "How would you solve \"${entry.problemTitle}\"?$topicHint"
+    }
+}
+
+private fun generateAnswerForProblem(entry: LeetCodeActivityStorage.CompletionEntry): String {
+    val difficultyTip = when (entry.difficulty.lowercase()) {
+        "easy" -> "Focus on the simplest working solution first."
+        "medium" -> "Consider trade-offs between time and space complexity."
+        "hard" -> "Look for patterns like DP, graphs, or advanced data structures."
+        else -> "Think step by step."
+    }
+    
+    val topicTips = entry.topics.take(3).mapNotNull { topic ->
+        when (topic.lowercase()) {
+            "array" -> "Consider two-pointer or sliding window techniques."
+            "string" -> "Think about character frequency or pattern matching."
+            "dynamic programming", "dp" -> "Define subproblems and recurrence relations."
+            "tree" -> "Consider DFS/BFS traversal patterns."
+            "graph" -> "Think about graph traversal or shortest path algorithms."
+            "hash table", "hashmap" -> "Use hash maps for O(1) lookups."
+            "binary search" -> "Look for sorted order or search space reduction."
+            "stack" -> "Consider monotonic stack for next greater/smaller problems."
+            "queue" -> "Use BFS for level-order processing."
+            "linked list" -> "Use dummy nodes and two-pointer techniques."
+            "recursion" -> "Identify the base case and recursive relation."
+            "backtracking" -> "Explore all possibilities with pruning."
+            "greedy" -> "Make locally optimal choices."
+            "sorting" -> "Consider if sorting simplifies the problem."
+            "heap" -> "Use for top-k or streaming median problems."
+            else -> null
+        }
+    }
+    
+    val tips = listOf(difficultyTip) + topicTips
+    return "Review your solution for \"${entry.problemTitle}\":\n\n" +
+           tips.joinToString("\n• ", prefix = "• ") +
+           "\n\nPractice explaining your approach out loud!"
 }

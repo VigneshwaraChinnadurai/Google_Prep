@@ -18,6 +18,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.vignesh.leetcodechecker.data.LeetCodeActivityStorage
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -27,6 +28,7 @@ import java.util.*
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GoalTrackingScreen(
+    onBackClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -51,12 +53,21 @@ fun GoalTrackingScreen(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = "🎯 Goal Tracking",
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFFE6EDF3)
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = onBackClick) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Back",
+                        tint = Color(0xFF58A6FF)
+                    )
+                }
+                Text(
+                    text = "🎯 Goal Tracking",
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFFE6EDF3)
+                )
+            }
             
             IconButton(
                 onClick = { showAddDialog = true }

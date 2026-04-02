@@ -25,6 +25,7 @@ import kotlinx.coroutines.delay
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.foundation.Canvas
 
 /**
@@ -32,6 +33,7 @@ import androidx.compose.foundation.Canvas
  */
 @Composable
 fun FocusModeScreen(
+    onBackClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -74,13 +76,25 @@ fun FocusModeScreen(
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Header
-        Text(
-            text = "🎯 Focus Mode",
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color(0xFFE6EDF3)
-        )
+        // Header with back button
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = onBackClick) {
+                Icon(
+                    Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Back",
+                    tint = Color(0xFF58A6FF)
+                )
+            }
+            Text(
+                text = "🎯 Focus Mode",
+                fontSize = 22.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFFE6EDF3)
+            )
+        }
         
         Spacer(modifier = Modifier.height(8.dp))
         

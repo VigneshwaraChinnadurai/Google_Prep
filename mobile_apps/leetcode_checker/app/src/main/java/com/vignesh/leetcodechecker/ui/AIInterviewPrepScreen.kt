@@ -1,5 +1,6 @@
 package com.vignesh.leetcodechecker.ui
 
+import android.content.Context
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -20,20 +21,39 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.vignesh.leetcodechecker.data.OllamaRepository
+import com.vignesh.leetcodechecker.data.GeminiApi
+import com.vignesh.leetcodechecker.data.GeminiContent
+import com.vignesh.leetcodechecker.data.GeminiGenerateRequest
+import com.vignesh.leetcodechecker.data.GeminiGenerationConfig
+import com.vignesh.leetcodechecker.data.GeminiPart
+import com.vignesh.leetcodechecker.BuildConfig
 import com.vignesh.leetcodechecker.AppSettingsStore
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Send
 import kotlinx.coroutines.launch
+import retrofit2.Retrofit
+import retrofit2.converter.moshi.MoshiConverterFactory
 
 /**
- * AI Interview Prep Screen - Uses Ollama for cost-effective interview practice
+ * AI Interview Prep Screen - Uses Ollama or Gemini for interview practice
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AIInterviewPrepScreen(
+    onBackClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val settings = remember { AppSettingsStore.load(context) }
+    
+    // AI Provider settings - stored in SharedPreferences
+    val aiProviderPrefs = remember { 
+        context.getSharedPreferences("ai_interview_prefs", android.content.Context.MODE_PRIVATE) 
+    }
+    var selectedProvider by remember { 
+        mutableStateOf(aiProviderPrefs.getString("provider", "Ollama") ?: "Ollama") 
+    }
+    var showSettings by remember { mutableStateOf(false) }
     
     var messages by remember { mutableStateOf(listOf<InterviewMessage>()) }
     var inputText by remember { mutableStateOf("") }
@@ -63,28 +83,159 @@ fun AIInterviewPrepScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
+                    .padding(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text(
-                    text = "🎤",
-                    fontSize = 28.sp
-                )
-                Spacer(modifier = Modifier.width(12.dp))
-                Column {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = onBackClick) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back",
+                            tint = Color(0xFF58A6FF)
+                        )
+                    }
                     Text(
-                        text = "AI Interview Prep",
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFFE6EDF3)
+                        text = "🎤",
+                        fontSize = 28.sp
                     )
-                    Text(
-                        text = "Practice with Ollama (Local LLM)",
-                        fontSize = 12.sp,
-                        color = Color(0xFF8B949E)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Column {
+                        Text(
+                            text = "AI Interview Prep",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFFE6EDF3)
+                        )
+                        Text(
+                            text = "Using $selectedProvider",
+                            fontSize = 12.sp,
+                            color = if (selectedProvider == "Gemini") Color(0xFF00B8A3) else Color(0xFF58A6FF)
+                        )
+                    }
+                }
+                IconButton(onClick = { showSettings = true }) {
+                    Icon(
+                        Icons.Filled.Settings,
+                        contentDescription = "Settings",
+                        tint = Color(0xFF8B949E)
                     )
                 }
             }
+        }
+        
+        // Settings Dialog
+        if (showSettings) {
+            AlertDialog(
+                onDismissRequest = { showSettings = false },
+                containerColor = Color(0xFF161B22),
+                title = {
+                    Text(
+                        text = "⚙️ AI Provider Settings",
+                        color = Color(0xFFE6EDF3),
+                        fontWeight = FontWeight.Bold
+                    )
+                },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Text(
+                            text = "Choose your AI provider for interview practice:",
+                            color = Color(0xFF8B949E),
+                            fontSize = 14.sp
+                        )
+                        
+                        // Ollama Option
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { 
+                                    selectedProvider = "Ollama"
+                                    aiProviderPrefs.edit().putString("provider", "Ollama").apply()
+                                },
+                            shape = RoundedCornerShape(8.dp),
+                            color = if (selectedProvider == "Ollama") Color(0xFF58A6FF).copy(alpha = 0.2f) else Color(0xFF21262D)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                RadioButton(
+                                    selected = selectedProvider == "Ollama",
+                                    onClick = { 
+                                        selectedProvider = "Ollama"
+                                        aiProviderPrefs.edit().putString("provider", "Ollama").apply()
+                                    },
+                                    colors = RadioButtonDefaults.colors(
+                                        selectedColor = Color(0xFF58A6FF)
+                                    )
+                                )
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Column {
+                                    Text(
+                                        text = "Ollama (Local)",
+                                        fontWeight = FontWeight.Medium,
+                                        color = Color(0xFFE6EDF3)
+                                    )
+                                    Text(
+                                        text = "Free • Runs locally • Requires Ollama setup",
+                                        fontSize = 12.sp,
+                                        color = Color(0xFF8B949E)
+                                    )
+                                }
+                            }
+                        }
+                        
+                        // Gemini Option
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { 
+                                    selectedProvider = "Gemini"
+                                    aiProviderPrefs.edit().putString("provider", "Gemini").apply()
+                                },
+                            shape = RoundedCornerShape(8.dp),
+                            color = if (selectedProvider == "Gemini") Color(0xFF00B8A3).copy(alpha = 0.2f) else Color(0xFF21262D)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                RadioButton(
+                                    selected = selectedProvider == "Gemini",
+                                    onClick = { 
+                                        selectedProvider = "Gemini"
+                                        aiProviderPrefs.edit().putString("provider", "Gemini").apply()
+                                    },
+                                    colors = RadioButtonDefaults.colors(
+                                        selectedColor = Color(0xFF00B8A3)
+                                    )
+                                )
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Column {
+                                    Text(
+                                        text = "Gemini (Cloud)",
+                                        fontWeight = FontWeight.Medium,
+                                        color = Color(0xFFE6EDF3)
+                                    )
+                                    Text(
+                                        text = "Requires API key • Better responses • May cost $",
+                                        fontSize = 12.sp,
+                                        color = Color(0xFF8B949E)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                },
+                confirmButton = {
+                    Button(
+                        onClick = { showSettings = false },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF238636))
+                    ) {
+                        Text("Done")
+                    }
+                }
+            )
         }
         
         if (!interviewStarted) {
@@ -99,8 +250,14 @@ fun AIInterviewPrepScreen(
                         isLoading = true
                         val initialPrompt = getInitialInterviewPrompt(selectedTopic)
                         try {
-                            val repository = OllamaRepository(context)
-                            val response = repository.generateInterviewQuestion(initialPrompt)
+                            val response = if (selectedProvider == "Gemini") {
+                                // Use Gemini
+                                generateGeminiInterviewQuestion(context, initialPrompt)
+                            } else {
+                                // Use Ollama
+                                val repository = OllamaRepository(context)
+                                repository.generateInterviewQuestion(initialPrompt)
+                            }
                             messages = messages + InterviewMessage(
                                 content = response,
                                 isUser = false,
@@ -115,7 +272,8 @@ fun AIInterviewPrepScreen(
                         }
                         isLoading = false
                     }
-                }
+                },
+                selectedProvider = selectedProvider
             )
         } else {
             // Chat Interface
@@ -182,12 +340,16 @@ fun AIInterviewPrepScreen(
                                 scope.launch {
                                     isLoading = true
                                     try {
-                                        val repository = OllamaRepository(context)
-                                        val response = repository.conductInterview(
-                                            topic = selectedTopic,
-                                            history = messages,
-                                            userAnswer = userMessage
-                                        )
+                                        val response = if (selectedProvider == "Gemini") {
+                                            conductGeminiInterview(context, selectedTopic, messages, userMessage)
+                                        } else {
+                                            val repository = OllamaRepository(context)
+                                            repository.conductInterview(
+                                                topic = selectedTopic,
+                                                history = messages,
+                                                userAnswer = userMessage
+                                            )
+                                        }
                                         messages = messages + InterviewMessage(
                                             content = response,
                                             isUser = false,
@@ -231,7 +393,8 @@ fun AIInterviewPrepScreen(
 private fun TopicSelectionView(
     selectedTopic: String,
     onTopicSelected: (String) -> Unit,
-    onStartInterview: () -> Unit
+    onStartInterview: () -> Unit,
+    selectedProvider: String = "Ollama"
 ) {
     val topics = listOf(
         "Data Structures" to "🗂️",
@@ -303,7 +466,10 @@ private fun TopicSelectionView(
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "• AI interviewer asks technical questions\n• Answer as you would in a real interview\n• Get feedback and follow-up questions\n• Uses local Ollama LLM (cost-free)",
+                    text = if (selectedProvider == "Gemini")
+                        "• AI interviewer asks technical questions\n• Answer as you would in a real interview\n• Get feedback and follow-up questions\n• Using Gemini AI (cloud-based)"
+                    else
+                        "• AI interviewer asks technical questions\n• Answer as you would in a real interview\n• Get feedback and follow-up questions\n• Using Ollama LLM (local, cost-free)",
                     fontSize = 13.sp,
                     color = Color(0xFF8B949E),
                     lineHeight = 20.sp
@@ -417,4 +583,101 @@ Start by introducing yourself briefly and ask an initial question related to $to
 Keep your questions clear and progressively challenging.
 After each answer, provide brief feedback and ask a follow-up question.
 Be encouraging but also point out areas for improvement."""
+}
+
+// ════════════════════════════════════════════════════════════════════════
+// Gemini API Helper Functions
+// ════════════════════════════════════════════════════════════════════════
+
+private suspend fun generateGeminiInterviewQuestion(context: Context, prompt: String): String {
+    val apiKey = BuildConfig.CHATBOT_GEMINI_API_KEY.ifBlank {
+        BuildConfig.GEMINI_API_KEY
+    }
+    
+    if (apiKey.isBlank()) {
+        throw Exception("Gemini API key not configured")
+    }
+    
+    val geminiApi = Retrofit.Builder()
+        .baseUrl("https://generativelanguage.googleapis.com/")
+        .addConverterFactory(MoshiConverterFactory.create())
+        .build()
+        .create(GeminiApi::class.java)
+    
+    val request = GeminiGenerateRequest(
+        contents = listOf(
+            GeminiContent(
+                parts = listOf(GeminiPart(text = prompt))
+            )
+        ),
+        generationConfig = GeminiGenerationConfig(
+            temperature = 0.7,
+            maxOutputTokens = 1024
+        )
+    )
+    
+    val response = geminiApi.generateContent(
+        model = "gemini-2.0-flash",
+        apiKey = apiKey,
+        body = request
+    )
+    
+    return response.candidates?.firstOrNull()?.content?.parts?.firstOrNull()?.text
+        ?: "Let's begin! Tell me about your experience with this topic."
+}
+
+private suspend fun conductGeminiInterview(
+    context: Context,
+    topic: String,
+    history: List<InterviewMessage>,
+    userAnswer: String
+): String {
+    val apiKey = BuildConfig.CHATBOT_GEMINI_API_KEY.ifBlank {
+        BuildConfig.GEMINI_API_KEY
+    }
+    
+    if (apiKey.isBlank()) {
+        throw Exception("Gemini API key not configured")
+    }
+    
+    val geminiApi = Retrofit.Builder()
+        .baseUrl("https://generativelanguage.googleapis.com/")
+        .addConverterFactory(MoshiConverterFactory.create())
+        .build()
+        .create(GeminiApi::class.java)
+    
+    // Build conversation history for context
+    val historyText = history.takeLast(6).joinToString("\n") { msg ->
+        if (msg.isUser) "Candidate: ${msg.content}" else "Interviewer: ${msg.content}"
+    }
+    
+    val prompt = """You are a technical interviewer conducting a coding interview focused on $topic.
+Continue the interview based on this conversation history:
+
+$historyText
+Candidate: $userAnswer
+
+Provide brief feedback on the answer (1-2 sentences) and ask a follow-up question related to $topic.
+Be encouraging but constructive. Keep response concise."""
+    
+    val request = GeminiGenerateRequest(
+        contents = listOf(
+            GeminiContent(
+                parts = listOf(GeminiPart(text = prompt))
+            )
+        ),
+        generationConfig = GeminiGenerationConfig(
+            temperature = 0.7,
+            maxOutputTokens = 512
+        )
+    )
+    
+    val response = geminiApi.generateContent(
+        model = "gemini-2.0-flash",
+        apiKey = apiKey,
+        body = request
+    )
+    
+    return response.candidates?.firstOrNull()?.content?.parts?.firstOrNull()?.text
+        ?: "That's interesting! Can you elaborate more on your approach?"
 }
