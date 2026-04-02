@@ -331,7 +331,12 @@ private fun parseHtmlContent(html: String): List<HtmlBlock> {
             exampleNumber++
             val example = parseExampleBlock(line, lines, i)
             if (example != null) {
-                blocks.add(example.copy(number = exampleNumber))
+                blocks.add(HtmlBlock.ExampleBlock(
+                    number = exampleNumber,
+                    input = example.input,
+                    output = example.output,
+                    explanation = example.explanation
+                ))
                 i = example.nextIndex
                 continue
             }
@@ -368,7 +373,7 @@ private fun parseHtmlContent(html: String): List<HtmlBlock> {
 }
 
 private fun extractCodeBlock(html: String): String {
-    val prePattern = Regex("""<pre[^>]*>(.*?)</pre>""", RegexOption.DOT_MATCHES_ALL or RegexOption.IGNORE_CASE)
+    val prePattern = Regex("""<pre[^>]*>(.*?)</pre>""", setOf(RegexOption.DOT_MATCHES_ALL, RegexOption.IGNORE_CASE))
     val match = prePattern.find(html)
     return if (match != null) {
         stripHtmlTags(match.groupValues[1])
@@ -376,7 +381,7 @@ private fun extractCodeBlock(html: String): String {
             .trim()
     } else {
         // Try to extract from code tag
-        val codePattern = Regex("""<code[^>]*>(.*?)</code>""", RegexOption.DOT_MATCHES_ALL or RegexOption.IGNORE_CASE)
+        val codePattern = Regex("""<code[^>]*>(.*?)</code>""", setOf(RegexOption.DOT_MATCHES_ALL, RegexOption.IGNORE_CASE))
         val codeMatch = codePattern.find(html)
         if (codeMatch != null) {
             stripHtmlTags(codeMatch.groupValues[1]).trim()
@@ -387,13 +392,13 @@ private fun extractCodeBlock(html: String): String {
 }
 
 private fun extractBetweenTags(html: String, tag: String): String {
-    val pattern = Regex("""<$tag[^>]*>(.*?)</$tag>""", RegexOption.DOT_MATCHES_ALL or RegexOption.IGNORE_CASE)
+    val pattern = Regex("""<$tag[^>]*>(.*?)</$tag>""", setOf(RegexOption.DOT_MATCHES_ALL, RegexOption.IGNORE_CASE))
     val match = pattern.find(html)
     return match?.groupValues?.getOrNull(1) ?: ""
 }
 
 private fun extractListItems(listHtml: String): List<String> {
-    val pattern = Regex("""<li[^>]*>(.*?)</li>""", RegexOption.DOT_MATCHES_ALL or RegexOption.IGNORE_CASE)
+    val pattern = Regex("""<li[^>]*>(.*?)</li>""", setOf(RegexOption.DOT_MATCHES_ALL, RegexOption.IGNORE_CASE))
     return pattern.findAll(listHtml).map { it.groupValues[1].trim() }.toList()
 }
 

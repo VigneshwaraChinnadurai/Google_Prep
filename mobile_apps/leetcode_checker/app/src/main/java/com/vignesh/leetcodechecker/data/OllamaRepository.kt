@@ -360,12 +360,15 @@ class OllamaRepository(private val context: Context) {
             val questionDetails = detailsResponse.data?.question
                 ?: error("Question details are not available")
 
-            val content = questionDetails.content
-                ?.replace(Regex("<[^>]*>"), " ")
-                ?.replace("&nbsp;", " ")
-                ?.replace(Regex("\\s+"), " ")
-                ?.trim()
-                .orEmpty()
+            // Keep raw HTML for proper rendering
+            val rawHtmlContent = questionDetails.content.orEmpty()
+
+            // Plain text for preview and search
+            val plainTextContent = rawHtmlContent
+                .replace(Regex("<[^>]*>"), " ")
+                .replace("&nbsp;", " ")
+                .replace(Regex("\\s+"), " ")
+                .trim()
 
             val pythonStarter = questionDetails.codeSnippets
                 ?.firstOrNull { it.langSlug.equals("python3", ignoreCase = true) }
@@ -382,8 +385,9 @@ class OllamaRepository(private val context: Context) {
                 questionId = daily.question.questionFrontendId,
                 tags = daily.question.topicTags.map { it.name },
                 url = "https://leetcode.com${daily.link}",
-                descriptionPreview = content.take(500),
-                fullStatement = content,
+                descriptionPreview = plainTextContent.take(500),
+                fullStatement = plainTextContent,
+                htmlContent = rawHtmlContent,
                 pythonStarterCode = pythonStarter,
                 exampleTestcases = exampleTestcases
             )
@@ -733,7 +737,7 @@ ${challenge.exampleTestcases.ifBlank { "Not provided" }}
                 prompt = prompt,
                 system = "You are a senior software engineer conducting a technical interview. Be professional, clear, and helpful.",
                 stream = false,
-                options = mapOf("num_predict" to 500)
+                options = OllamaOptions(numPredict = 500)
             )
             
             val response = ollamaApi().generate(request)
@@ -781,7 +785,7 @@ ${challenge.exampleTestcases.ifBlank { "Not provided" }}
                     |- Keep responses concise (2-3 paragraphs max)
                     |- If the candidate seems stuck, provide hints""".trimMargin(),
                 stream = false,
-                options = mapOf("num_predict" to 400)
+                options = OllamaOptions(numPredict = 400)
             )
             
             val response = ollamaApi().generate(request)

@@ -82,6 +82,9 @@ interface OllamaApi {
 
     @POST("api/generate")
     suspend fun generateRaw(@Body body: OllamaGenerateRequest): ResponseBody
+
+    @POST("api/generate")
+    suspend fun generate(@Body body: OllamaGenerateRequest): OllamaGenerateResponse
 }
 
 interface OllamaCatalogApi {
