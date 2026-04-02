@@ -243,9 +243,54 @@ class LeetCodeViewModel(
 
     fun markCompletedToday() {
         ConsistencyStorage.markCompletedToday(appContext)
+        
+        // Track activity for analytics and gamification
+        val challenge = _uiState.value.challenge
+        if (challenge != null) {
+            val entry = com.vignesh.leetcodechecker.data.LeetCodeActivityStorage.CompletionEntry(
+                date = com.vignesh.leetcodechecker.data.LeetCodeActivityStorage.run {
+                    java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).apply {
+                        timeZone = java.util.TimeZone.getTimeZone("Asia/Kolkata")
+                    }.format(java.util.Date())
+                },
+                problemId = challenge.questionId,
+                problemTitle = challenge.title,
+                difficulty = challenge.difficulty,
+                topics = challenge.tags,
+                solvedWithAi = !_uiState.value.aiCode.isNullOrBlank()
+            )
+            com.vignesh.leetcodechecker.data.LeetCodeActivityStorage.saveCompletion(appContext, entry)
+            
+            // Add XP based on difficulty
+            val xp = when (challenge.difficulty.lowercase()) {
+                "easy" -> 10
+                "medium" -> 25
+                "hard" -> 50
+                else -> 15
+            }
+            com.vignesh.leetcodechecker.data.LeetCodeActivityStorage.addXp(appContext, xp)
+            
+            // Create flashcard from the problem
+            val aiExplanation = _uiState.value.aiExplanation
+            if (!aiExplanation.isNullOrBlank()) {
+                val flashcard = com.vignesh.leetcodechecker.data.LeetCodeActivityStorage.Flashcard(
+                    problemId = challenge.questionId,
+                    problemTitle = challenge.title,
+                    question = "What is the key insight for solving '${challenge.title}'?",
+                    answer = aiExplanation.take(500),
+                    difficulty = challenge.difficulty,
+                    topics = challenge.tags
+                )
+                com.vignesh.leetcodechecker.data.LeetCodeActivityStorage.saveFlashcard(appContext, flashcard)
+            }
+            
+            // Update widget
+            com.vignesh.leetcodechecker.widget.LeetCodeWidgetProvider.updateAllWidgets(appContext)
+        }
+        
         _uiState.value = _uiState.value.copy(
             isCompletedToday = true,
-            infoMessage = "Marked completed for today."
+            infoMessage = "Marked completed for today. +XP earned!"
         )
     }
 

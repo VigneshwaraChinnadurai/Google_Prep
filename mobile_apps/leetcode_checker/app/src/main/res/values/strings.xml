@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Vignesh Personal Development</string>
+    <string name="widget_description">Shows your LeetCode streak, today\'s completion status, and current challenge</string>
 </resources>

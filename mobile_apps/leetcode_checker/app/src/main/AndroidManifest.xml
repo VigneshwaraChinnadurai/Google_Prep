@@ -30,6 +30,20 @@
         <receiver
             android:name=".ConsistencyReminderReceiver"
             android:exported="false" />
+
+        <!-- LeetCode Streak Widget -->
+        <receiver
+            android:name=".widget.LeetCodeWidgetProvider"
+            android:exported="true"
+            android:label="LeetCode Streak">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="com.vignesh.leetcodechecker.WIDGET_REFRESH" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_leetcode_info" />
+        </receiver>
     </application>
 
 </manifest>

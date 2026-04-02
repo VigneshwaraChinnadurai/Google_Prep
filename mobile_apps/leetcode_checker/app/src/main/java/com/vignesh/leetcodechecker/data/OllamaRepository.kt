@@ -712,4 +712,84 @@ ${challenge.exampleTestcases.ifBlank { "Not provided" }}
         hints += "Confirm Ollama is running: curl http://<ip>:11434/api/tags"
         return hints.distinct()
     }
+
+    // ════════════════════════════════════════════════════════════════════════
+    // AI Interview Prep Functions
+    // ════════════════════════════════════════════════════════════════════════
+
+    /**
+     * Generate an initial interview question for a given topic
+     */
+    suspend fun generateInterviewQuestion(prompt: String): String = withContext(Dispatchers.IO) {
+        val settings = loadSettings()
+        val model = settings.ollamaPreferredModels.split(',').firstOrNull()?.trim()
+            ?: defaultConfiguredModel()
+        
+        try {
+            ensureModelAvailable(model, StringBuilder())
+            
+            val request = OllamaGenerateRequest(
+                model = model,
+                prompt = prompt,
+                system = "You are a senior software engineer conducting a technical interview. Be professional, clear, and helpful.",
+                stream = false,
+                options = mapOf("num_predict" to 500)
+            )
+            
+            val response = ollamaApi().generate(request)
+            response.response ?: throw Exception("No response from Ollama")
+        } catch (e: Exception) {
+            Log.e(TAG, "Interview question generation failed", e)
+            throw e
+        }
+    }
+
+    /**
+     * Conduct an interview with context from previous messages
+     */
+    suspend fun conductInterview(
+        topic: String,
+        history: List<com.vignesh.leetcodechecker.ui.InterviewMessage>,
+        userAnswer: String
+    ): String = withContext(Dispatchers.IO) {
+        val settings = loadSettings()
+        val model = settings.ollamaPreferredModels.split(',').firstOrNull()?.trim()
+            ?: defaultConfiguredModel()
+        
+        try {
+            ensureModelAvailable(model, StringBuilder())
+            
+            // Build context from history
+            val contextBuilder = StringBuilder()
+            contextBuilder.append("Interview topic: $topic\n\n")
+            contextBuilder.append("Previous conversation:\n")
+            history.takeLast(6).forEach { msg ->
+                val role = if (msg.isUser) "Candidate" else "Interviewer"
+                contextBuilder.append("$role: ${msg.content}\n\n")
+            }
+            contextBuilder.append("Candidate's answer: $userAnswer\n\n")
+            contextBuilder.append("As the interviewer, provide brief feedback on the answer and ask a follow-up question.")
+            
+            val request = OllamaGenerateRequest(
+                model = model,
+                prompt = contextBuilder.toString(),
+                system = """You are a senior software engineer conducting a technical interview about $topic.
+                    |Guidelines:
+                    |- Provide constructive feedback on answers
+                    |- Ask follow-up questions to probe deeper
+                    |- Be encouraging but also point out areas for improvement
+                    |- Keep responses concise (2-3 paragraphs max)
+                    |- If the candidate seems stuck, provide hints""".trimMargin(),
+                stream = false,
+                options = mapOf("num_predict" to 400)
+            )
+            
+            val response = ollamaApi().generate(request)
+            response.response ?: throw Exception("No response from Ollama")
+        } catch (e: Exception) {
+            Log.e(TAG, "Interview response generation failed", e)
+            throw e
+        }
+    }
 }
+
