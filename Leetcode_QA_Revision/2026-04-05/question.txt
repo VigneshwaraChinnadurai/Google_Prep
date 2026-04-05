@@ -1,0 +1,31 @@
+Date: 2026-04-05
+Question ID: 657
+Title: Robot Return to Origin
+Difficulty: Easy
+Tags: String, Simulation
+URL: https://leetcode.com/problems/robot-return-to-origin/
+
+Question:
+There is a robot starting at the position (0, 0) , the origin, on a 2D plane. Given a sequence of its moves, judge if this robot ends up at (0, 0) after it completes its moves. You are given a string moves that represents the move sequence of the robot where moves[i] represents its i th move. Valid moves are &#39;R&#39; (right), &#39;L&#39; (left), &#39;U&#39; (up), and &#39;D&#39; (down). Return true if the robot returns to the origin after it finishes all of its moves, or false otherwise . Note : The way that the robot is &quot;facing&quot; is irrelevant. &#39;R&#39; will always make the robot move to the right once, &#39;L&#39; will always make it move left, etc. Also, assume that the magnitude of the robot&#39;s movement is the same for each move. Example 1: Input: moves = &quot;UD&quot; Output: true Explanation : The robot moves up once, and then down once. All moves have the same magnitude, so it ended up at the origin where it started. Therefore, we return true. Example 2: Input: moves = &quot;LL&quot; Output: false Explanation : The robot moves left twice. It ends up two &quot;moves&quot; to the left of the origin. We return false because it is not at the origin at the end of its moves. Constraints: 1 &lt;= moves.length &lt;= 2 * 10 4 moves only contains the characters &#39;U&#39; , &#39;D&#39; , &#39;L&#39; and &#39;R&#39; .
+
+Starter Code (Python3):
+class Solution:
+    def judgeCircle(self, moves: str) -> bool:
+        
+
+Testcases:
+"UD"
+"LL"
+
+Expected Output / Validation:
+```
+Input: coins = [[0,1,-1],[1,-2,3],[2,-3,4]]
+Output: 8
+My output: 8
+The trace in the thought process confirms this. The path (0,0)->(0,1)->(1,1)->(1,2)->(2,2) with one neutralization at (1,1) yields 0+1+0+3+4 = 8.
+
+Input: coins = [[10,10,10],[10,10,10]]
+Output: 40
+My output: 40
+The trace in the thought process confirms this. Since all coins are positive, no neutralizations are used. The path sum is simply the sum of coins on any valid path. For example, (0,0)->(0,1)->(0,2)->(1,2) gives 10+10+10+10 = 40.
+```
