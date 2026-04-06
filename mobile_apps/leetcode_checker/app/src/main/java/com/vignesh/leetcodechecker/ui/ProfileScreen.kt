@@ -43,7 +43,7 @@ import java.net.URL
  * ProfileScreen - Unified profile view with expandable sections
  * 
  * Contains:
- * - GitHub dropdown (contribution graph, stats, README)
+ * - GitHub dropdown (contribution graph, stats)
  * - Credly dropdown (badges/certifications)
  * - LinkedIn dropdown (profile preview)
  * - Medium dropdown (blog articles)
@@ -458,40 +458,6 @@ private fun GitHubContent(
                 totalContributions = state.totalContributions,
                 modifier = Modifier.fillMaxWidth()
             )
-            
-            // README section
-            if (state.isReadmeLoading) {
-                Spacer(modifier = Modifier.height(12.dp))
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(60.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator(color = Color(0xFF58A6FF), modifier = Modifier.size(20.dp))
-                }
-            } else if (state.profileReadme != null) {
-                Spacer(modifier = Modifier.height(12.dp))
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(8.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFF0D1117))
-                ) {
-                    Column(modifier = Modifier.padding(12.dp)) {
-                        Text(
-                            text = "📄 README.md",
-                            color = Color(0xFF58A6FF),
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        GitHubMarkdownText(
-                            markdown = state.profileReadme!!,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-                }
-            }
         }
     }
 }
@@ -541,73 +507,78 @@ private fun ContributionChip(value: Int, label: String, color: Color) {
 data class CredlyBadge(
     val name: String,
     val issuer: String,
-    val imageUrl: String,
+    val issuerAbbrev: String,
+    val issuerColor: Long,
     val badgeUrl: String,
-    val issueDate: String
+    val dateInfo: String,
+    val isExpired: Boolean = false
 )
 
+/**
+ * Returns the user's actual Credly badges.
+ * Credly pages are JavaScript-rendered so we use hardcoded data.
+ */
+@Suppress("UNUSED_PARAMETER")
 private suspend fun fetchCredlyBadges(username: String): List<CredlyBadge> = withContext(Dispatchers.IO) {
-    val badges = mutableListOf<CredlyBadge>()
-    try {
-        val profileUrl = "https://www.credly.com/users/$username/badges"
-        val connection = URL(profileUrl).openConnection()
-        connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
-        connection.setRequestProperty("Accept", "text/html,application/xhtml+xml")
-        connection.connectTimeout = 15000
-        connection.readTimeout = 15000
-        
-        val html = connection.getInputStream().bufferedReader().readText()
-        
-        // Parse badge data from HTML - Credly uses data attributes and structured HTML
-        // Look for badge cards with data-entity-id and extract info
-        val badgePattern = Regex(
-            """<div[^>]*class="[^"]*cr-public-earned-badge-grid-item[^"]*"[^>]*>.*?<img[^>]*src="([^"]+)"[^>]*alt="([^"]+)".*?<a[^>]*href="(/badges/[^"]+)".*?</div>""",
-            RegexOption.DOT_MATCHES_ALL
+    listOf(
+        CredlyBadge(
+            name = "Configure AI Applications to optimize search results",
+            issuer = "Google Cloud",
+            issuerAbbrev = "GC",
+            issuerColor = 0xFF4285F4,
+            badgeUrl = "https://www.credly.com/users/vigneshwarachinnadurai/badges",
+            dateInfo = "Issued Dec 10, 2025"
+        ),
+        CredlyBadge(
+            name = "Delivery Accreditation - AI Agents",
+            issuer = "ServiceNow",
+            issuerAbbrev = "SN",
+            issuerColor = 0xFF62D84E,
+            badgeUrl = "https://www.credly.com/users/vigneshwarachinnadurai/badges",
+            dateInfo = "Issued Dec 16, 2025"
+        ),
+        CredlyBadge(
+            name = "AWS Certified Machine Learning – Specialty",
+            issuer = "Amazon Web Services",
+            issuerAbbrev = "AWS",
+            issuerColor = 0xFFFF9900,
+            badgeUrl = "https://www.credly.com/users/vigneshwarachinnadurai/badges",
+            dateInfo = "Expired Oct 31, 2024",
+            isExpired = true
+        ),
+        CredlyBadge(
+            name = "Machine Learning - Foundation",
+            issuer = "Deloitte Certified US",
+            issuerAbbrev = "D",
+            issuerColor = 0xFF86BC25,
+            badgeUrl = "https://www.credly.com/users/vigneshwarachinnadurai/badges",
+            dateInfo = "Expires Jan 17, 2028"
+        ),
+        CredlyBadge(
+            name = "Data Engineering - Foundation",
+            issuer = "Deloitte Certified US",
+            issuerAbbrev = "D",
+            issuerColor = 0xFF86BC25,
+            badgeUrl = "https://www.credly.com/users/vigneshwarachinnadurai/badges",
+            dateInfo = "Expires Jan 28, 2028"
+        ),
+        CredlyBadge(
+            name = "Industry Proficiency Foundation: Technology, Media & Telecom",
+            issuer = "Deloitte Certified US",
+            issuerAbbrev = "D",
+            issuerColor = 0xFF86BC25,
+            badgeUrl = "https://www.credly.com/users/vigneshwarachinnadurai/badges",
+            dateInfo = "Issued Jun 16, 2023"
+        ),
+        CredlyBadge(
+            name = "Impact Day 2025",
+            issuer = "Deloitte Certified US",
+            issuerAbbrev = "D",
+            issuerColor = 0xFF86BC25,
+            badgeUrl = "https://www.credly.com/users/vigneshwarachinnadurai/badges",
+            dateInfo = "Expires Nov 28, 2026"
         )
-        
-        // Alternative pattern for newer Credly HTML structure
-        val imgPattern = Regex("""<img[^>]*src="(https://images\.credly\.com[^"]+)"[^>]*alt="([^"]+)""")
-        val linkPattern = Regex("""<a[^>]*href="(https://www\.credly\.com/badges/[^"]+)""")
-        
-        // Try to extract badge images and names
-        val imgMatches = imgPattern.findAll(html).toList()
-        val linkMatches = linkPattern.findAll(html).toList()
-        
-        // If we found badges via img tags
-        if (imgMatches.isNotEmpty()) {
-            imgMatches.take(20).forEachIndexed { index, match ->
-                val imageUrl = match.groupValues[1]
-                val altText = match.groupValues[2]
-                
-                // Skip non-badge images
-                if (!imageUrl.contains("images.credly.com") || altText.isBlank()) return@forEachIndexed
-                if (altText.contains("profile", ignoreCase = true)) return@forEachIndexed
-                
-                // Try to find corresponding link
-                val badgeUrl = if (index < linkMatches.size) linkMatches[index].groupValues[1] 
-                               else "https://www.credly.com/users/$username/badges"
-                
-                // Extract issuer from alt text if possible (format: "Badge Name, Issuer")
-                val parts = altText.split(",").map { it.trim() }
-                val name = parts.firstOrNull() ?: altText
-                val issuer = if (parts.size > 1) parts[1] else "Credly"
-                
-                badges.add(CredlyBadge(
-                    name = name,
-                    issuer = issuer,
-                    imageUrl = imageUrl,
-                    badgeUrl = badgeUrl,
-                    issueDate = ""
-                ))
-            }
-        }
-        
-        // Deduplicate by name
-        badges.distinctBy { it.name }
-    } catch (e: Exception) {
-        // Return empty list on error
-        emptyList()
-    }
+    )
 }
 
 @Composable
@@ -704,8 +675,6 @@ private fun CredlyBadgeItem(
     badge: CredlyBadge,
     onClick: () -> Unit
 ) {
-    val context = LocalContext.current
-    
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -715,33 +684,47 @@ private fun CredlyBadgeItem(
             .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        AsyncImage(
-            model = ImageRequest.Builder(context)
-                .data(badge.imageUrl)
-                .crossfade(true)
-                .build(),
-            contentDescription = badge.name,
+        // Badge icon with issuer color and abbreviation
+        Box(
             modifier = Modifier
-                .size(48.dp)
-                .clip(RoundedCornerShape(4.dp)),
-            contentScale = ContentScale.Fit
-        )
+                .size(56.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(
+                    if (badge.isExpired) Color(badge.issuerColor).copy(alpha = 0.4f)
+                    else Color(badge.issuerColor)
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = badge.issuerAbbrev,
+                color = Color.White,
+                fontSize = if (badge.issuerAbbrev.length > 2) 14.sp else 18.sp,
+                fontWeight = FontWeight.Bold
+            )
+        }
         
         Spacer(modifier = Modifier.width(12.dp))
         
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = badge.name,
-                color = Color(0xFFE6EDF3),
+                color = if (badge.isExpired) Color(0xFF8B949E) else Color(0xFFE6EDF3),
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Medium,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
             Text(
-                text = "${badge.issuer} • ${badge.issueDate}",
+                text = badge.issuer,
                 color = Color(0xFF8B949E),
-                fontSize = 12.sp
+                fontSize = 12.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                text = badge.dateInfo,
+                color = if (badge.isExpired) Color(0xFFF85149) else Color(0xFF8B949E),
+                fontSize = 11.sp
             )
         }
         
