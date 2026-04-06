@@ -1,6 +1,7 @@
 package com.vignesh.leetcodechecker.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -20,12 +21,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.vignesh.leetcodechecker.viewmodel.GitHubProfileViewModel
+import androidx.compose.material3.HorizontalDivider
 
 /**
  * GitHub Profile Screen
@@ -106,10 +111,11 @@ fun GitHubProfileScreen(
             state.user != null -> {
                 val user = state.user!!
                 
-                // Profile Card
+                // Profile Card with avatar
                 ProfileCard(
                     name = user.name ?: user.login ?: "Unknown",
                     username = user.login ?: "",
+                    avatarUrl = state.avatarUrl,
                     bio = user.bio,
                     location = user.location,
                     company = user.company,
@@ -137,6 +143,34 @@ fun GitHubProfileScreen(
                     modifier = Modifier.fillMaxWidth()
                 )
                 
+                // Profile README section
+                if (state.isReadmeLoading) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22))
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(100.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(
+                                color = Color(0xFF58A6FF),
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                    }
+                } else if (state.profileReadme != null) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    ProfileReadmeCard(
+                        readme = state.profileReadme!!,
+                        username = user.login ?: ""
+                    )
+                }
+                
                 Spacer(modifier = Modifier.height(80.dp)) // Bottom padding for nav bar
             }
         }
@@ -147,6 +181,7 @@ fun GitHubProfileScreen(
 private fun ProfileCard(
     name: String,
     username: String,
+    avatarUrl: String?,
     bio: String?,
     location: String?,
     company: String?,
@@ -154,6 +189,8 @@ private fun ProfileCard(
     following: Int,
     repos: Int
 ) {
+    val context = LocalContext.current
+    
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
@@ -165,20 +202,35 @@ private fun ProfileCard(
             Row(
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Avatar placeholder
-                Box(
-                    modifier = Modifier
-                        .size(64.dp)
-                        .clip(CircleShape)
-                        .background(Color(0xFF30363D)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        Icons.Filled.Person,
-                        contentDescription = "Avatar",
-                        tint = Color(0xFF8B949E),
-                        modifier = Modifier.size(40.dp)
+                // Avatar - load from URL or show placeholder
+                if (avatarUrl != null) {
+                    AsyncImage(
+                        model = ImageRequest.Builder(context)
+                            .data(avatarUrl)
+                            .crossfade(true)
+                            .build(),
+                        contentDescription = "Profile Avatar",
+                        modifier = Modifier
+                            .size(64.dp)
+                            .clip(CircleShape)
+                            .border(2.dp, Color(0xFF30363D), CircleShape),
+                        contentScale = ContentScale.Crop
                     )
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .size(64.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFF30363D)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            Icons.Filled.Person,
+                            contentDescription = "Avatar",
+                            tint = Color(0xFF8B949E),
+                            modifier = Modifier.size(40.dp)
+                        )
+                    }
                 }
                 
                 Spacer(modifier = Modifier.width(16.dp))
@@ -355,6 +407,50 @@ private fun ErrorCard(error: String, onRetry: () -> Unit) {
             ) {
                 Text("Retry")
             }
+        }
+    }
+}
+
+@Composable
+private fun ProfileReadmeCard(
+    readme: String,
+    username: String
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22))
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            // Header with repo name
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(bottom = 12.dp)
+            ) {
+                Text(
+                    text = "📄",
+                    fontSize = 16.sp
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "$username / README.md",
+                    color = Color(0xFF58A6FF),
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium
+                )
+            }
+            
+            HorizontalDivider(color = Color(0xFF30363D), thickness = 1.dp)
+            
+            Spacer(modifier = Modifier.height(12.dp))
+            
+            // Render the markdown content
+            GitHubMarkdownText(
+                markdown = readme,
+                modifier = Modifier.fillMaxWidth()
+            )
         }
     }
 }

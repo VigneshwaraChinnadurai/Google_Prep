@@ -21,7 +21,10 @@ data class GitHubProfileState(
     val contributionDays: List<ContributionDay> = emptyList(),
     val totalContributions: Int = 0,
     val selectedYear: Int = java.util.Calendar.getInstance().get(java.util.Calendar.YEAR),
-    val savedUsername: String? = null
+    val savedUsername: String? = null,
+    val avatarUrl: String? = null,
+    val profileReadme: String? = null,
+    val isReadmeLoading: Boolean = false
 )
 
 private const val PREFS_NAME = "github_profile_prefs"
@@ -88,16 +91,44 @@ class GitHubProfileViewModel : ViewModel() {
                     _state.value = _state.value.copy(
                         isLoading = false,
                         user = user,
+                        avatarUrl = user.avatarUrl,
                         contributionDays = contributionDays,
                         totalContributions = totalContributions,
                         savedUsername = targetUsername,
                         error = null
                     )
+                    
+                    // Also load the profile README
+                    loadProfileReadme(targetUsername)
                 },
                 onFailure = { error ->
                     _state.value = _state.value.copy(
                         isLoading = false,
                         error = error.message ?: "Unknown error"
+                    )
+                }
+            )
+        }
+    }
+    
+    private fun loadProfileReadme(username: String) {
+        viewModelScope.launch {
+            _state.value = _state.value.copy(isReadmeLoading = true)
+            
+            val result = repository.getProfileReadme(username)
+            
+            result.fold(
+                onSuccess = { content ->
+                    _state.value = _state.value.copy(
+                        profileReadme = content,
+                        isReadmeLoading = false
+                    )
+                },
+                onFailure = {
+                    // README is optional, don't show error
+                    _state.value = _state.value.copy(
+                        profileReadme = null,
+                        isReadmeLoading = false
                     )
                 }
             )

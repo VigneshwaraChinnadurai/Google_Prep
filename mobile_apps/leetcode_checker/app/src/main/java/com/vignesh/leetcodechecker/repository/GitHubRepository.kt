@@ -4,8 +4,26 @@ import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import com.vignesh.leetcodechecker.BuildConfig
 import com.vignesh.leetcodechecker.api.*
+import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
+import retrofit2.http.GET
+import retrofit2.http.Header
+import retrofit2.http.Headers
+import retrofit2.http.Path
+
+/**
+ * REST API for raw file content
+ */
+interface GitHubRawApi {
+    @GET("repos/{owner}/{repo}/readme")
+    @Headers("Accept: application/vnd.github.raw")
+    suspend fun getReadmeRaw(
+        @Header("Authorization") auth: String,
+        @Path("owner") owner: String,
+        @Path("repo") repo: String
+    ): String
+}
 
 /**
  * Repository for fetching GitHub profile and contribution data
@@ -21,7 +39,14 @@ class GitHubRepository {
         .addConverterFactory(MoshiConverterFactory.create(moshi))
         .build()
     
+    private val rawRetrofit = Retrofit.Builder()
+        .baseUrl("https://api.github.com/")
+        .client(OkHttpClient.Builder().build())
+        .addConverterFactory(retrofit2.converter.scalars.ScalarsConverterFactory.create())
+        .build()
+    
     private val api = retrofit.create(GitHubGraphQLApi::class.java)
+    private val rawApi = rawRetrofit.create(GitHubRawApi::class.java)
     
     /**
      * Fetch user profile with contributions
@@ -44,6 +69,24 @@ class GitHubRepository {
             } else {
                 Result.failure(Exception("User not found"))
             }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+    
+    /**
+     * Fetch profile README.md content from user's special profile repo (username/username)
+     */
+    suspend fun getProfileReadme(username: String): Result<String> {
+        return try {
+            val token = BuildConfig.GITHUB_TOKEN
+            if (token.isBlank()) {
+                return Result.failure(Exception("GitHub token not configured"))
+            }
+            
+            // The profile README is in a repo named the same as username
+            val content = rawApi.getReadmeRaw("Bearer $token", username, username)
+            Result.success(content)
         } catch (e: Exception) {
             Result.failure(e)
         }

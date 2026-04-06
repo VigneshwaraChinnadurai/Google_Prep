@@ -157,11 +157,11 @@ dates, and sources. Focus on the most recent and relevant data available."""
 
         val response = httpClient.newCall(request).execute()
         if (!response.isSuccessful) {
-            Log.w(TAG, "SEC EDGAR HTTP ${response.code()} for $ticker")
+            Log.w(TAG, "SEC EDGAR HTTP ${response.code} for $ticker")
             return null
         }
 
-        val body = response.body()?.string() ?: return null
+        val body = response.body?.string() ?: return null
         val json = JSONObject(body)
         val facts = json.optJSONObject("facts")
         val usGaap = facts?.optJSONObject("us-gaap") ?: return null
@@ -231,7 +231,7 @@ dates, and sources. Focus on the most recent and relevant data available."""
         val response = httpClient.newCall(request).execute()
         if (!response.isSuccessful) return null
 
-        val body = response.body()?.string() ?: return null
+        val body = response.body?.string() ?: return null
         val json = JSONObject(body)
         val hits = json.optJSONObject("hits")?.optJSONArray("hits") ?: return null
 
@@ -290,7 +290,7 @@ dates, and sources. Focus on the most recent and relevant data available."""
         val response = httpClient.newCall(request).execute()
         if (!response.isSuccessful) return emptyList()
 
-        val xml = response.body()?.string() ?: return emptyList()
+        val xml = response.body?.string() ?: return emptyList()
         return parseRssXml(xml, query, startIdx)
     }
 
@@ -385,7 +385,7 @@ object CikLookup {
                     .build()
                 val response = httpClient.newCall(request).execute()
                 if (response.isSuccessful) {
-                    val body = response.body()?.string() ?: return null
+                    val body = response.body?.string() ?: return null
                     val json = JSONObject(body)
                     val map = mutableMapOf<String, String>()
                     val keys = json.keys()
