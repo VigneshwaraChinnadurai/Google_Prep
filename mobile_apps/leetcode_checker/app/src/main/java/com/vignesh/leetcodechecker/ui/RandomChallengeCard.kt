@@ -362,10 +362,11 @@ fun RandomChallengeCard(
                     
                     Spacer(modifier = Modifier.height(8.dp))
                     
+                    // Updated messaging - SPA limitation
                     Text(
-                        text = "Clicking 'Accept' opens LeetCode with filters applied",
-                        fontSize = 12.sp,
-                        color = Color(0xFF58A6FF),
+                        text = "Tip: If filters don't auto-apply, select '$selectedTopic' tag and '${selectedDifficulty}' difficulty manually",
+                        fontSize = 11.sp,
+                        color = Color(0xFFF0883E),
                         textAlign = TextAlign.Center
                     )
                 }
@@ -378,8 +379,11 @@ fun RandomChallengeCard(
                         // Look up the proper slug from the topic name
                         val topicSlug = PROBLEM_TOPICS.find { it.name == selectedTopic }?.slug 
                             ?: selectedTopic!!.lowercase().replace(" ", "-")
+                        // LeetCode uses uppercase for difficulty in URL
                         val difficultyParam = selectedDifficulty!!.uppercase()
-                        val url = "https://leetcode.com/problemset/?topicSlugs=$topicSlug&difficulty=$difficultyParam"
+                        // Try tag-based URL which is more reliable for topic filtering
+                        // Format: /tag/{topic}/ with difficulty as query param 
+                        val url = "https://leetcode.com/tag/$topicSlug/?difficulty=$difficultyParam"
                         val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
                         context.startActivity(intent)
                         

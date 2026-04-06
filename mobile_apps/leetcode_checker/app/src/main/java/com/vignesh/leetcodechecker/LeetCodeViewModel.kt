@@ -159,22 +159,15 @@ class LeetCodeViewModel(
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         challenge = challenge,
-                        infoMessage = "LeetCode API content refreshed and stored locally.",
+                        infoMessage = "LeetCode API content refreshed.",
                         error = null,
                         isCompletedToday = ConsistencyStorage.isCompletedToday(appContext)
                     )
 
-                    val aiCode = _uiState.value.aiCode
-                    val aiExplanation = _uiState.value.aiExplanation
-                    val aiValidation = _uiState.value.aiTestcaseValidation
-                    if (!aiCode.isNullOrBlank() && !aiExplanation.isNullOrBlank()) {
-                        saveRevisionFilesLocally(
-                            challenge = challenge,
-                            aiCode = aiCode,
-                            aiExplanation = aiExplanation,
-                            aiValidation = aiValidation.orEmpty()
-                        )
-                    }
+                    // Check if local solution exists for this challenge date
+                    // If found, load it. If not, clear old AI data.
+                    val challengeDate = challenge.date.ifBlank { ConsistencyStorage.istDateKey() }
+                    loadOrClearLocalSolution(challengeDate)
                 }
                 .onFailure { throwable ->
                     _uiState.value = _uiState.value.copy(
@@ -332,6 +325,60 @@ class LeetCodeViewModel(
             aiError = null,
             aiDebugLog = result.debugLog
         )
+    }
+
+    /**
+     * Check if a local revision exists for the given challenge date.
+     * If found, load and apply the AI solution data to UI state.
+     * If not found, clear the AI fields.
+     */
+    private suspend fun loadOrClearLocalSolution(challengeDate: String) {
+        val items = RevisionExportManager.readLocalRevisionHistory(appContext)
+        val localRevision = items.firstOrNull { it.folderDate == challengeDate }
+
+        if (localRevision != null && localRevision.answerPython.isNotBlank()) {
+            // Parse explanation and testcase validation from explanationText
+            val explanationText = localRevision.explanationText
+            val aiExplanation = extractSection(explanationText, "LLM Explanation:", "LLM Testcase Validation:")
+            val aiValidation = extractSection(explanationText, "LLM Testcase Validation:", null)
+
+            _uiState.value = _uiState.value.copy(
+                aiCode = localRevision.answerPython,
+                aiExplanation = aiExplanation.ifBlank { null },
+                aiTestcaseValidation = aiValidation.ifBlank { null },
+                aiDebugLog = null,
+                aiError = null,
+                infoMessage = "Local solution found and loaded for $challengeDate."
+            )
+        } else {
+            // Clear AI fields since no local solution exists for this challenge
+            _uiState.value = _uiState.value.copy(
+                aiCode = null,
+                aiExplanation = null,
+                aiTestcaseValidation = null,
+                aiDebugLog = null,
+                aiError = null
+            )
+        }
+    }
+
+    /**
+     * Extract a section from text between startMarker and endMarker.
+     * If endMarker is null, extracts from startMarker to end of text.
+     */
+    private fun extractSection(text: String, startMarker: String, endMarker: String?): String {
+        val startIdx = text.indexOf(startMarker)
+        if (startIdx == -1) return ""
+        
+        val contentStart = startIdx + startMarker.length
+        val contentEnd = if (endMarker != null) {
+            val endIdx = text.indexOf(endMarker, contentStart)
+            if (endIdx == -1) text.length else endIdx
+        } else {
+            text.length
+        }
+        
+        return text.substring(contentStart, contentEnd).trim()
     }
 
     fun updateAiCode(newCode: String) {

@@ -10,6 +10,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
+import androidx.compose.runtime.LaunchedEffect
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.first
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -39,6 +42,15 @@ fun ContributionHeatmap(
     modifier: Modifier = Modifier
 ) {
     val scrollState = rememberScrollState()
+    
+    // Auto-scroll to the end (current month) when content is measured
+    LaunchedEffect(Unit) {
+        // Wait for the scroll state to have a valid maxValue (content measured)
+        snapshotFlow { scrollState.maxValue }
+            .filter { it > 0 }
+            .first()
+        scrollState.scrollTo(scrollState.maxValue)
+    }
     
     // GitHub dark theme colors for contribution levels
     val level0 = Color(0xFF161B22) // No contributions
@@ -77,22 +89,50 @@ fun ContributionHeatmap(
         
         Spacer(modifier = Modifier.height(12.dp))
         
-        // Month labels
-        val months = listOf("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+        // Calculate starting date (52 weeks ago from today, aligned to start of week)
+        val today = LocalDate.now()
+        val startDate = today.minusWeeks(52).minusDays(today.dayOfWeek.value.toLong() - 1)
+        
+        // Calculate month labels based on actual date range
+        val monthLabels = remember(startDate) {
+            val labels = mutableListOf<Pair<String, Int>>() // (month name, week position)
+            var currentMonth = -1
+            for (week in 0 until 53) {
+                val weekStartDate = startDate.plusWeeks(week.toLong())
+                val month = weekStartDate.monthValue
+                if (month != currentMonth) {
+                    currentMonth = month
+                    val monthName = weekStartDate.month.getDisplayName(TextStyle.SHORT, Locale.US)
+                    labels.add(monthName to week)
+                }
+            }
+            labels
+        }
+        
+        // Month labels - dynamically positioned based on actual weeks
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .horizontalScroll(scrollState)
-                .padding(start = 28.dp),
-            horizontalArrangement = Arrangement.spacedBy(cellSize * 4)
+                .padding(start = 28.dp)
         ) {
-            months.forEach { month ->
+            var lastWeekPos = 0
+            monthLabels.forEachIndexed { index, (month, weekPos) ->
+                // Add spacer for weeks since last label
+                val spacerWidth = if (index == 0) {
+                    (cellSize + cellSpacing) * weekPos
+                } else {
+                    (cellSize + cellSpacing) * (weekPos - lastWeekPos)
+                }
+                if (spacerWidth.value > 0) {
+                    Spacer(modifier = Modifier.width(spacerWidth))
+                }
                 Text(
                     text = month,
                     color = Color(0xFF848D97),
-                    fontSize = 10.sp,
-                    modifier = Modifier.width(cellSize * 4)
+                    fontSize = 10.sp
                 )
+                lastWeekPos = weekPos
             }
         }
         
@@ -126,10 +166,6 @@ fun ContributionHeatmap(
                 val cellSizePx = cellSize.toPx()
                 val cellSpacingPx = cellSpacing.toPx()
                 val cornerRadiusPx = cornerRadius.toPx()
-                
-                // Calculate starting date (52 weeks ago from today)
-                val today = LocalDate.now()
-                val startDate = today.minusWeeks(52).minusDays(today.dayOfWeek.value.toLong() - 1)
                 
                 // Draw 53 weeks (columns) x 7 days (rows)
                 for (week in 0 until 53) {

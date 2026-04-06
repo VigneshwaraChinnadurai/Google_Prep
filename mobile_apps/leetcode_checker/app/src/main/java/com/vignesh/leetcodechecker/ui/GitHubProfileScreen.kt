@@ -44,11 +44,12 @@ fun GitHubProfileScreen(
     val state by viewModel.state.collectAsState()
     val scrollState = rememberScrollState()
     
-    // Load saved username
-    var usernameInput by rememberSaveable { 
-        mutableStateOf(viewModel.getSavedUsername(context) ?: "") 
+    // Automatically load profile with default username on first composition
+    LaunchedEffect(Unit) {
+        if (state.user == null && !state.isLoading) {
+            viewModel.initializeWithDefault(context)
+        }
     }
-    var showUsernameInput by rememberSaveable { mutableStateOf(state.user == null) }
     
     Column(
         modifier = Modifier
@@ -83,65 +84,6 @@ fun GitHubProfileScreen(
         
         Spacer(modifier = Modifier.height(16.dp))
         
-        // Username Input Card (always show if no user loaded or on error)
-        if (showUsernameInput || state.error != null || state.user == null) {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22))
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
-                        text = "Enter your GitHub Username",
-                        color = Color(0xFFE6EDF3),
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-                    Text(
-                        text = "Not your email! Use your GitHub username (e.g., 'octocat')",
-                        color = Color(0xFF8B949E),
-                        fontSize = 12.sp
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
-                    
-                    OutlinedTextField(
-                        value = usernameInput,
-                        onValueChange = { usernameInput = it.trim() },
-                        placeholder = { Text("GitHub username", color = Color(0xFF8B949E)) },
-                        singleLine = true,
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = Color(0xFFE6EDF3),
-                            unfocusedTextColor = Color(0xFFE6EDF3),
-                            focusedBorderColor = Color(0xFF58A6FF),
-                            unfocusedBorderColor = Color(0xFF30363D),
-                            cursorColor = Color(0xFF58A6FF)
-                        ),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    
-                    Spacer(modifier = Modifier.height(12.dp))
-                    
-                    Button(
-                        onClick = {
-                            if (usernameInput.isNotBlank()) {
-                                viewModel.saveAndLoadProfile(context, usernameInput)
-                                showUsernameInput = false
-                            }
-                        },
-                        enabled = usernameInput.isNotBlank() && !state.isLoading,
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF238636)),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Icon(Icons.Filled.Search, contentDescription = null)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Load Profile")
-                    }
-                }
-            }
-            
-            Spacer(modifier = Modifier.height(16.dp))
-        }
-        
         when {
             state.isLoading -> {
                 Box(
@@ -163,14 +105,6 @@ fun GitHubProfileScreen(
             
             state.user != null -> {
                 val user = state.user!!
-                
-                // Show change username button
-                TextButton(
-                    onClick = { showUsernameInput = true },
-                    modifier = Modifier.align(Alignment.End)
-                ) {
-                    Text("Change Username", color = Color(0xFF58A6FF), fontSize = 12.sp)
-                }
                 
                 // Profile Card
                 ProfileCard(

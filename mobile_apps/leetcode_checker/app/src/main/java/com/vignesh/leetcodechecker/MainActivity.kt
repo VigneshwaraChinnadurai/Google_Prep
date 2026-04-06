@@ -11,6 +11,7 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.ui.graphics.Color
 import com.vignesh.leetcodechecker.ui.TabbedMainScreen
+import com.vignesh.leetcodechecker.ui.ChallengeFilter
 
 private val AppDarkColors = darkColorScheme(
     primary = Color(0xFF9FC8FF),
@@ -47,9 +48,11 @@ class MainActivity : ComponentActivity() {
                         val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
                         startActivity(intent)
                     },
-                    leetcodeScreenContent = { onOpenLink ->
+                    leetcodeScreenContent = { onOpenLink, challengeFilter, onClearFilter ->
                         com.vignesh.leetcodechecker.ui.LeetCodeScreen(
-                            onOpenLink = onOpenLink
+                            onOpenLink = onOpenLink,
+                            challengeFilter = challengeFilter,
+                            onClearFilter = onClearFilter
                         )
                     }
                 )

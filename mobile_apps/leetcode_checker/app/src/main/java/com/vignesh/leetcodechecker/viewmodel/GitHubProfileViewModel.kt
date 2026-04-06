@@ -26,6 +26,7 @@ data class GitHubProfileState(
 
 private const val PREFS_NAME = "github_profile_prefs"
 private const val KEY_USERNAME = "github_username"
+private const val DEFAULT_USERNAME = "VigneshwaraChinnadurai"
 
 /**
  * ViewModel for GitHub Profile and Contributions
@@ -38,22 +39,21 @@ class GitHubProfileViewModel : ViewModel() {
     val state: StateFlow<GitHubProfileState> = _state.asStateFlow()
     
     /**
-     * Get saved GitHub username from SharedPreferences
+     * Get saved GitHub username from SharedPreferences or default
      */
-    fun getSavedUsername(context: Context): String? {
+    fun getSavedUsername(context: Context): String {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        return prefs.getString(KEY_USERNAME, null)
+        return prefs.getString(KEY_USERNAME, DEFAULT_USERNAME) ?: DEFAULT_USERNAME
     }
     
     /**
-     * Save username and load profile
+     * Initialize - automatically load profile with default username
      */
-    fun saveAndLoadProfile(context: Context, username: String) {
-        // Save username
+    fun initializeWithDefault(context: Context) {
+        val username = getSavedUsername(context)
+        // Save and load profile
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         prefs.edit().putString(KEY_USERNAME, username).apply()
-        
-        // Load profile
         loadProfile(username)
     }
     
@@ -106,12 +106,6 @@ class GitHubProfileViewModel : ViewModel() {
     
     fun refresh(context: Context) {
         val savedUsername = getSavedUsername(context)
-        if (!savedUsername.isNullOrBlank()) {
-            loadProfile(savedUsername)
-        } else {
-            _state.value = _state.value.copy(
-                error = "Please enter your GitHub username first"
-            )
-        }
+        loadProfile(savedUsername)
     }
 }

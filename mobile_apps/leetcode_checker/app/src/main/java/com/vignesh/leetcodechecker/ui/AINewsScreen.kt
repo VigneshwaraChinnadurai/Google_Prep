@@ -296,36 +296,66 @@ fun AINewsScreen(
             }
             
             else -> {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    // Featured/Top Story
-                    if (displayedNews.isNotEmpty() && selectedCategory == null && searchQuery.isBlank()) {
-                        item {
-                            FeaturedNewsCard(article = displayedNews.first())
+                Box(modifier = Modifier.fillMaxSize()) {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        // Featured/Top Story
+                        if (displayedNews.isNotEmpty() && selectedCategory == null && searchQuery.isBlank()) {
+                            item {
+                                FeaturedNewsCard(article = displayedNews.first())
+                            }
+                            
+                            item {
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = "Latest Updates",
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFFE6EDF3)
+                                )
+                            }
+                        }
+                        
+                        // News List
+                        val startIndex = if (selectedCategory == null && searchQuery.isBlank()) 1 else 0
+                        items(displayedNews.drop(startIndex)) { article ->
+                            NewsArticleCard(article = article)
                         }
                         
                         item {
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = "Latest Updates",
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFFE6EDF3)
-                            )
+                            Spacer(modifier = Modifier.height(80.dp))
                         }
                     }
                     
-                    // News List
-                    val startIndex = if (selectedCategory == null && searchQuery.isBlank()) 1 else 0
-                    items(displayedNews.drop(startIndex)) { article ->
-                        NewsArticleCard(article = article)
-                    }
-                    
-                    item {
-                        Spacer(modifier = Modifier.height(80.dp))
+                    // Floating Refresh Button
+                    FloatingActionButton(
+                        onClick = {
+                            isLoading = true
+                            errorMessage = null
+                            scope.launch {
+                                val result = repository.fetchAINews(forceRefresh = true)
+                                result.onSuccess { articles ->
+                                    newsArticles = articles
+                                    isLoading = false
+                                }.onFailure { error ->
+                                    errorMessage = error.message
+                                    isLoading = false
+                                }
+                            }
+                        },
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .padding(16.dp),
+                        containerColor = Color(0xFF238636),
+                        contentColor = Color.White
+                    ) {
+                        Icon(
+                            Icons.Filled.Refresh,
+                            contentDescription = "Refresh News"
+                        )
                     }
                 }
             }
@@ -425,12 +455,21 @@ private fun FeaturedNewsCard(article: NewsArticle) {
                         color = Color(0xFF6E7681)
                     )
                     
-                    Icon(
-                        Icons.Filled.ArrowForward,
-                        contentDescription = "Read more",
-                        tint = Color(0xFF58A6FF),
-                        modifier = Modifier.size(18.dp)
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = "Read Article",
+                            fontSize = 12.sp,
+                            color = Color(0xFF58A6FF),
+                            fontWeight = FontWeight.Medium
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Icon(
+                            Icons.Filled.ArrowForward,
+                            contentDescription = "Read more",
+                            tint = Color(0xFF58A6FF),
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
                 }
             }
         }
@@ -533,6 +572,50 @@ private fun NewsArticleCard(article: NewsArticle) {
                                     modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                                 )
                             }
+                        }
+                    }
+                }
+                
+                // Visible Open Link Button
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = formatDate(article.publishedAt ?: article.pubDate),
+                        fontSize = 11.sp,
+                        color = Color(0xFF6E7681)
+                    )
+                    
+                    Surface(
+                        shape = RoundedCornerShape(6.dp),
+                        color = Color(0xFF58A6FF).copy(alpha = 0.15f),
+                        modifier = Modifier.clickable {
+                            article.url?.let { url ->
+                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                                context.startActivity(intent)
+                            }
+                        }
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Open Article",
+                                fontSize = 11.sp,
+                                color = Color(0xFF58A6FF),
+                                fontWeight = FontWeight.Medium
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Icon(
+                                Icons.Filled.ArrowForward,
+                                contentDescription = "Open",
+                                tint = Color(0xFF58A6FF),
+                                modifier = Modifier.size(14.dp)
+                            )
                         }
                     }
                 }

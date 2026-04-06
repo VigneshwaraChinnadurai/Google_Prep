@@ -29,6 +29,7 @@ import com.vignesh.leetcodechecker.data.LeetCodeActivityStorage
 fun FeaturesHubScreen(
     onNavigate: (FeatureDestination) -> Unit,
     onOpenLeaderboard: () -> Unit = {},
+    onFilterSelected: (topic: String, difficulty: String) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -91,7 +92,8 @@ fun FeaturesHubScreen(
         // Random Challenge Card
         RandomChallengeCard(
             onStartChallenge = { topic, difficulty ->
-                // Could open LeetCode with filters
+                // Notify parent to set filter and navigate to LeetCode tab
+                onFilterSelected(topic, difficulty)
             }
         )
         

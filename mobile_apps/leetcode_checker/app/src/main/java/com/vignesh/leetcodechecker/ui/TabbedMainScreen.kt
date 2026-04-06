@@ -46,21 +46,31 @@ enum class FeatureScreen {
 }
 
 /**
+ * Data class for challenge filter selected from Features page
+ */
+data class ChallengeFilter(
+    val topic: String? = null,
+    val difficulty: String? = null
+)
+
+/**
  * TabbedMainScreen — Main navigation wrapper for Vignesh Personal Development app
  *
  * Provides:
  * 1. Bottom navigation between "Leetcode", "Ollama", "Features", "Chatbot", and "GitHub Profile" tabs
  * 2. Separate ViewModels for each section
  * 3. State persistence across tab switches
+ * 4. Filter sharing between Features and LeetCode tabs
  */
 @Composable
 fun TabbedMainScreen(
     application: Application,
     onOpenLink: (String) -> Unit = {},
-    leetcodeScreenContent: @Composable (onOpenLink: (String) -> Unit) -> Unit
+    leetcodeScreenContent: @Composable (onOpenLink: (String) -> Unit, challengeFilter: ChallengeFilter?, onClearFilter: () -> Unit) -> Unit
 ) {
     var selectedTab by rememberSaveable { mutableStateOf(AppTab.LEETCODE) }
     var featureScreen by rememberSaveable { mutableStateOf(FeatureScreen.HUB) }
+    var challengeFilter by remember { mutableStateOf<ChallengeFilter?>(null) }
     val chatbotViewModel: ChatbotViewModel = viewModel()
     val ollamaViewModel: OllamaViewModel = viewModel()
     val gitHubProfileViewModel: GitHubProfileViewModel = viewModel()
@@ -113,7 +123,11 @@ fun TabbedMainScreen(
         ) {
             when (selectedTab) {
                 AppTab.LEETCODE -> {
-                    leetcodeScreenContent(onOpenLink)
+                    leetcodeScreenContent(
+                        onOpenLink,
+                        challengeFilter,
+                        { challengeFilter = null }
+                    )
                 }
                 AppTab.OLLAMA_LEETCODE -> {
                     OllamaLeetCodeScreen(
@@ -138,6 +152,10 @@ fun TabbedMainScreen(
                                     FeatureDestination.AI_NEWS -> FeatureScreen.AI_NEWS
                                     FeatureDestination.AI_NEWS_SETTINGS -> FeatureScreen.AI_NEWS_SETTINGS
                                 }
+                            },
+                            onFilterSelected = { topic, difficulty ->
+                                challengeFilter = ChallengeFilter(topic, difficulty)
+                                selectedTab = AppTab.LEETCODE
                             }
                         )
                         FeatureScreen.ANALYTICS -> AnalyticsDashboard(

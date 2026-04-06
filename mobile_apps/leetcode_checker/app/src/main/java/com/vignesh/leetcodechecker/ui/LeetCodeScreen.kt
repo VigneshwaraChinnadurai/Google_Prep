@@ -70,10 +70,13 @@ import java.util.TimeZone
  * 5. Dismissible error/info banners
  * 6. Collapsible sections for AI output
  * 7. Expandable settings, history, and diagram panels
+ * 8. Challenge filter from Features page shown as badge
  */
 @Composable
 fun LeetCodeScreen(
     onOpenLink: (String) -> Unit,
+    challengeFilter: ChallengeFilter? = null,
+    onClearFilter: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -201,6 +204,60 @@ fun LeetCodeScreen(
                         contentDescription = "LeetCode Logo",
                         modifier = Modifier.size(32.dp)
                     )
+                }
+            }
+
+            // ════════════════════════════════════════════════════════════
+            // Challenge Filter Banner (from Features page)
+            // ════════════════════════════════════════════════════════════
+            if (challengeFilter != null && (challengeFilter.topic != null || challengeFilter.difficulty != null)) {
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer
+                        ),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(12.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Text(
+                                    text = "🎯",
+                                    fontSize = 18.sp
+                                )
+                                Column {
+                                    Text(
+                                        text = "Challenge Filter Active",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                                    )
+                                    Text(
+                                        text = "${challengeFilter.topic ?: "Any"} • ${challengeFilter.difficulty ?: "Any"}",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                                    )
+                                }
+                            }
+                            TextButton(
+                                onClick = onClearFilter,
+                                colors = ButtonDefaults.textButtonColors(
+                                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            ) {
+                                Text("Clear", fontSize = 12.sp)
+                            }
+                        }
+                    }
                 }
             }
 
@@ -566,13 +623,15 @@ fun LeetCodeScreen(
                         isExpanded = expandedSection == "validation",
                         onToggle = { expandedSection = if (expandedSection == "validation") "" else "validation" }
                     ) {
-                        Text(
-                            text = state.aiTestcaseValidation ?: "",
-                            style = MaterialTheme.typography.bodySmall,
-                            fontFamily = FontFamily.Monospace,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            modifier = Modifier.padding(8.dp)
-                        )
+                        SelectionContainer {
+                            Text(
+                                text = state.aiTestcaseValidation ?: "",
+                                style = MaterialTheme.typography.bodySmall,
+                                fontFamily = FontFamily.Monospace,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.padding(8.dp)
+                            )
+                        }
                     }
                 }
             }
@@ -632,14 +691,16 @@ fun LeetCodeScreen(
                         isExpanded = expandedSection == "pipeline",
                         onToggle = { expandedSection = if (expandedSection == "pipeline") "" else "pipeline" }
                     ) {
-                        Text(
-                            text = state.aiDebugLog ?: "",
-                            style = MaterialTheme.typography.bodySmall,
-                            fontFamily = FontFamily.Monospace,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            lineHeight = 16.sp,
-                            modifier = Modifier.padding(8.dp)
-                        )
+                        SelectionContainer {
+                            Text(
+                                text = state.aiDebugLog ?: "",
+                                style = MaterialTheme.typography.bodySmall,
+                                fontFamily = FontFamily.Monospace,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                lineHeight = 16.sp,
+                                modifier = Modifier.padding(8.dp)
+                            )
+                        }
                     }
                 }
             }

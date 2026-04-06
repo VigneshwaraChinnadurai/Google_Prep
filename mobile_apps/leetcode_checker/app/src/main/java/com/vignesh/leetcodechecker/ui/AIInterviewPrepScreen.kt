@@ -33,6 +33,8 @@ import androidx.compose.material.icons.automirrored.filled.Send
 import kotlinx.coroutines.launch
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
+import com.squareup.moshi.Moshi
+import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 
 /**
  * AI Interview Prep Screen - Uses Ollama or Gemini for interview practice
@@ -58,6 +60,7 @@ fun AIInterviewPrepScreen(
     var messages by remember { mutableStateOf(listOf<InterviewMessage>()) }
     var inputText by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
     var selectedTopic by remember { mutableStateOf("Data Structures") }
     var interviewStarted by remember { mutableStateOf(false) }
     
@@ -245,6 +248,7 @@ fun AIInterviewPrepScreen(
                 onTopicSelected = { selectedTopic = it },
                 onStartInterview = {
                     interviewStarted = true
+                    errorMessage = null
                     // Start with initial question
                     scope.launch {
                         isLoading = true
@@ -264,8 +268,21 @@ fun AIInterviewPrepScreen(
                                 timestamp = System.currentTimeMillis()
                             )
                         } catch (e: Exception) {
+                            val errorText = when {
+                                e.message?.contains("API key") == true -> 
+                                    "⚠️ API key not configured. Please check your BuildConfig settings."
+                                e.message?.contains("Unable to resolve host") == true ||
+                                e.message?.contains("Failed to connect") == true ->
+                                    "⚠️ Network error. Check your internet connection${if (selectedProvider == "Ollama") " and verify Ollama is running." else "."}"
+                                selectedProvider == "Ollama" && e.message?.contains("Connection refused") == true ->
+                                    "⚠️ Cannot connect to Ollama. Make sure Ollama is running on your local network."
+                                else -> "⚠️ Error: ${e.message ?: "Unknown error occurred"}"
+                            }
+                            errorMessage = errorText
+                            // Add a fallback message so user can still try
                             messages = messages + InterviewMessage(
-                                content = "Welcome! Let's practice $selectedTopic interview questions. I'll ask you questions and provide feedback. Ready to begin?\n\nFirst question: Can you explain the time complexity of common operations on a hash table?",
+                                content = "Welcome! Let's practice $selectedTopic interview questions. I'll ask you questions and provide feedback.\n\n" +
+                                        "First question: Can you explain the time complexity of common operations on a hash table?",
                                 isUser = false,
                                 timestamp = System.currentTimeMillis()
                             )
@@ -276,6 +293,68 @@ fun AIInterviewPrepScreen(
                 selectedProvider = selectedProvider
             )
         } else {
+            // Error Banner (dismissible)
+            if (errorMessage != null) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    shape = RoundedCornerShape(8.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF3D1F1F))
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(12.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = errorMessage ?: "",
+                            color = Color(0xFFF85149),
+                            fontSize = 13.sp,
+                            modifier = Modifier.weight(1f)
+                        )
+                        IconButton(
+                            onClick = { errorMessage = null },
+                            modifier = Modifier.size(24.dp)
+                        ) {
+                            Icon(
+                                Icons.Filled.Close,
+                                contentDescription = "Dismiss",
+                                tint = Color(0xFFF85149),
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    }
+                }
+            }
+            
+            // New Interview Button
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                horizontalArrangement = Arrangement.End
+            ) {
+                TextButton(
+                    onClick = {
+                        interviewStarted = false
+                        messages = emptyList()
+                        errorMessage = null
+                    }
+                ) {
+                    Icon(
+                        Icons.Filled.Refresh,
+                        contentDescription = null,
+                        tint = Color(0xFF58A6FF),
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("New Interview", color = Color(0xFF58A6FF), fontSize = 12.sp)
+                }
+            }
+            
             // Chat Interface
             LazyColumn(
                 state = listState,
@@ -355,7 +434,17 @@ fun AIInterviewPrepScreen(
                                             isUser = false,
                                             timestamp = System.currentTimeMillis()
                                         )
+                                        errorMessage = null
                                     } catch (e: Exception) {
+                                        val errorText = when {
+                                            e.message?.contains("API key") == true -> 
+                                                "⚠️ API key issue. Check configuration."
+                                            e.message?.contains("Unable to resolve host") == true ||
+                                            e.message?.contains("Failed to connect") == true ->
+                                                "⚠️ Network error. ${if (selectedProvider == "Ollama") "Is Ollama running?" else "Check connection."}"
+                                            else -> "⚠️ ${e.message ?: "Error generating response"}"
+                                        }
+                                        errorMessage = errorText
                                         messages = messages + InterviewMessage(
                                             content = "That's a good point! Let me ask you a follow-up: How would you optimize this approach for better performance?",
                                             isUser = false,
@@ -595,12 +684,30 @@ private suspend fun generateGeminiInterviewQuestion(context: Context, prompt: St
     }
     
     if (apiKey.isBlank()) {
-        throw Exception("Gemini API key not configured")
+        throw Exception("Gemini API key not configured. Add CHATBOT_GEMINI_API_KEY or GEMINI_API_KEY to local.properties.")
     }
+    
+    // Load model from settings, fallback to gemini-2.0-flash
+    val settings = AppSettingsStore.load(context)
+    val model = settings.preferredModelsCsv.split(',')
+        .firstOrNull { it.contains("gemini", ignoreCase = true) }
+        ?.trim()
+        ?: "gemini-2.0-flash"
+    
+    val okHttpClient = okhttp3.OkHttpClient.Builder()
+        .connectTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+        .readTimeout(60, java.util.concurrent.TimeUnit.SECONDS)
+        .writeTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+        .build()
+    
+    val moshi = Moshi.Builder()
+        .add(KotlinJsonAdapterFactory())
+        .build()
     
     val geminiApi = Retrofit.Builder()
         .baseUrl("https://generativelanguage.googleapis.com/")
-        .addConverterFactory(MoshiConverterFactory.create())
+        .client(okHttpClient)
+        .addConverterFactory(MoshiConverterFactory.create(moshi))
         .build()
         .create(GeminiApi::class.java)
     
@@ -617,13 +724,13 @@ private suspend fun generateGeminiInterviewQuestion(context: Context, prompt: St
     )
     
     val response = geminiApi.generateContent(
-        model = "gemini-2.0-flash",
+        model = model,
         apiKey = apiKey,
         body = request
     )
     
     return response.candidates?.firstOrNull()?.content?.parts?.firstOrNull()?.text
-        ?: "Let's begin! Tell me about your experience with this topic."
+        ?: throw Exception("Empty response from Gemini API")
 }
 
 private suspend fun conductGeminiInterview(
@@ -640,9 +747,27 @@ private suspend fun conductGeminiInterview(
         throw Exception("Gemini API key not configured")
     }
     
+    // Load model from settings, fallback to gemini-2.0-flash
+    val settings = AppSettingsStore.load(context)
+    val model = settings.preferredModelsCsv.split(',')
+        .firstOrNull { it.contains("gemini", ignoreCase = true) }
+        ?.trim()
+        ?: "gemini-2.0-flash"
+    
+    val okHttpClient = okhttp3.OkHttpClient.Builder()
+        .connectTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+        .readTimeout(60, java.util.concurrent.TimeUnit.SECONDS)
+        .writeTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+        .build()
+    
+    val moshi = Moshi.Builder()
+        .add(KotlinJsonAdapterFactory())
+        .build()
+    
     val geminiApi = Retrofit.Builder()
         .baseUrl("https://generativelanguage.googleapis.com/")
-        .addConverterFactory(MoshiConverterFactory.create())
+        .client(okHttpClient)
+        .addConverterFactory(MoshiConverterFactory.create(moshi))
         .build()
         .create(GeminiApi::class.java)
     
@@ -673,11 +798,11 @@ Be encouraging but constructive. Keep response concise."""
     )
     
     val response = geminiApi.generateContent(
-        model = "gemini-2.0-flash",
+        model = model,
         apiKey = apiKey,
         body = request
     )
     
     return response.candidates?.firstOrNull()?.content?.parts?.firstOrNull()?.text
-        ?: "That's interesting! Can you elaborate more on your approach?"
+        ?: throw Exception("Empty response from Gemini API")
 }

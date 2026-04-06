@@ -23,6 +23,7 @@ import com.vignesh.leetcodechecker.data.LeetCodeActivityStorage
 import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import java.time.format.TextStyle
 import java.util.*
 
 /**
@@ -78,22 +79,50 @@ fun LeetCodeHeatmap(
         
         Spacer(modifier = Modifier.height(12.dp))
         
-        // Month labels
-        val months = listOf("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+        // Calculate starting date (52 weeks ago from today, aligned to start of week)
+        val today = LocalDate.now()
+        val startDate = today.minusWeeks(52).minusDays(today.dayOfWeek.value.toLong() - 1)
+        
+        // Calculate month labels based on actual date range
+        val monthLabels = remember(startDate) {
+            val labels = mutableListOf<Pair<String, Int>>() // (month name, week position)
+            var currentMonth = -1
+            for (week in 0 until 53) {
+                val weekStartDate = startDate.plusWeeks(week.toLong())
+                val month = weekStartDate.monthValue
+                if (month != currentMonth) {
+                    currentMonth = month
+                    val monthName = weekStartDate.month.getDisplayName(TextStyle.SHORT, Locale.US)
+                    labels.add(monthName to week)
+                }
+            }
+            labels
+        }
+        
+        // Month labels - dynamically positioned based on actual weeks
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .horizontalScroll(scrollState)
-                .padding(start = 28.dp),
-            horizontalArrangement = Arrangement.spacedBy(cellSize * 4)
+                .padding(start = 28.dp)
         ) {
-            months.forEach { month ->
+            var lastWeekPos = 0
+            monthLabels.forEachIndexed { index, (month, weekPos) ->
+                // Add spacer for weeks since last label
+                val spacerWidth = if (index == 0) {
+                    (cellSize + cellSpacing) * weekPos
+                } else {
+                    (cellSize + cellSpacing) * (weekPos - lastWeekPos)
+                }
+                if (spacerWidth.value > 0) {
+                    Spacer(modifier = Modifier.width(spacerWidth))
+                }
                 Text(
                     text = month,
                     color = Color(0xFF848D97),
-                    fontSize = 10.sp,
-                    modifier = Modifier.width(cellSize * 4)
+                    fontSize = 10.sp
                 )
+                lastWeekPos = weekPos
             }
         }
         
@@ -127,10 +156,6 @@ fun LeetCodeHeatmap(
                 val cellSizePx = cellSize.toPx()
                 val cellSpacingPx = cellSpacing.toPx()
                 val cornerRadiusPx = cornerRadius.toPx()
-                
-                // Calculate starting date (52 weeks ago from today)
-                val today = LocalDate.now()
-                val startDate = today.minusWeeks(52).minusDays(today.dayOfWeek.value.toLong() - 1)
                 
                 // Draw 53 weeks (columns) x 7 days (rows)
                 for (week in 0 until 53) {
