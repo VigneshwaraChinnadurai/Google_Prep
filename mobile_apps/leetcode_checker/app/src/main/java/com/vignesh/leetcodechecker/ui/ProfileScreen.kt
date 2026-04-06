@@ -62,6 +62,9 @@ fun ProfileScreen(
     var linkedinExpanded by remember { mutableStateOf(false) }
     var mediumExpanded by remember { mutableStateOf(false) }
     
+    // Refresh trigger to force reload
+    var refreshTrigger by remember { mutableStateOf(0) }
+    
     // Medium articles state
     var mediumArticles by remember { mutableStateOf<List<MediumArticle>>(emptyList()) }
     var mediumLoading by remember { mutableStateOf(false) }
@@ -79,9 +82,9 @@ fun ProfileScreen(
         }
     }
     
-    // Load Medium articles when expanded
-    LaunchedEffect(mediumExpanded) {
-        if (mediumExpanded && mediumArticles.isEmpty() && !mediumLoading) {
+    // Load Medium articles when expanded or on refresh
+    LaunchedEffect(mediumExpanded, refreshTrigger) {
+        if (mediumExpanded && !mediumLoading) {
             mediumLoading = true
             mediumError = null
             try {
@@ -94,9 +97,9 @@ fun ProfileScreen(
         }
     }
     
-    // Load Credly badges when expanded
-    LaunchedEffect(credlyExpanded) {
-        if (credlyExpanded && credlyBadges.isEmpty() && !credlyLoading) {
+    // Load Credly badges when expanded or on refresh
+    LaunchedEffect(credlyExpanded, refreshTrigger) {
+        if (credlyExpanded && !credlyLoading) {
             credlyLoading = true
             credlyError = null
             try {
@@ -131,9 +134,8 @@ fun ProfileScreen(
             IconButton(
                 onClick = { 
                     gitHubViewModel.refresh(context)
-                    // Reset other data to reload
-                    mediumArticles = emptyList()
-                    credlyBadges = emptyList()
+                    // Trigger reload of other data
+                    refreshTrigger++
                 },
                 enabled = !gitHubState.isLoading
             ) {
@@ -507,6 +509,7 @@ private fun ContributionChip(value: Int, label: String, color: Color) {
 data class CredlyBadge(
     val name: String,
     val issuer: String,
+    val imageUrl: String,
     val issuerAbbrev: String,
     val issuerColor: Long,
     val badgeUrl: String,
@@ -515,8 +518,8 @@ data class CredlyBadge(
 )
 
 /**
- * Returns the user's actual Credly badges.
- * Credly pages are JavaScript-rendered so we use hardcoded data.
+ * Returns the user's actual Credly badges with real image URLs.
+ * Image URLs are from the public Credly badge images.
  */
 @Suppress("UNUSED_PARAMETER")
 private suspend fun fetchCredlyBadges(username: String): List<CredlyBadge> = withContext(Dispatchers.IO) {
@@ -524,6 +527,7 @@ private suspend fun fetchCredlyBadges(username: String): List<CredlyBadge> = wit
         CredlyBadge(
             name = "Configure AI Applications to optimize search results",
             issuer = "Google Cloud",
+            imageUrl = "https://images.credly.com/size/340x340/images/16ae03cf-d272-4f94-9e50-688b236a9df5/image.png",
             issuerAbbrev = "GC",
             issuerColor = 0xFF4285F4,
             badgeUrl = "https://www.credly.com/users/vigneshwarachinnadurai/badges",
@@ -532,6 +536,7 @@ private suspend fun fetchCredlyBadges(username: String): List<CredlyBadge> = wit
         CredlyBadge(
             name = "Delivery Accreditation - AI Agents",
             issuer = "ServiceNow",
+            imageUrl = "https://images.credly.com/size/340x340/images/bd4e0db2-f867-4a75-8edf-3aac2c096654/image.png",
             issuerAbbrev = "SN",
             issuerColor = 0xFF62D84E,
             badgeUrl = "https://www.credly.com/users/vigneshwarachinnadurai/badges",
@@ -540,6 +545,7 @@ private suspend fun fetchCredlyBadges(username: String): List<CredlyBadge> = wit
         CredlyBadge(
             name = "AWS Certified Machine Learning – Specialty",
             issuer = "Amazon Web Services",
+            imageUrl = "https://images.credly.com/size/340x340/images/778bde6c-ad1c-4312-ac33-2fa40d50a147/image.png",
             issuerAbbrev = "AWS",
             issuerColor = 0xFFFF9900,
             badgeUrl = "https://www.credly.com/users/vigneshwarachinnadurai/badges",
@@ -549,6 +555,7 @@ private suspend fun fetchCredlyBadges(username: String): List<CredlyBadge> = wit
         CredlyBadge(
             name = "Machine Learning - Foundation",
             issuer = "Deloitte Certified US",
+            imageUrl = "https://images.credly.com/size/340x340/images/1b29d85a-e882-4478-a136-0ee96f828ec7/image.png",
             issuerAbbrev = "D",
             issuerColor = 0xFF86BC25,
             badgeUrl = "https://www.credly.com/users/vigneshwarachinnadurai/badges",
@@ -557,6 +564,7 @@ private suspend fun fetchCredlyBadges(username: String): List<CredlyBadge> = wit
         CredlyBadge(
             name = "Data Engineering - Foundation",
             issuer = "Deloitte Certified US",
+            imageUrl = "https://images.credly.com/size/340x340/images/2218e0f2-3f8e-4c03-8b42-b80501751f06/image.png",
             issuerAbbrev = "D",
             issuerColor = 0xFF86BC25,
             badgeUrl = "https://www.credly.com/users/vigneshwarachinnadurai/badges",
@@ -565,6 +573,7 @@ private suspend fun fetchCredlyBadges(username: String): List<CredlyBadge> = wit
         CredlyBadge(
             name = "Industry Proficiency Foundation: Technology, Media & Telecom",
             issuer = "Deloitte Certified US",
+            imageUrl = "https://images.credly.com/size/340x340/images/77f65a24-2b84-44ea-8b11-4f0e7e954f38/image.png",
             issuerAbbrev = "D",
             issuerColor = 0xFF86BC25,
             badgeUrl = "https://www.credly.com/users/vigneshwarachinnadurai/badges",
@@ -573,6 +582,7 @@ private suspend fun fetchCredlyBadges(username: String): List<CredlyBadge> = wit
         CredlyBadge(
             name = "Impact Day 2025",
             issuer = "Deloitte Certified US",
+            imageUrl = "https://images.credly.com/size/340x340/images/05e5d41e-3c70-4a8a-8c7a-d9b28e0195a8/image.png",
             issuerAbbrev = "D",
             issuerColor = 0xFF86BC25,
             badgeUrl = "https://www.credly.com/users/vigneshwarachinnadurai/badges",
@@ -675,6 +685,9 @@ private fun CredlyBadgeItem(
     badge: CredlyBadge,
     onClick: () -> Unit
 ) {
+    val context = LocalContext.current
+    var imageLoadFailed by remember { mutableStateOf(false) }
+    
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -684,23 +697,46 @@ private fun CredlyBadgeItem(
             .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Badge icon with issuer color and abbreviation
+        // Badge image with fallback to issuer icon
         Box(
             modifier = Modifier
                 .size(56.dp)
                 .clip(RoundedCornerShape(8.dp))
                 .background(
-                    if (badge.isExpired) Color(badge.issuerColor).copy(alpha = 0.4f)
-                    else Color(badge.issuerColor)
+                    if (imageLoadFailed) {
+                        if (badge.isExpired) Color(badge.issuerColor).copy(alpha = 0.4f)
+                        else Color(badge.issuerColor)
+                    } else Color.Transparent
                 ),
             contentAlignment = Alignment.Center
         ) {
-            Text(
-                text = badge.issuerAbbrev,
-                color = Color.White,
-                fontSize = if (badge.issuerAbbrev.length > 2) 14.sp else 18.sp,
-                fontWeight = FontWeight.Bold
-            )
+            if (imageLoadFailed) {
+                // Fallback: Show issuer abbreviation
+                Text(
+                    text = badge.issuerAbbrev,
+                    color = Color.White,
+                    fontSize = if (badge.issuerAbbrev.length > 2) 14.sp else 18.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            } else {
+                // Try to load badge image
+                AsyncImage(
+                    model = ImageRequest.Builder(context)
+                        .data(badge.imageUrl)
+                        .crossfade(true)
+                        .build(),
+                    contentDescription = badge.name,
+                    modifier = Modifier
+                        .size(56.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .then(
+                            if (badge.isExpired) Modifier.background(Color.Black.copy(alpha = 0.3f))
+                            else Modifier
+                        ),
+                    contentScale = ContentScale.Fit,
+                    onError = { imageLoadFailed = true }
+                )
+            }
         }
         
         Spacer(modifier = Modifier.width(12.dp))
