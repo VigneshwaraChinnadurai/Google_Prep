@@ -1,0 +1,120 @@
+## ============================================================================
+## LOCAL PROPERTIES TEMPLATE
+## ============================================================================
+## This file must *NOT* be checked into Version Control Systems,
+## as it contains sensitive information specific to your local configuration.
+##
+## SETUP INSTRUCTIONS:
+## 1. Copy this file and rename it to 'local.properties'
+## 2. Fill in the values below according to your configuration
+## 3. Never commit local.properties to version control
+## ============================================================================
+
+## ----------------------------------------------------------------------------
+## ANDROID SDK LOCATION (Required)
+## ----------------------------------------------------------------------------
+## Path to your Android SDK installation.
+## 
+## How to find:
+## - Windows: Usually C:\Users\<username>\AppData\Local\Android\Sdk
+## - macOS: Usually /Users/<username>/Library/Android/sdk
+## - Linux: Usually /home/<username>/Android/Sdk
+##
+## Note: Use escaped backslashes on Windows (C\\:\\Users\\...)
+## or forward slashes (C:/Users/...)
+## ----------------------------------------------------------------------------
+sdk.dir=
+
+## ----------------------------------------------------------------------------
+## GOOGLE GEMINI API KEY (Required for AI Features)
+## ----------------------------------------------------------------------------
+## Used for: AI Interview Prep, AI News, Strategic Chatbot, LeetCode Analysis
+##
+## How to obtain:
+## 1. Go to https://aistudio.google.com/app/apikey
+## 2. Sign in with your Google account
+## 3. Click "Create API Key"
+## 4. Copy the generated key (starts with 'AIza...')
+##
+## Free tier includes generous usage limits for personal use.
+## ----------------------------------------------------------------------------
+GEMINI_API_KEY=
+
+## ----------------------------------------------------------------------------
+## GITHUB PERSONAL ACCESS TOKEN (Required for GitHub Features)
+## ----------------------------------------------------------------------------
+## Used for: GitHub Profile display, Contribution heatmap, Syncing solutions
+##
+## How to obtain:
+## 1. Go to https://github.com/settings/tokens
+## 2. Click "Generate new token (classic)"
+## 3. Give it a name (e.g., "LeetCode Checker App")
+## 4. Select scopes: 'repo', 'read:user', 'user:email'
+## 5. Click "Generate token"
+## 6. Copy the token immediately (starts with 'ghp_...')
+##
+## IMPORTANT: Token is only shown once! Save it securely.
+## ----------------------------------------------------------------------------
+GITHUB_TOKEN=
+
+## ----------------------------------------------------------------------------
+## GITHUB REPOSITORY SETTINGS (Required for Solution Sync)
+## ----------------------------------------------------------------------------
+## GITHUB_OWNER: Your GitHub username (not email)
+##   Example: VigneshwaraChinnadurai
+##
+## GITHUB_REPO: Repository name where LeetCode solutions will be synced
+##   Example: Google_Prep
+##   Note: Repository must exist and you must have write access
+##
+## GITHUB_BRANCH: Branch to sync solutions to
+##   Example: main
+## ----------------------------------------------------------------------------
+GITHUB_OWNER=
+GITHUB_REPO=
+GITHUB_BRANCH=main
+
+## ----------------------------------------------------------------------------
+## APP SETTINGS PASSWORD (Optional)
+## ----------------------------------------------------------------------------
+## Password to protect sensitive settings within the app.
+## Set any numeric PIN you'll remember.
+## Default: 1234
+## ----------------------------------------------------------------------------
+SETTINGS_UPDATE_PASSWORD=1234
+
+## ----------------------------------------------------------------------------
+## OLLAMA SETTINGS (Optional - for Local AI)
+## ----------------------------------------------------------------------------
+## Used for: Running AI models locally instead of cloud APIs
+##
+## OLLAMA_BASE_URL: URL where Ollama is running
+##   Default: http://127.0.0.1:11434 (localhost)
+##   For network access, use your machine's IP address
+##
+## OLLAMA_MODEL: Which model to use
+##   Recommended: qwen2.5:3b (good balance of speed/quality)
+##   Others: llama3.2:3b, mistral:7b, codellama:7b
+##
+## Setup Ollama:
+## 1. Download from https://ollama.ai
+## 2. Install and run Ollama
+## 3. Pull a model: ollama pull qwen2.5:3b
+## 4. Ollama runs automatically on port 11434
+## ----------------------------------------------------------------------------
+OLLAMA_BASE_URL=http://127.0.0.1:11434
+OLLAMA_MODEL=qwen2.5:3b
+
+## ============================================================================
+## OPTIONAL: RELEASE BUILD SETTINGS
+## ============================================================================
+## Only needed if you want to create signed release APKs for distribution.
+## Create a separate 'keystore.properties' file for release signing:
+##
+## storeFile=path/to/your/keystore.jks
+## storePassword=your_keystore_password
+## keyAlias=your_key_alias
+## keyPassword=your_key_password
+##
+## See BUILD_GUIDE.md for detailed release build instructions.
+## ============================================================================

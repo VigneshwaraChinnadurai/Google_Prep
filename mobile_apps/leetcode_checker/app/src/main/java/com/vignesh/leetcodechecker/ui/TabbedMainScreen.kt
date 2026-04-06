@@ -26,7 +26,7 @@ enum class AppTab {
     OLLAMA_LEETCODE,
     FEATURES,
     STRATEGIC_CHATBOT,
-    GITHUB_PROFILE
+    PROFILE
 }
 
 // Sub-navigation for Features tab
@@ -108,10 +108,10 @@ fun TabbedMainScreen(
                     icon = { Icon(Icons.Filled.Settings, contentDescription = "Strategic Chatbot") }
                 )
                 NavigationBarItem(
-                    selected = selectedTab == AppTab.GITHUB_PROFILE,
-                    onClick = { selectedTab = AppTab.GITHUB_PROFILE },
-                    label = { Text("GitHub", fontSize = 10.sp) },
-                    icon = { Icon(Icons.Filled.Person, contentDescription = "GitHub Profile") }
+                    selected = selectedTab == AppTab.PROFILE,
+                    onClick = { selectedTab = AppTab.PROFILE },
+                    label = { Text("Profile", fontSize = 10.sp) },
+                    icon = { Icon(Icons.Filled.Person, contentDescription = "Profile") }
                 )
             }
         }
@@ -200,9 +200,9 @@ fun TabbedMainScreen(
                         onOpenLink = onOpenLink
                     )
                 }
-                AppTab.GITHUB_PROFILE -> {
-                    GitHubProfileScreen(
-                        viewModel = gitHubProfileViewModel
+                AppTab.PROFILE -> {
+                    ProfileScreen(
+                        gitHubViewModel = gitHubProfileViewModel
                     )
                 }
             }
