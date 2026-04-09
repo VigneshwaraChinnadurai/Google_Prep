@@ -1,0 +1,72 @@
+Date: 2026-04-09
+Title: XOR After Range Multiplication Queries II
+URL: https://leetcode.com/problems/xor-after-range-multiplication-queries-ii/
+
+LLM Explanation:
+The problem requires us to perform a series of range multiplication updates on an array and then find the XOR sum of all its elements. A naive simulation of each query would be too slow, with a complexity of O(q * n), given the constraints.
+
+A more efficient approach is to first calculate the total multiplier for each element `nums[i]` and then compute the final array and XOR sum. Let `V[i]` be the product of all `v` values from queries that affect index `i`. The final value of `nums[i]` will be `(nums[i] * V[i]) % MOD`. The main challenge is to compute the array `V` efficiently.
+
+The updates happen on arithmetic progressions. This structure suggests a square root decomposition approach based on the step `k` of the queries. We partition queries into two groups:
+1.  **Large `k` queries**: Queries where `k` is greater than a certain block size `B`.
+2.  **Small `k` queries**: Queries where `k` is less than or equal to `B`.
+
+The optimal choice for `B` is `sqrt(q)`, where `q` is the number of queries, as it balances the complexity of processing both types of queries.
+
+**Algorithm:**
+1.  **Partition Queries**: Iterate through all queries. If `k > B`, add it to a list of large `k` queries. Otherwise, add it to a dictionary/map for small `k` queries, grouped by `k`.
+
+2.  **Process Large `k` Queries**: For each large `k` query, we can afford to apply the updates naively. The number of elements updated per query is at most `n/k`, which is less than `n/B`. The total complexity for this part is `O(q * n / B)`.
+
+3.  **Process Small `k` Queries**: For each `k` from 1 to `B`, we process all queries with this step size together. The indices affected by a fixed `k` can be partitioned into `k` groups based on their remainder `rem` when divided by `k` (`i % k`). Each group forms an arithmetic progression, which can be viewed as a separate sub-array.
+    - For each `(k, rem)` pair, we have a set of range multiplication queries on the corresponding sub-array.
+    - We can handle these offline range updates efficiently using a **difference array**. For each query to multiply a range `[start, end]` by `v`, we multiply the `start`-th element of the difference array by `v` and the `(end+1)`-th element by the modular multiplicative inverse of `v`.
+    - After processing all queries for a given `(k, rem)`, we compute the prefix product of the difference array to get the final multipliers for each element in the sub-array. These are then applied to the global multiplier array `V`.
+    - The complexity for this part is dominated by iterating through all `k` up to `B` and processing the sub-arrays, resulting in `O(B * n + q * log(MOD))`, where `log(MOD)` comes from computing modular inverses.
+
+4.  **Final Calculation**: After computing the final multiplier array `V`, we iterate through the original `nums` array one last time. For each index `i`, we calculate `(nums[i] * V[i]) % MOD` and XOR it with the running XOR sum.
+
+The overall time complexity is `O(q*n/B + B*n + q*log(MOD))`. With `B = sqrt(q)`, this becomes approximately `O(n*sqrt(q))`, which is efficient enough for the given constraints. The space complexity is `O(n + q)` to store the multipliers and queries.
+
+LLM Testcase Validation:
+```
+[1,1,1]
+[[0,2,1,4]]
+```
+- `nums` = [1, 1, 1], `queries` = [[0, 2, 1, 4]]
+- `n`=3, `q`=1. `B`=1.
+- Query `k=1` is a small `k` query.
+- `small_k_queries[1]` gets `(0, 2, 4)`.
+- For `k=1`, `rem=0`: `sub_array_len`=3. `diff`=[1,1,1,1].
+- Query `(0,2,4)`: `start_idx=0`, `end_idx=2`.
+- `diff[0]` becomes 4. `diff[3]` becomes `inv(4)`.
+- Prefix product scan on `diff` results in multipliers `[4, 4, 4]`.
+- `V` becomes `[4, 4, 4]`.
+- `nums` becomes `[(1*4)%M, (1*4)%M, (1*4)%M]` = `[4, 4, 4]`.
+- XOR sum = `4 ^ 4 ^ 4` = `4`.
+- Output: 4. Correct.
+
+```
+[2,3,1,5,4]
+[[1,4,2,3],[0,2,1,2]]
+```
+- `nums` = [2,3,1,5,4], `queries` = [[1,4,2,3],[0,2,1,2]]
+- `n`=5, `q`=2. `B`=1.
+- Query 1: `k=2` is large. `large_k_queries` gets `(1,4,2,3)`.
+- Query 2: `k=1` is small. `small_k_queries[1]` gets `(0,2,1,2)`.
+- Initial `V` = [1,1,1,1,1].
+- Process large query: `(1,4,2,3)`. Indices 1 and 3 are updated. `V[1]*=3`, `V[3]*=3`. `V` becomes `[1,3,1,3,1]`.
+- Process small query `k=1`: `rem=0`. `sub_array_len=5`. `diff`=[1]*6.
+- Query `(0,2,2)`: `start=0`, `end=2`. `diff[0]*=2`, `diff[3]*=inv(2)`.
+- Prefix product gives multipliers `[2,2,2,1,1]`.
+- `V` is updated: `V[0]*=2`, `V[1]*=2`, `V[2]*=2`, `V[3]*=1`, `V[4]*=1`.
+- Final `V` = `[1*2, 3*2, 1*2, 3*1, 1*1]` = `[2, 6, 2, 3, 1]`.
+- `nums` becomes:
+  - `(2*2)%M = 4`
+  - `(3*6)%M = 18`
+  - `(1*2)%M = 2`
+  - `(5*3)%M = 15`
+  - `(4*1)%M = 4`
+- Final `nums` = `[4, 18, 2, 15, 4]`.
+- XOR sum = `4 ^ 18 ^ 2 ^ 15 ^ 4` = `(4^4) ^ 18 ^ 2 ^ 15` = `0 ^ 16 ^ 15` = `31`.
+- Output: 31. Correct.
