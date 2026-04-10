@@ -1,0 +1,62 @@
+Date: 2026-04-10
+Title: Minimum Distance Between Three Equal Elements I
+URL: https://leetcode.com/problems/minimum-distance-between-three-equal-elements-i/
+
+LLM Explanation:
+### Method Explanation
+
+The problem asks for the minimum distance of a "good tuple" `(i, j, k)`, which consists of three distinct indices where `nums[i] == nums[j] == nums[k]`. The distance is defined as `abs(i - j) + abs(j - k) + abs(k - i)`.
+
+#### Key Insight: Simplifying the Distance Formula
+A crucial observation is the simplification of the distance formula. For any three distinct indices `i, j, k`, if we sort them as `min_idx < mid_idx < max_idx`, the distance becomes:
+`(mid_idx - min_idx) + (max_idx - mid_idx) + (max_idx - min_idx) = 2 * (max_idx - min_idx)`
+This means the distance only depends on the smallest and largest indices in the triplet. To minimize the distance, we must find a triplet of equal-valued elements where the difference (or span) between the largest and smallest index is minimized.
+
+#### Algorithm
+Based on this insight, we can devise an efficient O(n) algorithm:
+
+1.  **Group Indices by Value**: We first iterate through the input array `nums` and use a hash map (a `defaultdict(list)` in Python) to store the indices of each unique number. For example, if `nums = [1,2,1,1,3]`, the map would be `{1: [0, 2, 3], 2: [1], 3: [4]}`. The lists of indices will be naturally sorted because we process the array from left to right.
+
+2.  **Find Minimum Span for Each Number**: We then iterate through the values of this hash map. For each list of indices:
+    *   If the list contains fewer than three indices, we cannot form a good tuple with this number, so we skip it.
+    *   If the list has three or more indices, we need to find the triplet from this list that minimizes the span `(max_idx - min_idx)`. Since the list of indices is sorted, the minimum span will always be between three *consecutive* indices. For a list `[idx_1, idx_2, ..., idx_m]`, we only need to check the spans `(idx_3 - idx_1)`, `(idx_4 - idx_2)`, and so on.
+
+3.  **Sliding Window**: We can find this minimum span efficiently by using a sliding window of size 3 over the sorted list of indices. For each window `(indices[i], indices[i+1], indices[i+2])`, the smallest index is `indices[i]` and the largest is `indices[i+2]`. The distance is `2 * (indices[i+2] - indices[i])`.
+
+4.  **Track Minimum Distance**: We maintain a variable, `min_dist`, initialized to infinity. As we calculate the distance for each valid triplet (from the sliding windows), we update `min_dist` with the minimum value found so far.
+
+5.  **Return Result**: After checking all numbers, if `min_dist` is still infinity, it means no good tuple was ever found, so we return -1. Otherwise, we return the final `min_dist`.
+
+### Complexity Analysis
+*   **Time Complexity**: O(n), where n is the length of `nums`.
+    *   Populating the hash map takes O(n) time.
+    *   Iterating through the hash map and the sliding windows also takes O(n) time in total, as each index is visited a constant number of times.
+*   **Space Complexity**: O(n) in the worst case, where all elements are distinct and the hash map stores an entry for each, or all elements are the same and one list stores all `n` indices.
+
+LLM Testcase Validation:
+```python
+# Testcases from the problem description
+s = Solution()
+# Example 1
+assert s.minimumDistance([1,2,1,1,3]) == 6, "Testcase 1 Failed"
+# Example 2
+assert s.minimumDistance([1,1,2,3,2,1,2]) == 8, "Testcase 2 Failed"
+# Example 3
+assert s.minimumDistance([1]) == -1, "Testcase 3 Failed"
+
+# Additional testcases
+# Array with less than 3 elements
+assert s.minimumDistance([1, 2]) == -1, "Testcase 4 Failed"
+# No element repeats 3 times
+assert s.minimumDistance([1, 2, 1, 2, 3, 4]) == -1, "Testcase 5 Failed"
+# Exactly one good tuple
+assert s.minimumDistance([1, 1, 1]) == 4, "Testcase 6 Failed"
+# Multiple good tuples for the same number
+assert s.minimumDistance([5, 5, 5, 5]) == 4, "Testcase 7 Failed"
+# Multiple good tuples for different numbers
+assert s.minimumDistance([1, 1, 1, 2, 2, 2]) == 4, "Testcase 8 Failed"
+# Indices are not contiguous
+assert s.minimumDistance([10, 8, 10, 10, 9, 10]) == 6, "Testcase 9 Failed"
+
+print("All testcases passed!")
+```
