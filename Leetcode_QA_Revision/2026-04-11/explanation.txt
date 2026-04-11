@@ -1,0 +1,57 @@
+Date: 2026-04-11
+Title: Minimum Distance Between Three Equal Elements II
+URL: https://leetcode.com/problems/minimum-distance-between-three-equal-elements-ii/
+
+LLM Explanation:
+### Method Explanation
+
+The problem asks for the minimum distance of a "good tuple" `(i, j, k)`, which are three distinct indices with equal values `nums[i] == nums[j] == nums[k]`. The distance is defined as `abs(i - j) + abs(j - k) + abs(k - i)`.
+
+#### Key Insight: Simplifying the Distance Formula
+
+A crucial observation is the simplification of the distance formula. If we sort the three indices as `i' < j' < k'`, the distance becomes:
+`distance = (j' - i') + (k' - j') + (k' - i') = 2 * (k' - i')`
+This means the distance for any good tuple only depends on the difference between its largest and smallest indices. The middle index `j'` does not affect the distance value.
+
+#### Strategy
+
+To find the minimum possible distance, we need to find a triplet of equal-valued elements whose indices `(i', j', k')` minimize the span `k' - i'`.
+
+The overall strategy is as follows:
+1.  **Group Indices by Value:** We first iterate through the input array `nums` and use a hash map (a `defaultdict(list)` in Python) to store the indices of each unique number. The keys will be the numbers, and the values will be lists of their indices. Since we iterate through `nums` from left to right, the lists of indices will be naturally sorted.
+
+2.  **Find Minimum Span for Each Number:** For each number that appears at least three times (i.e., its list of indices has a length of 3 or more), we need to find the triplet of its indices with the minimum span. To minimize `k' - i'`, we should choose three *consecutive* indices from its sorted list. For a list of indices `p_1, p_2, p_3, p_4, ...`, the minimum span will come from one of the triplets `(p_1, p_2, p_3)`, `(p_2, p_3, p_4)`, etc.
+
+3.  **Sliding Window:** We can efficiently find this minimum span by using a sliding window of size 3 over the sorted list of indices for each number. For each window `(indices[p], indices[p+1], indices[p+2])`, the smallest index is `i' = indices[p]` and the largest is `k' = indices[p+2]`. The distance is `2 * (indices[p+2] - indices[p])`.
+
+4.  **Track Overall Minimum:** We maintain a variable `min_dist`, initialized to infinity, and update it with the minimum distance found across all valid numbers and their corresponding triplets.
+
+5.  **Handle No Good Tuples:** If, after checking all numbers, `min_dist` is still infinity, it means no number appeared at least three times. In this case, no good tuple exists, and we return -1. Otherwise, we return the calculated `min_dist`.
+
+### Complexity Analysis
+
+-   **Time Complexity: O(N)**, where N is the length of `nums`.
+    -   Grouping indices takes O(N) as we iterate through `nums` once.
+    -   Calculating the minimum distance also takes O(N) in total. We iterate through each list of indices once. Since the sum of the lengths of all these lists is N, the total work is proportional to N.
+
+-   **Space Complexity: O(N)**.
+    -   The hash map `positions` can store up to N indices in the worst case (e.g., all elements are distinct or all are the same).
+
+LLM Testcase Validation:
+- Testcase 1: `nums = [1,2,1,1,3]`
+  - Indices for `1`: `[0, 2, 3]`.
+  - Triplet `(0, 2, 3)` gives distance `2 * (3 - 0) = 6`.
+  - `min_dist` becomes 6.
+  - No other numbers appear 3+ times.
+  - Output: `6`. Correct.
+
+- Testcase 2: `nums = [1,1,2,3,2,1,2]`
+  - Indices for `1`: `[0, 1, 5]`. Distance `2 * (5 - 0) = 10`.
+  - Indices for `2`: `[2, 4, 6]`. Distance `2 * (6 - 2) = 8`.
+  - `min_dist` is `min(10, 8) = 8`.
+  - Output: `8`. Correct.
+
+- Testcase 3: `nums = [1]`
+  - No number appears 3 or more times.
+  - `min_dist` remains at its initial large value.
+  - The function returns `-1`. Correct.
