@@ -1,0 +1,37 @@
+Date: 2026-04-12
+Title: Minimum Distance to Type a Word Using Two Fingers
+URL: https://leetcode.com/problems/minimum-distance-to-type-a-word-using-two-fingers/
+
+LLM Explanation:
+The problem asks for the minimum total distance to type a word using two fingers on a 6-column keyboard layout. The key insight is that this problem has optimal substructure and overlapping subproblems, making it suitable for dynamic programming.
+
+### DP State
+The state of our system can be defined by which character we are about to type and the current locations of the two fingers. A crucial observation is that when we are about to type `word[i]`, one of our fingers must be on the location of the previously typed character, `word[i-1]`. The other finger's location determines the choices we have for the current move.
+
+This leads to the following DP state definition:
+`solve(i, other_finger_pos)`: The minimum cost to type the suffix of the word starting from `word[i]`, given that one finger is on `word[i-1]` and the other finger is at `other_finger_pos`.
+
+We represent finger positions by their character's 0-indexed value (`'A'`=0, `'B'`=1, ...). A special value, `-1`, is used to represent a finger that is in its initial "free" state, from which any move has a cost of 0.
+
+### Recurrence Relation
+To compute `solve(i, other_finger_pos)`, we need to type `word[i]`. We have two choices:
+
+1.  **Use the finger at `word[i-1]`:** Move this finger to `word[i]`. The cost incurred is `distance(pos(word[i-1]), pos(word[i]))`. The other finger remains at `other_finger_pos`. The remaining problem is to type `word[i+1:]`, which corresponds to the subproblem `solve(i + 1, other_finger_pos)`.
+
+2.  **Use the other finger:** Move the finger from `other_finger_pos` to `word[i]`. The cost is `distance(other_finger_pos, pos(word[i]))`. The finger at `word[i-1]` now becomes the "other finger" for the next step. The remaining problem is `solve(i + 1, pos(word[i-1]))`.
+
+The value of `solve(i, other_finger_pos)` is the minimum cost of these two options.
+
+### Base Case and Initial Call
+- **Base Case:** When `i` reaches the end of the word (`i == len(word)`), there are no more characters to type, so the cost is 0.
+- **Initial Call:** The first character, `word[0]`, is typed by placing a finger on it for free. We then need to type the rest of the word, `word[1:]`. At this point, one finger is on `word[0]` and the other is free. This state corresponds to an initial call of `solve(1, -1)`.
+
+The solution is implemented using recursion with memoization to store and reuse the results of subproblems, which avoids redundant calculations.
+
+### Complexity
+- **Time Complexity:** O(N), where N is the length of the word. The number of states is `N * 27` (N for the index `i`, 27 for the other finger's position). Since 27 is a constant, the complexity is linear with respect to the word's length.
+- **Space Complexity:** O(N) for the memoization table and the recursion call stack.
+
+LLM Testcase Validation:
+"CAKE"
+"HAPPY"
