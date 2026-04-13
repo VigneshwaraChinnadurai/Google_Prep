@@ -1,0 +1,78 @@
+Date: 2026-04-13
+Title: Minimum Distance to the Target Element
+URL: https://leetcode.com/problems/minimum-distance-to-the-target-element/
+
+LLM Explanation:
+The problem asks us to find the minimum absolute difference between a given `start` index and an index `i` where `nums[i]` is equal to `target`.
+
+The most straightforward approach is to iterate through the entire `nums` array and check every element.
+
+1.  Initialize a variable, `min_distance`, to a very large value (e.g., infinity). This variable will store the minimum distance found so far.
+2.  Iterate through the `nums` array using `enumerate` to get both the index `i` and the value `num` at that index.
+3.  For each element, check if `num` is equal to the `target`.
+4.  If it is, calculate the distance to the `start` index: `distance = abs(i - start)`.
+5.  Compare this `distance` with the current `min_distance`. If the new distance is smaller, update `min_distance` to this new value.
+6.  After checking all elements in the array, `min_distance` will hold the minimum possible distance. The problem guarantees that the `target` exists in `nums`, so we are sure to find at least one match.
+
+This approach ensures we check all possible occurrences of the `target` and find the one closest to the `start` index.
+
+A more concise, "Pythonic" way to write this is using a generator expression with the `min()` function, which achieves the same result:
+`return min(abs(i - start) for i, num in enumerate(nums) if num == target)`
+
+**Complexity Analysis:**
+-   **Time Complexity:** O(N), where N is the number of elements in `nums`. We must scan the entire array in the worst case to find all occurrences of the target.
+-   **Space Complexity:** O(1), as we only use a few variables to store the minimum distance and loop counters, regardless of the input size.
+
+LLM Testcase Validation:
+```
+# Testcase 1
+nums1 = [1,2,3,4,5]
+target1 = 5
+start1 = 3
+# Expected output: 1
+# Explanation: nums[4] = 5, abs(4 - 3) = 1.
+
+# Testcase 2
+nums2 = [1]
+target2 = 1
+start2 = 0
+# Expected output: 0
+# Explanation: nums[0] = 1, abs(0 - 0) = 0.
+
+# Testcase 3
+nums3 = [1,1,1,1,1,1,1,1,1,1]
+target3 = 1
+start3 = 0
+# Expected output: 0
+# Explanation: nums[0] = 1, abs(0 - 0) = 0 is the minimum distance.
+
+# Create an instance of the Solution class
+sol = Solution()
+
+# Run the testcases
+output1 = sol.getMinDistance(nums1, target1, start1)
+output2 = sol.getMinDistance(nums2, target2, start2)
+output3 = sol.getMinDistance(nums3, target3, start3)
+
+# Print results for validation
+print(f"Testcase 1: nums={nums1}, target={target1}, start={start1}")
+print(f"Output: {output1}, Expected: 1, Correct: {output1 == 1}")
+print("-" * 20)
+print(f"Testcase 2: nums={nums2}, target={target2}, start={start2}")
+print(f"Output: {output2}, Expected: 0, Correct: {output2 == 0}")
+print("-" * 20)
+print(f"Testcase 3: nums={nums3}, target={target3}, start={start3}")
+print(f"Output: {output3}, Expected: 0, Correct: {output3 == 0}")
+print("-" * 20)
+
+# Validation script output:
+# Testcase 1: nums=[1, 2, 3, 4, 5], target=5, start=3
+# Output: 1, Expected: 1, Correct: True
+# --------------------
+# Testcase 2: nums=[1], target=1, start=0
+# Output: 0, Expected: 0, Correct: True
+# --------------------
+# Testcase 3: nums=[1, 1, 1, 1, 1, 1, 1, 1, 1, 1], target=1, start=0
+# Output: 0, Expected: 0, Correct: True
+# --------------------
+```
