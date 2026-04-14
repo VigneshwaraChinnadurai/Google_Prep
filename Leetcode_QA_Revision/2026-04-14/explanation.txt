@@ -1,0 +1,56 @@
+Date: 2026-04-14
+Title: Minimum Total Distance Traveled
+URL: https://leetcode.com/problems/minimum-total-distance-traveled/
+
+LLM Explanation:
+The problem asks for the minimum total distance to assign each robot to a factory for repair, respecting factory capacity limits.
+
+### Key Insight: Non-Crossing Property
+A crucial observation is that the optimal assignment of robots to factories will not have "crossings". If we sort both the robot positions and factory positions, say `r_1 < r_2 < ... < r_n` and `f_1 < f_2 < ... < f_m`, then if robot `r_i` is assigned to factory `f_k` and robot `r_j` (with `i < j`) is assigned to factory `f_l`, it must be that `k <= l` in an optimal solution. Any "crossing" assignment (where `k > l`) can be "uncrossed" to reduce or maintain the total distance. This property allows us to use dynamic programming.
+
+### Dynamic Programming Approach
+After sorting the `robot` and `factory` arrays, we can define a DP state. Let `dp[i]` be the minimum cost to repair the first `i` robots (from the sorted list) using some subset of the factories considered so far. We build up the solution by considering one factory at a time.
+
+Let's say we have computed the `dp` array considering factories `0` to `j-1`. Now, we introduce factory `j` and compute a `next_dp` array. `next_dp[i]` will be the minimum cost to repair the first `i` robots using factories `0` to `j`.
+
+To compute `next_dp[i]`, we consider how many of the first `i` robots are assigned to the current factory `j`. Let's say we assign `k` robots to factory `j`. Due to the non-crossing property, these `k` robots must be `robot[i-k], ..., robot[i-1]`. The number of robots `k` can range from `0` (we don't use factory `j` for these `i` robots) up to `min(i, limit_j)`, where `limit_j` is the capacity of factory `j`.
+
+The remaining `i-k` robots must be repaired by the previous factories (`0` to `j-1`), and the minimum cost for this is already computed as `dp[i-k]`. The cost of assigning the `k` robots to factory `j` is the sum of distances: `sum_{l=1 to k} |robot[i-l] - pos_j|`.
+
+### Recurrence Relation
+The recurrence for updating the DP state when considering factory `j` is:
+`next_dp[i] = min_{0 <= k <= min(i, limit_j)} (dp[i-k] + cost_of_assigning_k_robots_to_factory_j)`
+
+We can iterate through each factory `j`, and for each factory, we compute the `next_dp` array based on the `dp` array from the previous factory.
+
+### Algorithm
+1. Sort the `robot` positions in non-decreasing order.
+2. Sort the `factory` data (position, limit) based on position in non-decreasing order.
+3. Initialize a DP array `dp` of size `n+1`, where `dp[i]` stores the minimum cost for the first `i` robots. `dp[0] = 0` and `dp[i] = infinity` for `i > 0`.
+4. Iterate through each factory `j` from `0` to `m-1`:
+   a. Create a `next_dp` array of size `n+1`, initialized to infinity.
+   b. Iterate `i` from `0` to `n` (number of robots to repair).
+   c. For each `i`, iterate `k` from `0` to `min(i, limit_j)` (number of robots assigned to factory `j`).
+      i. Calculate the cost of assigning the last `k` robots (`robot[i-k]` to `robot[i-1]`) to factory `j`.
+      ii. Update `next_dp[i]` with `min(next_dp[i], dp[i-k] + cost)`.
+   d. After iterating through all `i` and `k`, replace `dp` with `next_dp`.
+5. The final answer is `dp[n]`.
+
+### Complexity
+- **Time Complexity:** `O(m * n^2)`. We have an outer loop for `m` factories. Inside, we have two nested loops for `i` (up to `n`) and `k` (up to `n`).
+- **Space Complexity:** `O(n)`. We use two arrays of size `n+1` (`dp` and `next_dp`) to store the DP states.
+
+This approach is efficient enough for the given constraints (`n, m <= 100`).
+
+LLM Testcase Validation:
+```
+[0,4,6]
+[[2,2],[6,2]]
+```
+The code returns `4`, which is correct.
+
+```
+[1,-1]
+[[-2,1],[2,1]]
+```
+The code returns `2`, which is correct.
