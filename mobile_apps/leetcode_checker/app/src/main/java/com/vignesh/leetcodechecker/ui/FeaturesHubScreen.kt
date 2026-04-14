@@ -110,6 +110,7 @@ fun FeaturesHubScreen(
         Spacer(modifier = Modifier.height(12.dp))
         
         val features = listOf(
+            FeatureItem("AI Hub", "🧠", Color(0xFFFF6B6B), FeatureDestination.AI_LEARNING_HUB),
             FeatureItem("Analytics", "📊", Color(0xFF58A6FF), FeatureDestination.ANALYTICS),
             FeatureItem("Goals", "🎯", Color(0xFF39D353), FeatureDestination.GOALS),
             FeatureItem("Achievements", "🏆", Color(0xFFFFD700), FeatureDestination.ACHIEVEMENTS),
@@ -119,7 +120,8 @@ fun FeaturesHubScreen(
             FeatureItem("Leaderboard", "📈", Color(0xFFC0C0C0), FeatureDestination.LEADERBOARD),
             FeatureItem("Offline", "📱", Color(0xFF6E7681), FeatureDestination.OFFLINE),
             FeatureItem("AI/ML News", "🤖", Color(0xFF9C27B0), FeatureDestination.AI_NEWS),
-            FeatureItem("Protection", "🔒", Color(0xFFF85149), FeatureDestination.PROTECTION)
+            FeatureItem("Protection", "🔒", Color(0xFFF85149), FeatureDestination.PROTECTION),
+            FeatureItem("Python IDE", "🐍", Color(0xFF3776AB), FeatureDestination.PYTHON_PLAYGROUND)
         )
         
         LazyVerticalGrid(
@@ -333,5 +335,7 @@ enum class FeatureDestination {
     OFFLINE,
     PROTECTION,
     AI_NEWS,
-    AI_NEWS_SETTINGS
+    AI_NEWS_SETTINGS,
+    PYTHON_PLAYGROUND,
+    AI_LEARNING_HUB
 }

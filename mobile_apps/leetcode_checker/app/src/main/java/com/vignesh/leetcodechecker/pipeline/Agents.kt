@@ -504,45 +504,128 @@ Focus on competitive relationships, growth drivers, and strategic linkages. Extr
         val strategySystem = buildStrategySystem(p)
         val prompt = "ANALYSIS:\n$threat\n\nMARKET CONTEXT:\n${context.take(2000)}"
 
-        return try {
-            val request = GeminiGenerateRequest(
-                systemInstruction = GeminiContent(
-                    parts = listOf(GeminiPart(text = strategySystem))
-                ),
-                contents = listOf(
-                    GeminiContent(parts = listOf(GeminiPart(text = prompt)))
-                ),
-                generationConfig = GeminiGenerationConfig(
-                    temperature = 0.3,
-                    maxOutputTokens = 4096,
-                    responseMimeType = "application/json",
-                    responseSchema = PipelineSchemas.STRATEGY,
-                    thinkingConfig = GeminiThinkingConfig(thinkingBudget = 2048)
-                )
-            )
-            val response = geminiApi.generateContent(model, apiKey, request)
-            val text = response.candidates?.firstOrNull()?.content?.parts
-                ?.mapNotNull { it.text }?.joinToString("") ?: "[]"
-            val json = JSONObject(cleanJsonText(text))
-            val arr = json.optJSONArray("strategies") ?: JSONArray()
-            val strategies = (0 until arr.length()).map { i ->
-                val s = arr.getJSONObject(i)
-                val actions = (0 until (s.optJSONArray("actions")?.length() ?: 0)).map { j ->
-                    s.getJSONArray("actions").getString(j)
+        // Retry up to 3 times with different approaches
+        var lastError: Exception? = null
+        for (attempt in 1..3) {
+            try {
+                Log.d(TAG, "Strategy generation attempt $attempt/3")
+                
+                // Adjust temperature on retries to get different outputs
+                val temp = when (attempt) {
+                    1 -> 0.3
+                    2 -> 0.5
+                    else -> 0.7
                 }
-                mapOf<String, Any>(
-                    "name" to s.optString("name", ""),
-                    "actions" to actions,
-                    "cost" to s.optString("cost", ""),
-                    "expected_outcome" to s.optString("expected_outcome", "")
+                
+                val request = GeminiGenerateRequest(
+                    systemInstruction = GeminiContent(
+                        parts = listOf(GeminiPart(text = strategySystem))
+                    ),
+                    contents = listOf(
+                        GeminiContent(parts = listOf(GeminiPart(text = prompt)))
+                    ),
+                    generationConfig = GeminiGenerationConfig(
+                        temperature = temp,
+                        maxOutputTokens = 4096,
+                        responseMimeType = "application/json",
+                        responseSchema = PipelineSchemas.STRATEGY,
+                        thinkingConfig = GeminiThinkingConfig(thinkingBudget = 2048)
+                    )
                 )
+                val response = geminiApi.generateContent(model, apiKey, request)
+                val text = response.candidates?.firstOrNull()?.content?.parts
+                    ?.mapNotNull { it.text }?.joinToString("") ?: "[]"
+                
+                Log.d(TAG, "Strategy response (attempt $attempt): ${text.take(500)}")
+                
+                val cleanedText = cleanJsonText(text)
+                val json = try {
+                    JSONObject(cleanedText)
+                } catch (e: Exception) {
+                    // Try wrapping in object if it's just an array
+                    if (cleanedText.trim().startsWith("[")) {
+                        JSONObject("{\"strategies\": $cleanedText}")
+                    } else {
+                        throw e
+                    }
+                }
+                
+                val arr = json.optJSONArray("strategies") ?: JSONArray()
+                val strategies = (0 until arr.length()).map { i ->
+                    val s = arr.getJSONObject(i)
+                    val actions = (0 until (s.optJSONArray("actions")?.length() ?: 0)).map { j ->
+                        s.getJSONArray("actions").getString(j)
+                    }
+                    mapOf<String, Any>(
+                        "name" to s.optString("name", ""),
+                        "actions" to actions,
+                        "cost" to s.optString("cost", ""),
+                        "expected_outcome" to s.optString("expected_outcome", "")
+                    )
+                }
+                
+                if (strategies.isNotEmpty()) {
+                    logStep("Strategies", "${strategies.size} generated on attempt $attempt")
+                    return strategies
+                } else {
+                    Log.w(TAG, "Strategy attempt $attempt returned empty strategies")
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "Strategy generation attempt $attempt failed: ${e.message}")
+                lastError = e
             }
-            logStep("Strategies", "${strategies.size} generated")
-            strategies
-        } catch (e: Exception) {
-            Log.w(TAG, "Strategy generation failed: ${e.message}")
-            emptyList()
         }
+        
+        // If all attempts failed, generate fallback strategies from the analysis
+        Log.w(TAG, "All strategy generation attempts failed, generating fallback")
+        return generateFallbackStrategies(threat, p)
+    }
+    
+    private fun generateFallbackStrategies(threat: String, p: PipelineSearchPlan): List<Map<String, Any>> {
+        // Extract key insights from the threat analysis to create meaningful fallback strategies
+        val keywords = threat.lowercase()
+        val strategies = mutableListOf<Map<String, Any>>()
+        
+        // Strategy based on competitive positioning
+        strategies.add(mapOf(
+            "name" to "Strengthen Market Position in ${p.domain}",
+            "actions" to listOf(
+                "Conduct detailed competitive analysis of market leaders",
+                "Identify differentiation opportunities",
+                "Develop targeted value proposition"
+            ),
+            "cost" to "Medium - Internal analysis + strategic consulting",
+            "expected_outcome" to "Improved market positioning and clearer competitive strategy"
+        ))
+        
+        // Strategy based on growth
+        if (keywords.contains("growth") || keywords.contains("revenue") || keywords.contains("market")) {
+            strategies.add(mapOf(
+                "name" to "Accelerate Growth Through Strategic Initiatives",
+                "actions" to listOf(
+                    "Explore expansion into adjacent markets",
+                    "Invest in product/service innovation",
+                    "Build strategic partnerships"
+                ),
+                "cost" to "High - Capital investment and R&D",
+                "expected_outcome" to "Revenue growth and market share expansion"
+            ))
+        }
+        
+        // Strategy based on operational excellence
+        strategies.add(mapOf(
+            "name" to "Operational Excellence and Efficiency",
+            "actions" to listOf(
+                "Optimize operational processes",
+                "Implement technology improvements",
+                "Enhance talent capabilities"
+            ),
+            "cost" to "Medium - Process optimization and technology",
+            "expected_outcome" to "Improved margins and operational agility"
+        ))
+        
+        logStep("Strategies", "${strategies.size} fallback strategies generated")
+        return strategies
     }
 
     // ── 6. Memory Extraction ──────────────────────────────────────

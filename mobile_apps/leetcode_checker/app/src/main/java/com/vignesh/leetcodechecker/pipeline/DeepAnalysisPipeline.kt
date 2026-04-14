@@ -9,25 +9,25 @@ import org.json.JSONObject
 import java.util.concurrent.TimeUnit
 
 /**
- * DeepAnalysisPipeline — Full 10-step agentic pipeline running on-device.
+ * DeepAnalysisPipeline — Truly agentic pipeline with dynamic step selection.
  *
- * Ported from Python orchestrator.py deep_analysis() generator.
- * All computation is HTTP calls to public APIs + pure text/math.
- * No Python backend needed.
+ * Ported from Python orchestrator.py with AGENTIC enhancements.
+ * Uses LLM to dynamically decide which analysis steps to run based on
+ * the query context and available data.
  *
- * Pipeline steps:
- *   0. Query Planning (generate SearchPlan from user prompt)
- *   1. Plan (LLM decomposes into analysis steps)
- *   2. Fetch & Index (news, SEC EDGAR, grounded search → chunk → embed)
- *   3. Financial retrieval + extraction
- *   4. Market share delta (pure math)
- *   5. Qualitative signals retrieval
- *   6. Threat analysis (LLM)
- *   7. Critique (quality gate)
- *   7b. Refinement loop (0-2 iterations)
- *   8. Strategy generation
- *   9. Memory extraction
- *  10. Executive summary
+ * Pipeline steps (dynamically selected):
+ *   0. Query Planning + Agentic Router (decide which steps to run)
+ *   1. Plan (LLM decomposes into analysis steps) - ALWAYS
+ *   2. Fetch & Index (news, SEC EDGAR, grounded search) - if needsExternalData
+ *   3. Financial retrieval + extraction - if needsFinancials
+ *   4. Market share delta (pure math) - if needsFinancials AND multipleCompanies
+ *   5. Qualitative signals retrieval - if needsQualitative
+ *   6. Threat/Competitive analysis (LLM) - if needsCompetitiveAnalysis
+ *   7. Critique (quality gate) - ALWAYS when analysis done
+ *   7b. Refinement loop - if score < 7
+ *   8. Strategy generation - if needsStrategies
+ *   9. Memory extraction - ALWAYS
+ *  10. Executive summary - ALWAYS
  */
 
 /**
@@ -40,6 +40,20 @@ data class PipelineStatus(
     val fullReport: String? = null
 )
 
+/**
+ * Agentic routing decisions for dynamic pipeline execution.
+ */
+data class AgenticRoute(
+    val needsExternalData: Boolean = true,
+    val needsSecFilings: Boolean = false,
+    val needsNewsData: Boolean = true,
+    val needsFinancials: Boolean = true,
+    val needsQualitative: Boolean = true,
+    val needsCompetitiveAnalysis: Boolean = true,
+    val needsStrategies: Boolean = true,
+    val reasoning: String = ""
+)
+
 class DeepAnalysisPipeline(
     private val geminiApi: GeminiApi,
     private val apiKey: String,
@@ -48,6 +62,34 @@ class DeepAnalysisPipeline(
     companion object {
         private const val TAG = "DeepAnalysisPipeline"
         private const val MAX_CRITIQUE_LOOPS = 2
+        
+        private const val AGENTIC_ROUTER_SYSTEM = """You are an agentic orchestrator that decides which analysis steps to run based on the user's query.
+
+Analyze the query and decide which pipeline steps are needed. Return JSON with boolean flags.
+
+Guidelines:
+- needsExternalData: TRUE for any analysis needing current market data, recent news, or external information
+- needsSecFilings: TRUE only for US public companies when financial/regulatory data from SEC is needed
+- needsNewsData: TRUE for queries about recent events, trends, or competitive moves
+- needsFinancials: TRUE for queries about revenue, growth, margins, valuation, or financial metrics
+- needsQualitative: TRUE for queries about strategy, market position, competitive dynamics, or trends
+- needsCompetitiveAnalysis: TRUE for competitive queries, threat assessments, or market positioning
+- needsStrategies: TRUE when the user asks for recommendations, strategic advice, or action items
+
+Be selective! Not every query needs all steps. A simple "What is X's market position?" doesn't need SEC filings.
+For conversational questions like "Explain cloud computing" or "What is AI?", use Quick Chat mode instead.
+
+Return ONLY valid JSON with this structure:
+{
+  "needsExternalData": true/false,
+  "needsSecFilings": true/false,
+  "needsNewsData": true/false,
+  "needsFinancials": true/false,
+  "needsQualitative": true/false,
+  "needsCompetitiveAnalysis": true/false,
+  "needsStrategies": true/false,
+  "reasoning": "<brief explanation of why these steps were selected>"
+}"""
     }
 
     private val httpClient = OkHttpClient.Builder()
@@ -74,11 +116,68 @@ class DeepAnalysisPipeline(
     }
 
     /**
-     * Run the full deep analysis pipeline.
+     * Agentic router — LLM decides which pipeline steps to run.
+     * This makes the pipeline truly adaptive to the query.
+     */
+    private suspend fun determineAgenticRoute(prompt: String, searchPlan: PipelineSearchPlan): AgenticRoute {
+        return try {
+            Log.d(TAG, "Agentic router analyzing query: ${prompt.take(100)}")
+            
+            val contextInfo = buildString {
+                appendLine("User Query: $prompt")
+                appendLine("Detected Domain: ${searchPlan.domain}")
+                appendLine("Companies Identified: ${searchPlan.companies.map { it.name }}")
+                appendLine("Has SEC Tickers: ${searchPlan.tickerToCik.isNotEmpty()}")
+            }
+            
+            val request = GeminiGenerateRequest(
+                systemInstruction = GeminiContent(
+                    parts = listOf(GeminiPart(text = AGENTIC_ROUTER_SYSTEM))
+                ),
+                contents = listOf(
+                    GeminiContent(parts = listOf(GeminiPart(text = contextInfo)))
+                ),
+                generationConfig = GeminiGenerationConfig(
+                    temperature = 0.1,
+                    maxOutputTokens = 512,
+                    responseMimeType = "application/json",
+                    thinkingConfig = null
+                )
+            )
+            
+            val response = geminiApi.generateContent(model, apiKey, request)
+            val text = response.candidates?.firstOrNull()?.content?.parts
+                ?.mapNotNull { it.text }?.joinToString("") ?: ""
+            
+            val json = JSONObject(text.trim().removePrefix("```json").removeSuffix("```").trim())
+            
+            AgenticRoute(
+                needsExternalData = json.optBoolean("needsExternalData", true),
+                needsSecFilings = json.optBoolean("needsSecFilings", false),
+                needsNewsData = json.optBoolean("needsNewsData", true),
+                needsFinancials = json.optBoolean("needsFinancials", true),
+                needsQualitative = json.optBoolean("needsQualitative", true),
+                needsCompetitiveAnalysis = json.optBoolean("needsCompetitiveAnalysis", true),
+                needsStrategies = json.optBoolean("needsStrategies", true),
+                reasoning = json.optString("reasoning", "Default full analysis")
+            ).also {
+                Log.d(TAG, "Agentic route: $it")
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Agentic router failed, using full pipeline: ${e.message}")
+            AgenticRoute(reasoning = "Fallback to full analysis due to router error")
+        }
+    }
+
+    /**
+     * Run the agentic deep analysis pipeline.
+     * Uses LLM to dynamically decide which steps to run.
      * Emits PipelineStatus updates as a Flow.
      */
     fun runDeepAnalysis(prompt: String): Flow<PipelineStatus> = flow {
         var accumulated = ""
+        var currentStep = 0
+        var totalSteps = 10  // Will be adjusted by agentic router
 
         fun emit(text: String): PipelineStatus {
             accumulated += text + "\n"
@@ -89,8 +188,8 @@ class DeepAnalysisPipeline(
         wireCostGuard()
 
         try {
-            // ── Step 0: Query Planning ──────────────────────────
-            emit("🧠 **Step 0:** Understanding your question...").also { emit(it) }
+            // ── Step 0: Query Planning + Agentic Routing ──────────
+            emit("🧠 **Step 0:** Understanding your question & planning approach...").also { emit(it) }
             val planner = QueryPlanner(geminiApi, apiKey, model, httpClient)
             val searchPlan = planner.generateSearchPlan(prompt)
             
@@ -101,6 +200,25 @@ class DeepAnalysisPipeline(
                 "   ✅ Domain: **${searchPlan.domain}** | " +
                 "Companies: $companiesSummary | " +
                 "Queries planned: ${searchPlan.groundingQueries.size}\n"
+            ).also { emit(it) }
+            
+            // ── Agentic Router — decides what steps to run ──────
+            emit("🤖 **Agentic Router:** Analyzing query to optimize pipeline...").also { emit(it) }
+            val route = determineAgenticRoute(prompt, searchPlan)
+            
+            // Calculate dynamic step count based on selected steps
+            val selectedSteps = mutableListOf("Planning", "Summary", "Memory")
+            if (route.needsExternalData) selectedSteps.add("Data Fetch")
+            if (route.needsFinancials) selectedSteps.add("Financials")
+            if (route.needsQualitative) selectedSteps.add("Qualitative")
+            if (route.needsCompetitiveAnalysis) selectedSteps.add("Analysis")
+            if (route.needsStrategies) selectedSteps.add("Strategies")
+            selectedSteps.add("Critique")
+            totalSteps = selectedSteps.size
+            
+            emit(
+                "   ✅ Selected ${selectedSteps.size} steps: ${selectedSteps.joinToString(" → ")}\n" +
+                "   📝 Reasoning: ${route.reasoning}\n"
             ).also { emit(it) }
 
             // Seed memory
@@ -115,80 +233,126 @@ class DeepAnalysisPipeline(
             val critiqueMod = CritiqueModule(geminiApi, apiKey, model)
             val analyst = AnalystAgent(geminiApi, apiKey, model, memory, critiqueMod)
             analyst.setSearchPlan(searchPlan)
+            
+            currentStep = 1
 
-            // ── Step 1: Planning ────────────────────────────────
-            emit("🔍 **Step 1/10:** Planning analysis steps...").also { emit(it) }
+            // ── Step 1: Planning (ALWAYS) ───────────────────────
+            emit("🔍 **Step $currentStep/$totalSteps:** Planning analysis steps...").also { emit(it) }
             val plan = analyst.buildPlan(prompt)
             emit("   ✅ Generated ${plan.size} steps\n").also { emit(it) }
+            currentStep++
+            
+            // Variables for analysis context
+            var finContext = ""
+            var signalsContext = ""
+            var financials: JSONObject? = null
+            var shareDelta: JSONObject? = null
+            var documents: List<PipelineDocument> = emptyList()
 
-            // ── Step 2: Fetch & Index ───────────────────────────
-            emit(
-                "📡 **Step 2/10:** Fetching real-time data " +
-                "(${searchPlan.groundingQueries.size} web searches, " +
-                "${searchPlan.tickerToCik.size} SEC filings, " +
-                "${searchPlan.newsQueries.size} news feeds)..."
-            ).also { emit(it) }
+            // ── Step 2: Fetch & Index (if needsExternalData) ────
+            if (route.needsExternalData) {
+                val fetchTypes = mutableListOf<String>()
+                if (route.needsNewsData) fetchTypes.add("news")
+                if (route.needsSecFilings && searchPlan.tickerToCik.isNotEmpty()) fetchTypes.add("SEC")
+                fetchTypes.add("web")
+                
+                emit(
+                    "📡 **Step $currentStep/$totalSteps:** Fetching real-time data " +
+                    "(${fetchTypes.joinToString(", ")})..."
+                ).also { emit(it) }
 
-            val documents = dataFetcher.fetchAll(searchPlan)
-            emit("   ✅ Fetched ${documents.size} documents").also { emit(it) }
+                documents = dataFetcher.fetchAll(searchPlan, 
+                    fetchSec = route.needsSecFilings,
+                    fetchNews = route.needsNewsData
+                )
+                emit("   ✅ Fetched ${documents.size} documents").also { emit(it) }
 
-            // Build retrieval pipeline
-            emit("   ⏳ Indexing: chunking + embedding...").also { emit(it) }
-            retrievalPipeline = RetrievalPipeline(
-                geminiApi = geminiApi,
-                apiKey = apiKey,
-                model = model,
-                companyPatterns = searchPlan.companyPatterns
-            )
-            val chunkCount = retrievalPipeline!!.ingest(documents)
-            indexBuilt = true
-            emit("   ✅ Indexed $chunkCount chunks from ${documents.size} documents\n").also { emit(it) }
-
-            // ── Step 3: Financial retrieval + extraction ────────
-            emit(
-                "📊 **Step 3/10:** Retrieving financial context " +
-                "(hybrid search → rerank → fuse)..."
-            ).also { emit(it) }
-            val finQuery = searchPlan.financialRetrievalQuery.ifBlank {
-                "${searchPlan.domain} quarterly revenue growth operating income"
+                // Build retrieval pipeline
+                emit("   ⏳ Indexing: chunking + embedding...").also { emit(it) }
+                retrievalPipeline = RetrievalPipeline(
+                    geminiApi = geminiApi,
+                    apiKey = apiKey,
+                    model = model,
+                    companyPatterns = searchPlan.companyPatterns
+                )
+                val chunkCount = retrievalPipeline!!.ingest(documents)
+                indexBuilt = true
+                emit("   ✅ Indexed $chunkCount chunks from ${documents.size} documents\n").also { emit(it) }
+                currentStep++
+            } else {
+                emit("⏭️ **Skipping data fetch** — Using cached context or not needed\n").also { emit(it) }
             }
-            val finContext = retrievalPipeline!!.query(finQuery)
-            emit("   ✅ Financial context retrieved").also { emit(it) }
-            emit("   ⏳ Extracting structured metrics via LLM...").also { emit(it) }
-            val financials = analyst.extractFinancials(finContext)
-            emit("   ✅ Financial data extracted\n").also { emit(it) }
 
-            // ── Step 4: Market share delta ──────────────────────
-            emit("🧮 **Step 4/10:** Computing market share deltas...").also { emit(it) }
-            val shareDelta = analyst.computeShareDelta(financials)
-            emit("   ✅ ${shareDelta.toString().take(200)}\n").also { emit(it) }
-
-            // ── Step 5: Qualitative signals ─────────────────────
-            emit("🔎 **Step 5/10:** Retrieving competitive signals...").also { emit(it) }
-            val qualQuery = searchPlan.qualitativeRetrievalQuery.ifBlank {
-                "${searchPlan.domain} ${searchPlan.focusTopic} competitive signals trends"
+            // ── Step 3: Financial retrieval + extraction (if needsFinancials) ────
+            if (route.needsFinancials && retrievalPipeline != null) {
+                emit(
+                    "📊 **Step $currentStep/$totalSteps:** Retrieving financial context..."
+                ).also { emit(it) }
+                val finQuery = searchPlan.financialRetrievalQuery.ifBlank {
+                    "${searchPlan.domain} quarterly revenue growth operating income"
+                }
+                finContext = retrievalPipeline!!.query(finQuery)
+                emit("   ✅ Financial context retrieved").also { emit(it) }
+                emit("   ⏳ Extracting structured metrics via LLM...").also { emit(it) }
+                financials = analyst.extractFinancials(finContext)
+                emit("   ✅ Financial data extracted\n").also { emit(it) }
+                currentStep++
+                
+                // Market share delta only if multiple companies
+                if (searchPlan.companies.size >= 2 && financials != null) {
+                    emit("🧮 **Step $currentStep/$totalSteps:** Computing market share deltas...").also { emit(it) }
+                    shareDelta = analyst.computeShareDelta(financials)
+                    emit("   ✅ ${shareDelta.toString().take(200)}\n").also { emit(it) }
+                    currentStep++
+                }
+            } else if (route.needsFinancials) {
+                emit("⏭️ **Skipping financials** — No index built yet\n").also { emit(it) }
             }
-            val signalsContext = retrievalPipeline!!.query(qualQuery)
+
+            // ── Step 4: Qualitative signals (if needsQualitative) ────
+            if (route.needsQualitative && retrievalPipeline != null) {
+                emit("🔎 **Step $currentStep/$totalSteps:** Retrieving competitive signals...").also { emit(it) }
+                val qualQuery = searchPlan.qualitativeRetrievalQuery.ifBlank {
+                    "${searchPlan.domain} ${searchPlan.focusTopic} competitive signals trends"
+                }
+                signalsContext = retrievalPipeline!!.query(qualQuery)
+                emit("   ✅ Qualitative signals retrieved\n").also { emit(it) }
+                currentStep++
+            }
+            
             val memoryCtx = memory.format()
-            emit("   ✅ Qualitative signals retrieved\n").also { emit(it) }
+            var threat = ""
 
-            // ── Step 6: Threat analysis ─────────────────────────
-            emit("⚡ **Step 6/10:** Synthesising strategic analysis...").also { emit(it) }
-            var threat = analyst.analyseThreat(financials, signalsContext, memoryCtx)
-            emit("   ✅ Strategic analysis complete\n").also { emit(it) }
+            // ── Step 5: Competitive/Threat analysis (if needsCompetitiveAnalysis) ────
+            if (route.needsCompetitiveAnalysis) {
+                emit("⚡ **Step $currentStep/$totalSteps:** Synthesising strategic analysis...").also { emit(it) }
+                threat = analyst.analyseThreat(
+                    financials ?: JSONObject(), 
+                    signalsContext.ifEmpty { finContext }, 
+                    memoryCtx
+                )
+                emit("   ✅ Strategic analysis complete\n").also { emit(it) }
+                currentStep++
+            } else {
+                emit("⏭️ **Skipping competitive analysis** — Not needed for this query\n").also { emit(it) }
+            }
 
-            // ── Step 7: Critique (quality gate) ─────────────────
-            emit("📝 **Step 7/10:** Self-critique (quality gate)...").also { emit(it) }
-            var conclusion = "Market share delta: $shareDelta\n\nThreat: $threat"
-            var critique = critiqueMod.critique(conclusion, signalsContext)
+            // ── Step 6: Critique (quality gate - ALWAYS) ────────
+            emit("📝 **Step $currentStep/$totalSteps:** Self-critique (quality gate)...").also { emit(it) }
+            var conclusion = buildString {
+                if (shareDelta != null) appendLine("Market share delta: $shareDelta")
+                appendLine("Analysis: $threat")
+            }
+            var critique = critiqueMod.critique(conclusion, signalsContext.ifEmpty { finContext })
             var score = (critique["overall_score"] as? Number)?.toDouble() ?: 7.0
             var verdict = critique["verdict"]?.toString() ?: "PASS"
             val icon7 = if (verdict == "PASS") "✅" else "⚠️"
             emit("   $icon7 Score: ${String.format("%.1f", score)}/10 — $verdict\n").also { emit(it) }
+            currentStep++
 
-            // ── Step 7b: Refinement loop ────────────────────────
+            // ── Step 7: Refinement loop (if needed) ─────────────
             var loop = 0
-            while (verdict == "NEEDS_REFINEMENT" && loop < MAX_CRITIQUE_LOOPS) {
+            while (verdict == "NEEDS_REFINEMENT" && loop < MAX_CRITIQUE_LOOPS && retrievalPipeline != null) {
                 loop++
                 emit(
                     "🔄 **Refinement $loop/$MAX_CRITIQUE_LOOPS:** " +
@@ -205,24 +369,31 @@ class DeepAnalysisPipeline(
 
                 if (extraParts.isNotEmpty()) {
                     val enriched = signalsContext + "\n\n" + extraParts.joinToString("\n\n")
-                    threat = analyst.analyseThreat(financials, enriched, memoryCtx)
-                    conclusion = "Market share delta: $shareDelta\n\nThreat: $threat"
+                    threat = analyst.analyseThreat(financials ?: JSONObject(), enriched, memoryCtx)
+                    conclusion = buildString {
+                        if (shareDelta != null) appendLine("Market share delta: $shareDelta")
+                        appendLine("Analysis: $threat")
+                    }
                 }
 
-                critique = critiqueMod.critique(conclusion, signalsContext)
+                critique = critiqueMod.critique(conclusion, signalsContext.ifEmpty { finContext })
                 score = (critique["overall_score"] as? Number)?.toDouble() ?: 7.0
                 verdict = critique["verdict"]?.toString() ?: "PASS"
                 val iconR = if (verdict == "PASS") "✅" else "⚠️"
                 emit("   $iconR Refined score: ${String.format("%.1f", score)}/10 — $verdict\n").also { emit(it) }
             }
 
-            // ── Step 8: Strategy generation ─────────────────────
-            emit("💡 **Step 8/10:** Generating strategic recommendations...").also { emit(it) }
-            val strategies = analyst.generateStrategies(threat, signalsContext)
-            emit("   ✅ ${strategies.size} strategies generated\n").also { emit(it) }
+            // ── Step 8: Strategy generation (if needsStrategies) ─
+            var strategies: List<Map<String, Any>> = emptyList()
+            if (route.needsStrategies) {
+                emit("💡 **Step $currentStep/$totalSteps:** Generating strategic recommendations...").also { emit(it) }
+                strategies = analyst.generateStrategies(threat, signalsContext.ifEmpty { finContext })
+                emit("   ✅ ${strategies.size} strategies generated\n").also { emit(it) }
+                currentStep++
+            }
 
-            // ── Step 9: Memory extraction ───────────────────────
-            emit("🧠 **Step 9/10:** Extracting knowledge graph edges...").also { emit(it) }
+            // ── Step 9: Memory extraction (ALWAYS) ──────────────
+            emit("🧠 **Step $currentStep/$totalSteps:** Extracting knowledge graph edges...").also { emit(it) }
             val edgesBefore = memory.allEdges().size
             val strategiesText = strategies.joinToString("\n") { s ->
                 "${s["name"]}: ${(s["actions"] as? List<*>)?.joinToString(", ") ?: ""}"
@@ -230,22 +401,24 @@ class DeepAnalysisPipeline(
             analyst.extractMemory(threat + "\n" + strategiesText.take(1500))
             val edgeCount = memory.allEdges().size
             emit("   ✅ $edgeCount total edges in memory (+${edgeCount - edgesBefore} new)\n").also { emit(it) }
+            currentStep++
 
-            // ── Step 10: Executive summary ──────────────────────
-            emit("📋 **Step 10/10:** Writing executive summary...").also { emit(it) }
+            // ── Step 10: Executive summary (ALWAYS) ─────────────
+            emit("📋 **Step $currentStep/$totalSteps:** Writing executive summary...").also { emit(it) }
             val summary = analyst.synthesiseSummary(threat, strategies)
             emit("   ✅ Complete!\n").also { emit(it) }
 
             // ── Store result for follow-up ──────────────────────
             analysisResult = mapOf(
                 "plan" to plan,
-                "financials" to financials.toString(),
-                "share_delta" to shareDelta.toString(),
+                "financials" to (financials?.toString() ?: ""),
+                "share_delta" to (shareDelta?.toString() ?: ""),
                 "threat_statement" to threat,
                 "strategies" to strategies,
                 "critique" to critique,
                 "executive_summary" to summary,
-                "memory_edges" to memory.allEdges()
+                "memory_edges" to memory.allEdges(),
+                "agentic_route" to route.toString()
             )
 
             // ── Format final report ─────────────────────────────

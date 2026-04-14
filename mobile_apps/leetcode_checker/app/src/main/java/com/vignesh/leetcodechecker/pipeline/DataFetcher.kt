@@ -49,13 +49,18 @@ dates, and sources. Focus on the most recent and relevant data available."""
 
     /**
      * Fetch data from all sources based on the search plan.
+     * Supports selective fetching based on agentic routing decisions.
      * Returns list of PipelineDocuments.
      */
-    suspend fun fetchAll(plan: PipelineSearchPlan): List<PipelineDocument> {
+    suspend fun fetchAll(
+        plan: PipelineSearchPlan,
+        fetchSec: Boolean = true,
+        fetchNews: Boolean = true
+    ): List<PipelineDocument> {
         val docs = mutableListOf<PipelineDocument>()
         var docIdx = 0
 
-        // 1. Gemini Grounded Search
+        // 1. Gemini Grounded Search (always enabled if queries exist)
         for (query in plan.groundingQueries) {
             try {
                 val doc = fetchGrounded(query, "grounded_${docIdx++}")
@@ -65,38 +70,46 @@ dates, and sources. Focus on the most recent and relevant data available."""
             }
         }
 
-        // 2. SEC EDGAR XBRL
-        for ((ticker, cik) in plan.tickerToCik) {
-            try {
-                val doc = fetchSecEdgar(ticker, cik, "sec_xbrl_${docIdx++}")
-                if (doc != null) docs.add(doc)
-            } catch (e: Exception) {
-                Log.w(TAG, "SEC EDGAR failed for $ticker: ${e.message}")
+        // 2. SEC EDGAR XBRL (optional based on agentic routing)
+        if (fetchSec) {
+            for ((ticker, cik) in plan.tickerToCik) {
+                try {
+                    val doc = fetchSecEdgar(ticker, cik, "sec_xbrl_${docIdx++}")
+                    if (doc != null) docs.add(doc)
+                } catch (e: Exception) {
+                    Log.w(TAG, "SEC EDGAR failed for $ticker: ${e.message}")
+                }
             }
+
+            // 3. SEC Full-Text Search
+            for (query in plan.secFulltextQueries) {
+                try {
+                    val doc = fetchSecFulltext(query, "sec_ft_${docIdx++}")
+                    if (doc != null) docs.add(doc)
+                } catch (e: Exception) {
+                    Log.w(TAG, "SEC fulltext failed for '$query': ${e.message}")
+                }
+            }
+        } else {
+            Log.i(TAG, "Skipping SEC data fetch (agentic router decision)")
         }
 
-        // 3. SEC Full-Text Search
-        for (query in plan.secFulltextQueries) {
-            try {
-                val doc = fetchSecFulltext(query, "sec_ft_${docIdx++}")
-                if (doc != null) docs.add(doc)
-            } catch (e: Exception) {
-                Log.w(TAG, "SEC fulltext failed for '$query': ${e.message}")
+        // 4. Google News RSS (optional based on agentic routing)
+        if (fetchNews) {
+            for (query in plan.newsQueries) {
+                try {
+                    val newDocs = fetchNewsRss(query, docIdx)
+                    docIdx += newDocs.size
+                    docs.addAll(newDocs)
+                } catch (e: Exception) {
+                    Log.w(TAG, "News RSS failed for '$query': ${e.message}")
+                }
             }
+        } else {
+            Log.i(TAG, "Skipping News data fetch (agentic router decision)")
         }
 
-        // 4. Google News RSS
-        for (query in plan.newsQueries) {
-            try {
-                val newDocs = fetchNewsRss(query, docIdx)
-                docIdx += newDocs.size
-                docs.addAll(newDocs)
-            } catch (e: Exception) {
-                Log.w(TAG, "News RSS failed for '$query': ${e.message}")
-            }
-        }
-
-        Log.i(TAG, "Fetched ${docs.size} documents total")
+        Log.i(TAG, "Fetched ${docs.size} documents total (SEC=${fetchSec}, News=${fetchNews})")
         return docs
     }
 

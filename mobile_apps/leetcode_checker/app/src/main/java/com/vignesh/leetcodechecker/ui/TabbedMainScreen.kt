@@ -42,7 +42,9 @@ enum class FeatureScreen {
     OFFLINE,
     PROTECTION,
     AI_NEWS,
-    AI_NEWS_SETTINGS
+    AI_NEWS_SETTINGS,
+    PYTHON_PLAYGROUND,
+    AI_LEARNING_HUB
 }
 
 /**
@@ -151,6 +153,8 @@ fun TabbedMainScreen(
                                     FeatureDestination.PROTECTION -> FeatureScreen.PROTECTION
                                     FeatureDestination.AI_NEWS -> FeatureScreen.AI_NEWS
                                     FeatureDestination.AI_NEWS_SETTINGS -> FeatureScreen.AI_NEWS_SETTINGS
+                                    FeatureDestination.PYTHON_PLAYGROUND -> FeatureScreen.PYTHON_PLAYGROUND
+                                    FeatureDestination.AI_LEARNING_HUB -> FeatureScreen.AI_LEARNING_HUB
                                 }
                             },
                             onFilterSelected = { topic, difficulty ->
@@ -191,6 +195,16 @@ fun TabbedMainScreen(
                         )
                         FeatureScreen.AI_NEWS_SETTINGS -> AINewsSettingsScreen(
                             onBackClick = { featureScreen = FeatureScreen.AI_NEWS }
+                        )
+                        FeatureScreen.PYTHON_PLAYGROUND -> PythonPlaygroundScreen(
+                            modifier = Modifier.fillMaxSize()
+                        )
+                        FeatureScreen.AI_LEARNING_HUB -> AIFeaturesHubScreen(
+                            apiKey = "", // TODO: Get from config
+                            onBackClick = { featureScreen = FeatureScreen.HUB },
+                            onProblemClick = { slug, title -> 
+                                // Could navigate to problem
+                            }
                         )
                     }
                 }

@@ -38,7 +38,10 @@ private val AppLightColors = lightColorScheme(
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Schedule consistency reminders
         ConsistencyReminderScheduler.ensureHourlyReminder(this)
+        // Schedule daily auto-fetch at 6 AM IST
+        ConsistencyReminderScheduler.scheduleDailyAutoFetch(this)
         setContent {
             val darkTheme = isSystemInDarkTheme()
             MaterialTheme(colorScheme = if (darkTheme) AppDarkColors else AppLightColors) {
