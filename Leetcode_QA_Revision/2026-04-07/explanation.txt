@@ -1,0 +1,50 @@
+Date: 2026-04-07
+Title: Walking Robot Simulation II
+URL: https://leetcode.com/problems/walking-robot-simulation-ii/
+
+LLM Explanation:
+The core idea is to avoid a step-by-step simulation, which would be too slow given that `num` can be up to 10^5. The robot's movement is confined to the perimeter of the grid, forming a closed loop. We can model this movement as a one-dimensional path.
+
+1.  **Linear Path Model**: The robot's state can be represented by a single integer, `pos_linear`, which is its total distance traveled along the perimeter path. The total length of this path (the perimeter) is `2 * (width - 1) + 2 * (height - 1)`.
+
+2.  **`__init__`**: We initialize the robot's properties, including the grid dimensions and the calculated perimeter length. A flag, `moved_once`, is used to handle the special initial state: at `(0, 0)` facing "East" before any `step` command.
+
+3.  **`step(num)`**: Instead of simulating `num` individual moves, we simply advance the `pos_linear` by `num`. To handle multiple laps around the perimeter, we take the result modulo the perimeter length. This gives us the final position on the one-dimensional path in O(1) time. We also set `moved_once` to true.
+
+4.  **`getPos()` and `getDir()`**: These methods translate the `pos_linear` value back into 2D grid coordinates `[x, y]` and a cardinal direction. The perimeter path is divided into four segments (bottom, right, top, left). By comparing `pos_linear` against the cumulative lengths of these segments, we can determine which segment the robot is on and calculate its exact position and direction.
+
+5.  **Edge Case Handling**:
+    *   **Initial State**: The `moved_once` flag is crucial. If no steps have been taken, the robot is at `(0, 0)` facing "East".
+    *   **Completing a Cycle**: If `pos_linear` becomes 0 after a move, it means the robot has completed one or more full cycles and is back at `(0, 0)`. In this case, it has just arrived from `(0, 1)`, so its direction is "South". The `moved_once` flag helps distinguish this state from the initial state.
+
+This approach reduces the complexity of all operations to O(1), making it highly efficient and capable of passing within the time limits.
+
+**Complexity Analysis**:
+*   Time Complexity:
+    *   `__init__`: O(1)
+    *   `step`: O(1)
+    *   `getPos`: O(1)
+    *   `getDir`: O(1)
+*   Space Complexity: O(1) for storing state variables.
+
+LLM Testcase Validation:
+```
+Input
+["Robot","step","step","getPos","getDir","step","step","step","getPos","getDir"]
+[[6,3],[2],[2],[],[],[2],[1],[4],[],[]]
+Output
+[null,null,null,[4,0],"East",null,null,null,[1,2],"West"]
+```
+The code is tested against the provided example case.
+1. `Robot(6, 3)`: Initializes `width=6`, `height=3`. `perimeter = 2*(5) + 2*(2) = 14`. `pos_linear=0`, `moved_once=False`.
+2. `step(2)`: `pos_linear = (0+2)%14 = 2`. `moved_once=True`.
+3. `step(2)`: `pos_linear = (2+2)%14 = 4`.
+4. `getPos()`: `p=4`. `4 <= 5` (c1). Returns `[4, 0]`. Correct.
+5. `getDir()`: `p=4`. `4 <= 5` (c1). Returns `"East"`. Correct.
+6. `step(2)`: `pos_linear = (4+2)%14 = 6`.
+7. `step(1)`: `pos_linear = (6+1)%14 = 7`.
+8. `step(4)`: `pos_linear = (7+4)%14 = 11`.
+9. `getPos()`: `p=11`. `7 < 11 <= 12` (c2 < p <= c3). Returns `[6-1 - (11-7), 3-1] = [5-4, 2] = [1, 2]`. Correct.
+10. `getDir()`: `p=11`. `7 < 11 <= 12`. Returns `"West"`. Correct.
+
+The output matches the example.

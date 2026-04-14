@@ -1,0 +1,38 @@
+Date: 2026-04-11
+Question ID: 3741
+Title: Minimum Distance Between Three Equal Elements II
+Difficulty: Medium
+Tags: Array, Hash Table
+URL: https://leetcode.com/problems/minimum-distance-between-three-equal-elements-ii/
+
+Question:
+You are given an integer array nums . A tuple (i, j, k) of 3 distinct indices is good if nums[i] == nums[j] == nums[k] . The distance of a good tuple is abs(i - j) + abs(j - k) + abs(k - i) , where abs(x) denotes the absolute value of x . Return an integer denoting the minimum possible distance of a good tuple. If no good tuples exist, return -1 . Example 1: Input: nums = [1,2,1,1,3] Output: 6 Explanation: The minimum distance is achieved by the good tuple (0, 2, 3) . (0, 2, 3) is a good tuple because nums[0] == nums[2] == nums[3] == 1 . Its distance is abs(0 - 2) + abs(2 - 3) + abs(3 - 0) = 2 + 1 + 3 = 6 . Example 2: Input: nums = [1,1,2,3,2,1,2] Output: 8 Explanation: The minimum distance is achieved by the good tuple (2, 4, 6) . (2, 4, 6) is a good tuple because nums[2] == nums[4] == nums[6] == 2 . Its distance is abs(2 - 4) + abs(4 - 6) + abs(6 - 2) = 2 + 2 + 4 = 8 . Example 3: Input: nums = [1] Output: -1 Explanation: There are no good tuples. Therefore, the answer is -1. Constraints: 1 &lt;= n == nums.length &lt;= 10 5 1 &lt;= nums[i] &lt;= n
+
+Starter Code (Python3):
+class Solution:
+    def minimumDistance(self, nums: List[int]) -> int:
+        
+
+Testcases:
+[1,2,1,1,3]
+[1,1,2,3,2,1,2]
+[1]
+
+Expected Output / Validation:
+- Testcase 1: `nums = [1,2,1,1,3]`
+  - Indices for `1`: `[0, 2, 3]`.
+  - Triplet `(0, 2, 3)` gives distance `2 * (3 - 0) = 6`.
+  - `min_dist` becomes 6.
+  - No other numbers appear 3+ times.
+  - Output: `6`. Correct.
+
+- Testcase 2: `nums = [1,1,2,3,2,1,2]`
+  - Indices for `1`: `[0, 1, 5]`. Distance `2 * (5 - 0) = 10`.
+  - Indices for `2`: `[2, 4, 6]`. Distance `2 * (6 - 2) = 8`.
+  - `min_dist` is `min(10, 8) = 8`.
+  - Output: `8`. Correct.
+
+- Testcase 3: `nums = [1]`
+  - No number appears 3 or more times.
+  - `min_dist` remains at its initial large value.
+  - The function returns `-1`. Correct.

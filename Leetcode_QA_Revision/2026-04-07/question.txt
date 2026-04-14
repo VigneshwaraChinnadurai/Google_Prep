@@ -1,0 +1,57 @@
+Date: 2026-04-07
+Question ID: 2069
+Title: Walking Robot Simulation II
+Difficulty: Medium
+Tags: Design, Simulation
+URL: https://leetcode.com/problems/walking-robot-simulation-ii/
+
+Question:
+A width x height grid is on an XY-plane with the bottom-left cell at (0, 0) and the top-right cell at (width - 1, height - 1) . The grid is aligned with the four cardinal directions ( &quot;North&quot; , &quot;East&quot; , &quot;South&quot; , and &quot;West&quot; ). A robot is initially at cell (0, 0) facing direction &quot;East&quot; . The robot can be instructed to move for a specific number of steps . For each step, it does the following. Attempts to move forward one cell in the direction it is facing. If the cell the robot is moving to is out of bounds , the robot instead turns 90 degrees counterclockwise and retries the step. After the robot finishes moving the number of steps required, it stops and awaits the next instruction. Implement the Robot class: Robot(int width, int height) Initializes the width x height grid with the robot at (0, 0) facing &quot;East&quot; . void step(int num) Instructs the robot to move forward num steps. int[] getPos() Returns the current cell the robot is at, as an array of length 2, [x, y] . String getDir() Returns the current direction of the robot, &quot;North&quot; , &quot;East&quot; , &quot;South&quot; , or &quot;West&quot; . Example 1: Input [&quot;Robot&quot;, &quot;step&quot;, &quot;step&quot;, &quot;getPos&quot;, &quot;getDir&quot;, &quot;step&quot;, &quot;step&quot;, &quot;step&quot;, &quot;getPos&quot;, &quot;getDir&quot;] [[6, 3], [2], [2], [], [], [2], [1], [4], [], []] Output [null, null, null, [4, 0], &quot;East&quot;, null, null, null, [1, 2], &quot;West&quot;] Explanation Robot robot = new Robot(6, 3); // Initialize the grid and the robot at (0, 0) facing East. robot.step(2); // It moves two steps East to (2, 0), and faces East. robot.step(2); // It moves two steps East to (4, 0), and faces East. robot.getPos(); // return [4, 0] robot.getDir(); // return &quot;East&quot; robot.step(2); // It moves one step East to (5, 0), and faces East. // Moving the next step East would be out of bounds, so it turns and faces North. // Then, it moves one step North to (5, 1), and faces North. robot.step(1); // It moves one step North to (5, 2), and faces North (not West). robot.step(4); // Moving the next step North would be out of bounds, so it turns and faces West. // Then, it moves four steps West to (1, 2), and faces West. robot.getPos(); // return [1, 2] robot.getDir(); // return &quot;West&quot; Constraints: 2 &lt;= width, height &lt;= 100 1 &lt;= num &lt;= 10 5 At most 10 4 calls in total will be made to step , getPos , and getDir .
+
+Starter Code (Python3):
+class Robot:
+
+    def __init__(self, width: int, height: int):
+        
+
+    def step(self, num: int) -> None:
+        
+
+    def getPos(self) -> List[int]:
+        
+
+    def getDir(self) -> str:
+        
+
+
+# Your Robot object will be instantiated and called as such:
+# obj = Robot(width, height)
+# obj.step(num)
+# param_2 = obj.getPos()
+# param_3 = obj.getDir()
+
+Testcases:
+["Robot","step","step","getPos","getDir","step","step","step","getPos","getDir"]
+[[6,3],[2],[2],[],[],[2],[1],[4],[],[]]
+
+Expected Output / Validation:
+```
+Input
+["Robot","step","step","getPos","getDir","step","step","step","getPos","getDir"]
+[[6,3],[2],[2],[],[],[2],[1],[4],[],[]]
+Output
+[null,null,null,[4,0],"East",null,null,null,[1,2],"West"]
+```
+The code is tested against the provided example case.
+1. `Robot(6, 3)`: Initializes `width=6`, `height=3`. `perimeter = 2*(5) + 2*(2) = 14`. `pos_linear=0`, `moved_once=False`.
+2. `step(2)`: `pos_linear = (0+2)%14 = 2`. `moved_once=True`.
+3. `step(2)`: `pos_linear = (2+2)%14 = 4`.
+4. `getPos()`: `p=4`. `4 <= 5` (c1). Returns `[4, 0]`. Correct.
+5. `getDir()`: `p=4`. `4 <= 5` (c1). Returns `"East"`. Correct.
+6. `step(2)`: `pos_linear = (4+2)%14 = 6`.
+7. `step(1)`: `pos_linear = (6+1)%14 = 7`.
+8. `step(4)`: `pos_linear = (7+4)%14 = 11`.
+9. `getPos()`: `p=11`. `7 < 11 <= 12` (c2 < p <= c3). Returns `[6-1 - (11-7), 3-1] = [5-4, 2] = [1, 2]`. Correct.
+10. `getDir()`: `p=11`. `7 < 11 <= 12`. Returns `"West"`. Correct.
+
+The output matches the example.
