@@ -1,0 +1,61 @@
+Date: 2026-04-16
+Title: Closest Equal Element Queries
+URL: https://leetcode.com/problems/closest-equal-element-queries/
+
+LLM Explanation:
+The problem asks for the minimum circular distance from a given index to another index with the same value. A naive approach of iterating through the array for each query would be too slow, with a time complexity of O(N*Q). A more efficient solution involves preprocessing and binary search.
+
+1.  **Preprocessing:** We first create a hash map (a `defaultdict` in Python) to group all indices by their corresponding value in `nums`. We iterate through `nums` once, and for each value, we append its index to a list in the hash map. Since we iterate in order, each list of indices will be naturally sorted. This step takes O(N) time.
+
+2.  **Query Processing:** For each `query_index`, we perform the following steps:
+    a.  Look up the list of indices for `nums[query_index]` in our pre-built map.
+    b.  If the list contains only one element, it means the value is unique, so we record -1 as the answer.
+    c.  If the list has multiple indices, we need to find the one closest to `query_index`. Since the list is sorted, the closest indices must be the immediate predecessor and successor. We can find the position of `query_index` in this list efficiently using binary search (Python's `bisect.bisect_left`).
+
+3.  **Calculating Circular Distance:** Once we identify the predecessor and successor indices, we calculate the circular distance to each. The distance between two indices `i` and `j` in a circular array of length `n` is `min(|i - j|, n - |i - j|)`. We must also handle the wrap-around case for neighbors: the predecessor of the first element is the last, and the successor of the last element is the first. This is easily managed with Python's negative indexing and the modulo operator.
+
+4.  **Final Answer:** The minimum of the circular distances to the predecessor and successor is the answer for the query.
+
+This approach has a time complexity of O(N + Q * log K), where N is the length of `nums`, Q is the number of queries, and K is the maximum frequency of any number. The space complexity is O(N) for the hash map. This is highly efficient and passes within the given constraints.
+
+LLM Testcase Validation:
+```
+# Testcase 1
+nums1 = [1,3,1,4,1,3,2]
+queries1 = [0,3,5]
+expected1 = [2,-1,3]
+solver = Solution()
+result1 = solver.solveQueries(nums1, queries1)
+assert result1 == expected1, f"Testcase 1 Failed: Expected {expected1}, Got {result1}"
+
+# Testcase 2
+nums2 = [1,2,3,4]
+queries2 = [0,1,2,3]
+expected2 = [-1,-1,-1,-1]
+result2 = solver.solveQueries(nums2, queries2)
+assert result2 == expected2, f"Testcase 2 Failed: Expected {expected2}, Got {result2}"
+
+# Additional Testcases
+# All elements are the same
+nums3 = [5,5,5,5,5]
+queries3 = [0, 2, 4]
+expected3 = [1,1,1]
+result3 = solver.solveQueries(nums3, queries3)
+assert result3 == expected3, f"Testcase 3 Failed: Expected {expected3}, Got {result3}"
+
+# Two elements, circular distance
+nums4 = [10, 20, 30, 40, 10]
+queries4 = [0, 4]
+expected4 = [1,1]
+result4 = solver.solveQueries(nums4, queries4)
+assert result4 == expected4, f"Testcase 4 Failed: Expected {expected4}, Got {result4}"
+
+# Single element array
+nums5 = [100]
+queries5 = [0]
+expected5 = [-1]
+result5 = solver.solveQueries(nums5, queries5)
+assert result5 == expected5, f"Testcase 5 Failed: Expected {expected5}, Got {result5}"
+
+print("All testcases passed!")
+```
