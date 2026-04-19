@@ -1,0 +1,57 @@
+Date: 2026-04-19
+Question ID: 1855
+Title: Maximum Distance Between a Pair of Values
+Difficulty: Medium
+Tags: Array, Two Pointers, Binary Search
+URL: https://leetcode.com/problems/maximum-distance-between-a-pair-of-values/
+
+Question:
+You are given two non-increasing 0-indexed integer arrays nums1 ​​​​​​ and nums2 ​​​​​​. A pair of indices (i, j) , where 0 &lt;= i &lt; nums1.length and 0 &lt;= j &lt; nums2.length , is valid if both i &lt;= j and nums1[i] &lt;= nums2[j] . The distance of the pair is j - i ​​​​. Return the maximum distance of any valid pair (i, j) . If there are no valid pairs, return 0 . An array arr is non-increasing if arr[i-1] &gt;= arr[i] for every 1 &lt;= i &lt; arr.length . Example 1: Input: nums1 = [55,30,5,4,2], nums2 = [100,20,10,10,5] Output: 2 Explanation: The valid pairs are (0,0), (2,2), (2,3), (2,4), (3,3), (3,4), and (4,4). The maximum distance is 2 with pair (2,4). Example 2: Input: nums1 = [2,2,2], nums2 = [10,10,1] Output: 1 Explanation: The valid pairs are (0,0), (0,1), and (1,1). The maximum distance is 1 with pair (0,1). Example 3: Input: nums1 = [30,29,19,5], nums2 = [25,25,25,25,25] Output: 2 Explanation: The valid pairs are (2,2), (2,3), (2,4), (3,3), and (3,4). The maximum distance is 2 with pair (2,4). Constraints: 1 &lt;= nums1.length, nums2.length &lt;= 10 5 1 &lt;= nums1[i], nums2[j] &lt;= 10 5 Both nums1 and nums2 are non-increasing .
+
+Starter Code (Python3):
+class Solution:
+    def maxDistance(self, nums1: List[int], nums2: List[int]) -> int:
+        
+
+Testcases:
+[55,30,5,4,2]
+[100,20,10,10,5]
+[2,2,2]
+[10,10,1]
+[30,29,19,5]
+[25,25,25,25,25]
+
+Expected Output / Validation:
+```
+Tested against provided examples:
+1. Input: nums1 = [55,30,5,4,2], nums2 = [100,20,10,10,5]
+   - i=0, j=0: nums1[0]<=nums2[0] (55<=100). dist=0. j=1.
+   - i=0, j=1: nums1[0]>nums2[1] (55>20). i=1.
+   - i=1, j=1: nums1[1]>nums2[1] (30>20). i=2.
+   - i=2, j=1: nums1[2]<=nums2[1] (5<=20). dist=max(0, 1-2)=0. j=2.
+   - i=2, j=2: nums1[2]<=nums2[2] (5<=10). dist=max(0, 2-2)=0. j=3.
+   - i=2, j=3: nums1[2]<=nums2[3] (5<=10). dist=max(0, 3-2)=1. j=4.
+   - i=2, j=4: nums1[2]<=nums2[4] (5<=5). dist=max(1, 4-2)=2. j=5.
+   - j=5, loop terminates.
+   Output: 2. Correct.
+
+2. Input: nums1 = [2,2,2], nums2 = [10,10,1]
+   - i=0, j=0: nums1[0]<=nums2[0] (2<=10). dist=0. j=1.
+   - i=0, j=1: nums1[0]<=nums2[1] (2<=10). dist=max(0, 1-0)=1. j=2.
+   - i=0, j=2: nums1[0]>nums2[2] (2>1). i=1.
+   - i=1, j=2: nums1[1]>nums2[2] (2>1). i=2.
+   - i=2, j=2: nums1[2]>nums2[2] (2>1). i=3.
+   - i=3, loop terminates.
+   Output: 1. Correct.
+
+3. Input: nums1 = [30,29,19,5], nums2 = [25,25,25,25,25]
+   - i=0, j=0: nums1[0]>nums2[0] (30>25). i=1.
+   - i=1, j=0: nums1[1]>nums2[0] (29>25). i=2.
+   - i=2, j=0: nums1[2]<=nums2[0] (19<=25). dist=max(0, 0-2)=0. j=1.
+   - i=2, j=1: nums1[2]<=nums2[1] (19<=25). dist=max(0, 1-2)=0. j=2.
+   - i=2, j=2: nums1[2]<=nums2[2] (19<=25). dist=max(0, 2-2)=0. j=3.
+   - i=2, j=3: nums1[2]<=nums2[3] (19<=25). dist=max(0, 3-2)=1. j=4.
+   - i=2, j=4: nums1[2]<=nums2[4] (19<=25). dist=max(1, 4-2)=2. j=5.
+   - j=5, loop terminates.
+   Output: 2. Correct.
+```
