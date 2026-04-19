@@ -1,0 +1,66 @@
+Date: 2026-04-19
+Title: Maximum Distance Between a Pair of Values
+URL: https://leetcode.com/problems/maximum-distance-between-a-pair-of-values/
+
+LLM Explanation:
+The problem asks for the maximum distance `j - i` between a valid pair of indices `(i, j)` from two non-increasing arrays, `nums1` and `nums2`. A pair is valid if `i <= j` and `nums1[i] <= nums2[j]`.
+
+A brute-force approach of checking all possible pairs `(i, j)` would be O(n1 * n2), which is too slow given the constraints. A more optimal solution can be achieved using a two-pointer approach, which leverages the non-increasing property of the arrays.
+
+### Two-Pointer Approach
+
+We can use two pointers, `i` for `nums1` and `j` for `nums2`, both starting at index 0. We iterate while both pointers are within their respective array bounds.
+
+The logic for moving the pointers is as follows:
+
+1.  **If `nums1[i] <= nums2[j]`:**
+    This condition satisfies one of the requirements for a valid pair. We can calculate the current distance `j - i` and update our `max_dist`. Note that we don't need an explicit check for `i <= j`. If `i > j`, the distance `j - i` will be negative. Since `max_dist` is initialized to 0, it will not be updated by a negative value. A positive distance is only recorded when `j > i`, which correctly implies `i <= j`.
+    After finding a potential valid pair, to maximize the distance `j - i` for the current `i`, we should try to find a larger `j`. Therefore, we increment the `j` pointer.
+
+2.  **If `nums1[i] > nums2[j]`:**
+    This means `nums2[j]` is too small for `nums1[i]`. Because `nums2` is non-increasing, all subsequent elements `nums2[k]` (for `k > j`) will also be less than or equal to `nums2[j]`, and thus too small for `nums1[i]`. This implies that no valid pair can be formed with the current `i` and any index `k >= j`. To find a potential match, we must find a smaller value in `nums1`, which we do by incrementing the `i` pointer.
+
+The pointers `i` and `j` only move forward. In each step of the loop, at least one pointer is incremented. This ensures that the total number of operations is proportional to the sum of the lengths of the arrays.
+
+### Complexity Analysis
+-   **Time Complexity:** O(n1 + n2), where `n1` and `n2` are the lengths of `nums1` and `nums2`. Each pointer traverses its array at most once.
+-   **Space Complexity:** O(1), as we only use a constant amount of extra space for the pointers and the result variable.
+
+### Edge Cases
+-   **No valid pairs:** If no valid pair exists, the condition `nums1[i] <= nums2[j]` might never lead to a positive distance `j - i`. The `max_dist` will remain at its initial value of 0, which is the correct output.
+-   **Arrays of different lengths:** The `while i < n1 and j < n2` condition correctly handles arrays of any length.
+
+LLM Testcase Validation:
+```
+Tested against provided examples:
+1. Input: nums1 = [55,30,5,4,2], nums2 = [100,20,10,10,5]
+   - i=0, j=0: nums1[0]<=nums2[0] (55<=100). dist=0. j=1.
+   - i=0, j=1: nums1[0]>nums2[1] (55>20). i=1.
+   - i=1, j=1: nums1[1]>nums2[1] (30>20). i=2.
+   - i=2, j=1: nums1[2]<=nums2[1] (5<=20). dist=max(0, 1-2)=0. j=2.
+   - i=2, j=2: nums1[2]<=nums2[2] (5<=10). dist=max(0, 2-2)=0. j=3.
+   - i=2, j=3: nums1[2]<=nums2[3] (5<=10). dist=max(0, 3-2)=1. j=4.
+   - i=2, j=4: nums1[2]<=nums2[4] (5<=5). dist=max(1, 4-2)=2. j=5.
+   - j=5, loop terminates.
+   Output: 2. Correct.
+
+2. Input: nums1 = [2,2,2], nums2 = [10,10,1]
+   - i=0, j=0: nums1[0]<=nums2[0] (2<=10). dist=0. j=1.
+   - i=0, j=1: nums1[0]<=nums2[1] (2<=10). dist=max(0, 1-0)=1. j=2.
+   - i=0, j=2: nums1[0]>nums2[2] (2>1). i=1.
+   - i=1, j=2: nums1[1]>nums2[2] (2>1). i=2.
+   - i=2, j=2: nums1[2]>nums2[2] (2>1). i=3.
+   - i=3, loop terminates.
+   Output: 1. Correct.
+
+3. Input: nums1 = [30,29,19,5], nums2 = [25,25,25,25,25]
+   - i=0, j=0: nums1[0]>nums2[0] (30>25). i=1.
+   - i=1, j=0: nums1[1]>nums2[0] (29>25). i=2.
+   - i=2, j=0: nums1[2]<=nums2[0] (19<=25). dist=max(0, 0-2)=0. j=1.
+   - i=2, j=1: nums1[2]<=nums2[1] (19<=25). dist=max(0, 1-2)=0. j=2.
+   - i=2, j=2: nums1[2]<=nums2[2] (19<=25). dist=max(0, 2-2)=0. j=3.
+   - i=2, j=3: nums1[2]<=nums2[3] (19<=25). dist=max(0, 3-2)=1. j=4.
+   - i=2, j=4: nums1[2]<=nums2[4] (19<=25). dist=max(1, 4-2)=2. j=5.
+   - j=5, loop terminates.
+   Output: 2. Correct.
+```
