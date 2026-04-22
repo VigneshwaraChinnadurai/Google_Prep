@@ -1,0 +1,27 @@
+Date: 2026-04-22
+Title: Words Within Two Edits of Dictionary
+URL: https://leetcode.com/problems/words-within-two-edits-of-dictionary/
+
+LLM Explanation:
+### Method
+The problem asks for words in `queries` that can be transformed into a word in `dictionary` with at most two character changes. Since all words have the same length, this is equivalent to finding query words that have a Hamming distance of 2 or less from at least one dictionary word.
+
+### Algorithm
+A direct brute-force approach is efficient enough given the problem's constraints.
+1.  Initialize an empty list `result` to store the matching query words.
+2.  Iterate through each `query_word` in the `queries` list. This preserves the required output order.
+3.  For each `query_word`, iterate through each `dict_word` in the `dictionary`.
+4.  Compare the two words character by character and count the number of differing characters (mismatches).
+5.  If the number of mismatches is less than or equal to 2, the `query_word` is valid. Add it to the `result` list.
+6.  Crucially, once a match is found for a `query_word`, we can stop checking it against the rest of the dictionary. We `break` from the inner loop and move to the next `query_word`.
+7.  After iterating through all queries, return the `result` list.
+
+### Complexity Analysis
+-   **Time Complexity:** `O(Q * D * N)`, where `Q` is the number of queries, `D` is the number of dictionary words, and `N` is the length of each word. With `Q, D, N <= 100`, this evaluates to a maximum of `100 * 100 * 100 = 10^6` character comparisons, which is very efficient.
+-   **Space Complexity:** `O(R * N)` to store the result list, where `R` is the number of matching query words. The auxiliary space complexity is `O(1)`.
+
+This approach is simple to implement, correct, and performs well within the time limits, making it an optimal solution for this problem.
+
+LLM Testcase Validation:
+{"queries": ["word","note","ants","wood"], "dictionary": ["wood","joke","moat"]}
+{"queries": ["yes"], "dictionary": ["not"]}
