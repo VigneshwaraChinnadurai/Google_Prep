@@ -1,0 +1,38 @@
+llm:
+  # Primary provider - Gemini is cheapest. Options: gemini, anthropic, openai, bedrock
+  provider: gemini
+  model_id: gemini-2.5-flash
+  temperature: 0.2
+  max_output_tokens: 2048
+
+  # Fallback if primary fails (optional)
+  fallback_provider: null
+  fallback_model_id: null
+
+matching:
+  threshold: 0.65          # 0.0 - 1.0. Jobs below this score are hidden.
+  max_jobs_per_company: 20
+  # Skills weighting (relative importance when computing fit score)
+  weights:
+    skills: 0.45
+    experience: 0.25
+    role_alignment: 0.20
+    location: 0.10
+
+scraping:
+  headless: true
+  page_timeout_ms: 30000
+  user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Job-Finder-Personal/1.0"
+  concurrency: 3           # How many companies to scrape in parallel
+  respect_robots: true
+
+applicator:
+  headless: false          # Always false - user needs to see + submit
+  auto_fill_cover_letter: true
+  pause_before_submit: true  # Wait for user to click submit
+
+cache:
+  resume_profile_path: data/profile.json
+  matches_path: data/matches.json
+  jobs_cache_path: data/jobs_cache.json
+  cache_ttl_hours: 6

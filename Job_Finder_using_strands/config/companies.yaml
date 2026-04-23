@@ -1,0 +1,57 @@
+# Companies you're targeting. Add/remove as needed.
+# `ats` tells the scraper which adapter to use.
+# Supported: greenhouse, lever, workday, smartrecruiters, ashby, generic
+#
+# `url` is the company's public careers/jobs listing page.
+# `location_filters` narrows results (case-insensitive substring match).
+
+companies:
+  - name: Google
+    ats: generic
+    url: https://www.google.com/about/careers/applications/jobs/results/?location=Bangalore%2C%20India
+    location_filters: ["Bangalore", "Bengaluru", "India"]
+
+  - name: Microsoft
+    ats: generic
+    url: https://jobs.careers.microsoft.com/global/en/search?lc=India&l=en_us
+    location_filters: ["Bangalore", "Bengaluru", "Hyderabad", "India"]
+
+  - name: Atlassian
+    ats: generic
+    url: https://www.atlassian.com/company/careers/all-jobs?team=Engineering&location=Bengaluru%2C+India
+    location_filters: ["Bengaluru", "Bangalore"]
+
+  - name: Stripe
+    ats: generic
+    url: https://stripe.com/jobs/search?office_locations=Asia+Pacific--Bengaluru
+    location_filters: ["Bengaluru", "Bangalore"]
+
+  - name: Airbnb
+    ats: greenhouse
+    url: https://boards.greenhouse.io/airbnb
+    location_filters: ["Bangalore", "Bengaluru", "India"]
+
+  - name: Databricks
+    ats: greenhouse
+    url: https://boards.greenhouse.io/databricks
+    location_filters: ["Bangalore", "Bengaluru", "India"]
+
+  - name: Figma
+    ats: greenhouse
+    url: https://boards.greenhouse.io/figma
+    location_filters: ["Bangalore", "Bengaluru", "India"]
+
+  - name: Notion
+    ats: greenhouse
+    url: https://boards.greenhouse.io/notion
+    location_filters: ["Bangalore", "Bengaluru", "India"]
+
+  - name: Netflix
+    ats: lever
+    url: https://jobs.lever.co/netflix
+    location_filters: ["Bangalore", "Bengaluru", "India"]
+
+  - name: Palo Alto Networks
+    ats: workday
+    url: https://paloaltonetworks.wd1.myworkdayjobs.com/Careers
+    location_filters: ["Bangalore", "Bengaluru", "India"]
