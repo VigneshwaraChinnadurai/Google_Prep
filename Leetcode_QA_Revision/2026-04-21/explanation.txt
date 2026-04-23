@@ -1,0 +1,53 @@
+Date: 2026-04-21
+Title: Minimize Hamming Distance After Swap Operations
+URL: https://leetcode.com/problems/minimize-hamming-distance-after-swap-operations/
+
+LLM Explanation:
+The problem asks for the minimum possible Hamming distance between `source` and `target` arrays after performing any number of allowed swaps on the `source` array.
+
+The key insight is to understand the structure formed by the `allowedSwaps`. If we can swap indices `i` and `j`, and also `j` and `k`, it implies we can move the element at `i` to `k`, `k` to `j`, and `j` to `i`. In essence, any elements at indices that are connected by a path of swaps can be freely permuted among those positions. This is a classic connectivity problem.
+
+We can model the indices `0, 1, ..., n-1` as nodes in a graph, and each allowed swap `[u, v]` as an edge between nodes `u` and `v`. The problem then breaks down into finding the connected components of this graph. Within each connected component, we can rearrange the `source` values at those indices in any order we like.
+
+The goal is to maximize the number of matches (`source[i] == target[i]`) for the indices within each component. For a given component, we have a multiset of available numbers (from `source` at the component's indices) and a multiset of required numbers (from `target` at the same indices). The maximum number of matches we can achieve is the size of the intersection of these two multisets.
+
+The overall algorithm is as follows:
+1.  **Identify Connected Components:** Use a Union-Find (Disjoint Set Union) data structure to efficiently group the indices into connected components. Initialize `n` sets, one for each index. For each swap `[u, v]` in `allowedSwaps`, perform a `union` operation on `u` and `v`.
+2.  **Group Indices:** After processing all swaps, iterate through all indices from `0` to `n-1`. Use a hash map to group indices by their component's root, which can be found using the `find` operation.
+3.  **Calculate Matches per Component:** For each component (i.e., each group of indices):
+    a. Collect the `source` values and `target` values at these indices into two frequency maps (multisets), for which Python's `collections.Counter` is ideal.
+    b. The maximum number of matches for this component is the size of the intersection of these two multisets. This can be calculated efficiently using the `&` operator on the two `Counter` objects.
+    c. Sum these matches over all components to get the `total_matches`.
+4.  **Calculate Minimum Hamming Distance:** The minimum Hamming distance is the total number of elements, `n`, minus the maximum total number of matches we can achieve. The result is `n - total_matches`.
+
+**Complexity Analysis:**
+-   **Time Complexity:** `O(n + m * α(n))`, where `n` is the number of elements and `m` is the number of swaps. `α(n)` is the very slow-growing inverse Ackermann function, making the Union-Find operations nearly constant time. The rest of the algorithm (grouping indices, calculating matches) takes `O(n)`. Thus, the overall complexity is dominated by the Union-Find part, effectively linear in `n + m`.
+-   **Space Complexity:** `O(n)` to store the Union-Find data structure, the components map, and the counters for the largest component.
+
+LLM Testcase Validation:
+Testcase 1:
+Input: source = [1,2,3,4], target = [2,1,4,5], allowedSwaps = [[0,1],[2,3]]
+Output: 1
+The code correctly identifies two components of indices: {0, 1} and {2, 3}.
+For {0, 1}, source values {1, 2} can be rearranged to match target values {2, 1}, resulting in 2 matches.
+For {2, 3}, source values {3, 4} can be rearranged to match target values {4, 5}. Only the value 4 can be matched. This gives 1 match.
+Total matches = 2 + 1 = 3. Total elements n = 4. Minimum Hamming distance = 4 - 3 = 1. Correct.
+
+Testcase 2:
+Input: source = [1,2,3,4], target = [1,3,2,4], allowedSwaps = []
+Output: 2
+With no swaps, each index is its own component. We compare source[i] and target[i] for each i.
+source[0]==target[0] (1==1) -> match
+source[1]!=target[1] (2!=3) -> mismatch
+source[2]!=target[2] (3!=2) -> mismatch
+source[3]==target[3] (4==4) -> match
+Total mismatches = 2. Correct.
+
+Testcase 3:
+Input: source = [5,1,2,4,3], target = [1,5,4,2,3], allowedSwaps = [[0,4],[4,2],[1,3],[1,4]]
+Output: 0
+The allowed swaps connect all indices {0, 1, 2, 3, 4} into a single component.
+The multiset of source values is {5, 1, 2, 4, 3}.
+The multiset of target values is {1, 5, 4, 2, 3}.
+Since the multisets are identical, we can rearrange the source elements to perfectly match the target elements.
+Total matches = 5. n = 5. Minimum Hamming distance = 5 - 5 = 0. Correct.

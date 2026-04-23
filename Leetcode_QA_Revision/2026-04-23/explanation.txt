@@ -1,0 +1,65 @@
+Date: 2026-04-23
+Title: Sum of Distances
+URL: https://leetcode.com/problems/sum-of-distances/
+
+LLM Explanation:
+The problem asks for the sum of absolute differences of indices for all identical elements. A naive approach of iterating through all pairs of indices for each element would result in an O(n^2) time complexity, which is too slow for the given constraints.
+
+A more efficient method is to calculate the sum of distances in a structured way. For each index `i`, the total distance `arr[i]` is the sum of two components:
+1. The sum of distances to identical elements with indices `j < i`.
+2. The sum of distances to identical elements with indices `j > i`.
+
+Let's analyze the first component for an element `nums[i] = v`:
+`Sum_left = sum_{j<i, nums[j]==v} |i - j| = sum_{j<i, nums[j]==v} (i - j)`
+This can be rewritten using the distributive property:
+`Sum_left = (count_left * i) - sum_of_indices_left`, where `count_left` is the number of times `v` has appeared before index `i`, and `sum_of_indices_left` is the sum of their indices.
+
+Similarly, for the second component:
+`Sum_right = sum_{j>i, nums[j]==v} |i - j| = sum_{j>i, nums[j]==v} (j - i)`
+This can be rewritten as:
+`Sum_right = sum_of_indices_right - (count_right * i)`.
+
+This structure suggests an efficient two-pass algorithm:
+- **Pass 1 (Left-to-Right):** We iterate from the beginning of the array. For each element `nums[i]`, we can calculate `Sum_left` because we have already processed all elements to its left. We use two hash maps: one to store the running count of each number and another to store the sum of indices where it has appeared. The calculated `Sum_left` is stored in our result array `arr`.
+- **Pass 2 (Right-to-Left):** We iterate from the end of the array. Similarly, for each `nums[i]`, we can calculate `Sum_right` using information about elements to its right. The result from this pass is added to the value already in `arr[i]`, giving the final total distance.
+
+This algorithm processes the array twice, and hash map operations take constant time on average.
+
+- **Time Complexity:** O(n), as we iterate through the array twice.
+- **Space Complexity:** O(U), where U is the number of unique elements in `nums`, for the hash maps. In the worst case, U can be n, so the space complexity is O(n).
+
+LLM Testcase Validation:
+```
+# Testcase 1
+nums1 = [1,3,1,1,2]
+expected1 = [5,0,3,4,0]
+sol = Solution()
+output1 = sol.distance(nums1)
+assert output1 == expected1, f"Testcase 1 Failed: Expected {expected1}, got {output1}"
+
+# Testcase 2
+nums2 = [0,5,3]
+expected2 = [0,0,0]
+output2 = sol.distance(nums2)
+assert output2 == expected2, f"Testcase 2 Failed: Expected {expected2}, got {output2}"
+
+# Additional Testcase: All elements are the same
+nums3 = [1,1,1,1]
+expected3 = [6,4,4,6]
+output3 = sol.distance(nums3)
+assert output3 == expected3, f"Testcase 3 Failed: Expected {expected3}, got {output3}"
+
+# Additional Testcase: Single element
+nums4 = [10]
+expected4 = [0]
+output4 = sol.distance(nums4)
+assert output4 == expected4, f"Testcase 4 Failed: Expected {expected4}, got {output4}"
+
+# Additional Testcase: Alternating elements
+nums5 = [1,2,1,2,1]
+expected5 = [6,2,4,2,6]
+output5 = sol.distance(nums5)
+assert output5 == expected5, f"Testcase 5 Failed: Expected {expected5}, got {output5}"
+
+print("All testcases passed!")
+```

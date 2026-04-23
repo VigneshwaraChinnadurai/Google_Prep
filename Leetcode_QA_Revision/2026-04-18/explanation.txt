@@ -1,0 +1,61 @@
+Date: 2026-04-18
+Title: Mirror Distance of an Integer
+URL: https://leetcode.com/problems/mirror-distance-of-an-integer/
+
+LLM Explanation:
+The problem asks for the "mirror distance" of an integer `n`, defined as `abs(n - reverse(n))`. The main task is to find the reversed version of the integer `n`.
+
+A simple and idiomatic way to reverse an integer in Python is to use string manipulation:
+1.  **Convert to String:** The integer `n` is first converted into its string representation. For example, if `n = 25`, it becomes `"25"`.
+2.  **Reverse String:** The string is then reversed. Python's slice notation `[::-1]` provides a concise way to do this. `"25"[::-1]` results in `"52"`.
+3.  **Convert back to Integer:** The reversed string is converted back to an integer. The `int()` function handles this conversion, correctly interpreting strings like `"01"` (from reversing `10`) as the integer `1`.
+4.  **Calculate Distance:** Finally, the absolute difference between the original number `n` and its reversed version `reversed_n` is calculated using `abs(n - reversed_n)`.
+
+This approach is robust and correctly handles all edge cases within the problem's constraints, such as single-digit numbers, palindromic numbers, and numbers with trailing zeros.
+
+**Example Walkthrough (`n = 25`):**
+-   `n` is `25`.
+-   Convert to string: `s_n = "25"`.
+-   Reverse the string: `reversed_s_n = "52"`.
+-   Convert back to integer: `reversed_n = 52`.
+-   Calculate the mirror distance: `abs(25 - 52) = abs(-27) = 27`.
+
+**Complexity Analysis:**
+-   **Time Complexity:** `O(log10(n))`. The time taken for string conversion, reversal, and integer conversion is proportional to the number of digits in `n`.
+-   **Space Complexity:** `O(log10(n))`. Space is required to store the string representation of `n`.
+
+LLM Testcase Validation:
+```python
+# Create an instance of the Solution class
+sol = Solution()
+
+# Testcase 1: n = 25
+# Expected output: 27
+# reverse(25) = 52, abs(25 - 52) = 27
+assert sol.mirrorDistance(25) == 27
+
+# Testcase 2: n = 10
+# Expected output: 9
+# reverse(10) = 1, abs(10 - 1) = 9
+assert sol.mirrorDistance(10) == 9
+
+# Testcase 3: n = 7
+# Expected output: 0
+# reverse(7) = 7, abs(7 - 7) = 0
+assert sol.mirrorDistance(7) == 0
+
+# Additional testcases
+# Palindrome number
+assert sol.mirrorDistance(121) == 0
+
+# Single digit number
+assert sol.mirrorDistance(1) == 0
+
+# Maximum constraint
+assert sol.mirrorDistance(1000000000) == 999999999
+
+# Another number
+assert sol.mirrorDistance(987) == 198 # abs(987 - 789) = 198
+
+print("All test cases passed.")
+```

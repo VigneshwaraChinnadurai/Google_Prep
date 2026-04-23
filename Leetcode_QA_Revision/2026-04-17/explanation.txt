@@ -1,0 +1,50 @@
+Date: 2026-04-17
+Title: Minimum Absolute Distance Between Mirror Pairs
+URL: https://leetcode.com/problems/minimum-absolute-distance-between-mirror-pairs/
+
+LLM Explanation:
+The problem asks for the minimum absolute distance `j - i` between indices of a "mirror pair" `(i, j)` where `i < j` and `reverse(nums[i]) == nums[j]`.
+
+A brute-force approach would be to check every possible pair of indices `(i, j)` with `i < j`. This would involve two nested loops, leading to an `O(N^2)` time complexity, which is too slow for the given constraint `N <= 10^5`.
+
+A more optimal approach uses a hash map to solve the problem in linear time. The core idea is to iterate through the array once, and for each element `nums[j]`, efficiently find if a valid preceding index `i` exists.
+
+The condition for a mirror pair is `reverse(nums[i]) == nums[j]`. As we iterate through the array at index `j` with value `current_num = nums[j]`, we need to check if we have previously seen a number `nums[i]` (where `i < j`) whose reverse equals `current_num`.
+
+To do this efficiently, we use a hash map, `reversed_num_to_index`, to store information about the numbers we've already processed. The map's keys will be the *reversed* values of numbers encountered, and the values will be their most recent indices.
+`map: { reverse(number): index }`
+
+The algorithm proceeds as follows:
+1. Initialize `min_dist` to infinity and an empty hash map `reversed_num_to_index`.
+2. Iterate through `nums` from left to right with index `j` and value `current_num`.
+3. For each `current_num`, check if it exists as a key in `reversed_num_to_index`.
+   - If it does, it means we have found an index `i = reversed_num_to_index[current_num]` such that `reverse(nums[i]) == current_num`. This forms a mirror pair `(i, j)`.
+   - We calculate the distance `j - i` and update `min_dist` with the minimum distance found so far.
+4. After the check, we update the map for the current element. We compute `reversed_current = reverse(current_num)` and store the current index `j` in the map: `reversed_num_to_index[reversed_current] = j`.
+   - By always storing the most recent index for a given reversed value, we ensure that any future match will yield the smallest possible distance, as `j - i` is minimized when `i` is maximized.
+5. After iterating through the entire array, if `min_dist` is still infinity, no mirror pairs were found, and we return -1. Otherwise, we return the calculated `min_dist`.
+
+This approach has a time complexity of `O(N)` because we iterate through the array once, and each hash map operation takes, on average, `O(1)` time. The space complexity is `O(N)` in the worst case, where we might store an entry in the hash map for each element in the input array.
+
+LLM Testcase Validation:
+```
+Tested against provided test cases:
+1. Input: nums = [12,21,45,33,54]
+   - j=0, num=12: map becomes {21: 0}
+   - j=1, num=21: 21 is in map. i=0. dist=1. min_dist=1. map becomes {21: 0, 12: 1}
+   - j=2, num=45: map becomes {21: 0, 12: 1, 54: 2}
+   - j=3, num=33: map becomes {21: 0, 12: 1, 54: 2, 33: 3}
+   - j=4, num=54: 54 is in map. i=2. dist=2. min_dist=min(1,2)=1. map becomes {21: 0, 12: 1, 54: 2, 33: 3, 45: 4}
+   Output: 1. Correct.
+
+2. Input: nums = [120,21]
+   - j=0, num=120: reverse(120)=21. map becomes {21: 0}
+   - j=1, num=21: 21 is in map. i=0. dist=1. min_dist=1. map becomes {21: 0, 12: 1}
+   Output: 1. Correct.
+
+3. Input: nums = [21,120]
+   - j=0, num=21: reverse(21)=12. map becomes {12: 0}
+   - j=1, num=120: 120 is not in map. reverse(120)=21. map becomes {12: 0, 21: 1}
+   - Loop ends. min_dist is infinity.
+   Output: -1. Correct.
+```
