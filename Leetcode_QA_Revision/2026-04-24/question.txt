@@ -1,0 +1,24 @@
+Date: 2026-04-24
+Question ID: 2833
+Title: Furthest Point From Origin
+Difficulty: Easy
+Tags: String, Counting
+URL: https://leetcode.com/problems/furthest-point-from-origin/
+
+Question:
+You are given a string moves of length n consisting only of characters &#39;L&#39; , &#39;R&#39; , and &#39;_&#39; . The string represents your movement on a number line starting from the origin 0 . In the i th move, you can choose one of the following directions: move to the left if moves[i] = &#39;L&#39; or moves[i] = &#39;_&#39; move to the right if moves[i] = &#39;R&#39; or moves[i] = &#39;_&#39; Return the distance from the origin of the furthest point you can get to after n moves . Example 1: Input: moves = &quot;L_RL__R&quot; Output: 3 Explanation: The furthest point we can reach from the origin 0 is point -3 through the following sequence of moves &quot;LLRLLLR&quot;. Example 2: Input: moves = &quot;_R__LL_&quot; Output: 5 Explanation: The furthest point we can reach from the origin 0 is point -5 through the following sequence of moves &quot;LRLLLLL&quot;. Example 3: Input: moves = &quot;_______&quot; Output: 7 Explanation: The furthest point we can reach from the origin 0 is point 7 through the following sequence of moves &quot;RRRRRRR&quot;. Constraints: 1 &lt;= moves.length == n &lt;= 50 moves consists only of characters &#39;L&#39; , &#39;R&#39; and &#39;_&#39; .
+
+Starter Code (Python3):
+class Solution:
+    def furthestDistanceFromOrigin(self, moves: str) -> int:
+        
+
+Testcases:
+"L_RL__R"
+"_R__LL_"
+"_______"
+
+Expected Output / Validation:
+"L_RL__R"
+"_R__LL_"
+"_______"
