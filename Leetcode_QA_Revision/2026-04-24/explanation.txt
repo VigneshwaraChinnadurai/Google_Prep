@@ -1,0 +1,35 @@
+Date: 2026-04-24
+Title: Furthest Point From Origin
+URL: https://leetcode.com/problems/furthest-point-from-origin/
+
+LLM Explanation:
+The problem asks for the maximum possible distance from the origin after a series of moves. The moves are 'L' (left), 'R' (right), or '_' (wildcard, can be either left or right).
+
+The key insight is that to maximize the distance from the origin, we must maximize the absolute value of our final position. This means we should commit all our flexible moves ('_') to a single direction, either all to the right or all to the left.
+
+Let's break down the calculation:
+1.  **Fixed Moves:** The 'L' and 'R' characters represent fixed moves. We can calculate their net effect on the position. Let `count_L` be the number of 'L's and `count_R` be the number of 'R's. The net displacement from these fixed moves is `count_R - count_L`.
+
+2.  **Flexible Moves:** The '_' characters are wildcards. Let `count_underscore` be the number of '_'s. To get as far away from the origin as possible, we should use all these `count_underscore` moves to push further in one direction.
+
+3.  **Two Extreme Scenarios:**
+    *   **Furthest Right:** To get the maximum positive position, we treat all '_' as 'R'. The final position would be `(count_R - count_L) + count_underscore`.
+    *   **Furthest Left:** To get the minimum (most negative) position, we treat all '_' as 'L'. The final position would be `(count_R - count_L) - count_underscore`.
+
+4.  **Maximum Distance:** The furthest distance from the origin is the maximum of the absolute values of these two extreme positions.
+    `max(abs((count_R - count_L) + count_underscore), abs((count_R - count_L) - count_underscore))`
+
+5.  **Simplification:** This expression can be simplified. Let `d = count_R - count_L` and `w = count_underscore`. The expression becomes `max(abs(d + w), abs(d - w))`, which is a known identity that simplifies to `abs(d) + abs(w)`. Since `w` (a count) is always non-negative, this is `abs(d) + w`.
+    Therefore, the final formula for the maximum distance is:
+    `abs(count_R - count_L) + count_underscore`
+
+The implementation simply counts the occurrences of 'L', 'R', and '_' and applies this formula. Python's `str.count()` method is used for a concise implementation.
+
+**Complexity:**
+- **Time Complexity:** O(N), where N is the length of the `moves` string. This is because `str.count()` iterates through the string.
+- **Space Complexity:** O(1), as we only use a few variables to store the counts, independent of the input size.
+
+LLM Testcase Validation:
+"L_RL__R"
+"_R__LL_"
+"_______"
