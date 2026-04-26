@@ -1,0 +1,33 @@
+Date: 2026-04-26
+Title: Detect Cycles in 2D Grid
+URL: https://leetcode.com/problems/detect-cycles-in-2d-grid/
+
+LLM Explanation:
+The problem asks us to detect if there's a cycle of cells with the same character value in a 2D grid. This can be modeled as a graph problem. Each cell in the grid is a node, and an edge exists between two adjacent cells (up, down, left, right) if they contain the same character. The problem then becomes finding if a cycle exists in this graph.
+
+The graph may consist of several disconnected components, where each component is formed by cells of a particular character. We need to check each of these components for cycles.
+
+A standard approach for cycle detection in an undirected graph is to use a graph traversal algorithm like Breadth-First Search (BFS) or Depth-First Search (DFS). We'll use BFS to avoid potential recursion depth issues with large grids.
+
+The overall algorithm is as follows:
+1. We maintain a `visited` 2D array to keep track of cells that have already been part of a traversal.
+2. We iterate through each cell `(r, c)` of the grid.
+3. If `visited[r][c]` is `False`, it means we have found a new, unexplored connected component. We start a BFS traversal from this cell.
+4. The BFS explores all reachable cells with the same character value. During the traversal:
+    - We use a queue to store cells to visit, along with their "parent" cell (the cell from which we arrived).
+    - When we visit a cell, we mark it as `True` in our `visited` array.
+    - For the current cell, we explore its four neighbors.
+    - A cycle is detected if we encounter a neighbor that has the same character value and has already been `visited` during the current traversal, provided it's not the immediate parent cell. The parent check is crucial to avoid trivial 2-step cycles (e.g., A -> B -> A), which are disallowed by the problem statement.
+5. If the BFS for any component finds a cycle, we can immediately return `True`.
+6. If we traverse all components without finding any cycles, we return `False`.
+
+The problem specifies that a cycle must have a length of 4 or more. In a 2D grid where movement is restricted to cardinal directions, the smallest possible cycle is a 2x2 square, which has a length of 4. Therefore, any cycle detected by our BFS approach will automatically satisfy the length requirement.
+
+**Complexity Analysis:**
+- **Time Complexity:** O(m * n), where `m` is the number of rows and `n` is the number of columns. Each cell is visited at most once.
+- **Space Complexity:** O(m * n) for the `visited` array and the BFS queue in the worst case (e.g., a grid filled with the same character).
+
+LLM Testcase Validation:
+[["a","a","a","a"],["a","b","b","a"],["a","b","b","a"],["a","a","a","a"]]
+[["c","c","c","a"],["c","d","c","c"],["c","c","e","c"],["f","c","c","c"]]
+[["a","b","b"],["b","z","b"],["b","b","a"]]
