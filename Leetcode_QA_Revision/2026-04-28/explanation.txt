@@ -3,44 +3,41 @@ Title: Minimum Operations to Make a Uni-Value Grid
 URL: https://leetcode.com/problems/minimum-operations-to-make-a-uni-value-grid/
 
 LLM Explanation:
-The problem asks whether a valid path exists from the top-left `(0, 0)` to the bottom-right `(m-1, n-1)` of a grid, where movement is constrained by street types in each cell. This can be modeled as a graph traversal problem where grid cells are nodes and valid connections are edges.
+The problem asks for the minimum number of operations to make all elements in a grid equal, where an operation consists of adding or subtracting `x` from an element.
 
-A Breadth-First Search (BFS) is an excellent algorithm for determining path existence in an unweighted graph. The core of the solution is to correctly define when a move from one cell to an adjacent one is "valid".
+First, we must determine if a solution is possible. For any two numbers, `a` and `b`, to be made equal to a common value `v`, `v` must be reachable from both. This means `v = a + k1*x` and `v = b + k2*x` for some integers `k1` and `k2`. This implies `a - b = (k2 - k1)*x`, meaning the difference between `a` and `b` must be a multiple of `x`. This condition must hold for all pairs of elements in the grid. A simpler way to check this is to verify that all elements have the same remainder when divided by `x`. If this condition is not met, it's impossible to make the grid uni-value, and we return -1.
 
-A move from cell `(r, c)` to an adjacent cell `(nr, nc)` is valid if and only if two conditions are met:
-1. The street at `(r, c)` has an opening/port pointing towards `(nr, nc)`.
-2. The street at `(nr, nc)` has an opening/port pointing back towards `(r, c)`.
+If a solution is possible, we need to find a target value `v` that minimizes the total number of operations. The number of operations to change an element `num` to `v` is `abs(num - v) / x`. The total number of operations is the sum of these individual operation counts over all elements: `sum(abs(num - v) / x)`. To minimize this sum, we need to minimize the numerator, `sum(abs(num - v))`.
 
-The algorithm proceeds as follows:
-1.  **Data Structure for Moves**: A dictionary `moves` is created to map each street type (integer 1-6) to a set of allowed move directions, represented as `(dr, dc)` tuples. For example, street type 1 (left-right) maps to `{(0, -1), (0, 1)}`. Using sets allows for efficient O(1) lookups.
-2.  **BFS Initialization**: A standard BFS is set up using a queue, initialized with the starting cell `(0, 0)`. A `visited` set is used to keep track of cells that have already been processed to avoid cycles and redundant computations.
-3.  **Traversal Logic**:
-    - The BFS dequeues a cell `(r, c)`.
-    - If `(r, c)` is the destination, a path has been found, and we return `true`.
-    - Otherwise, for the current cell's street type, we iterate through its possible moves `(dr, dc)`.
-    - For each move, we calculate the neighbor's coordinates `(nr, nc)`.
-    - We check if the move is valid:
-        - The neighbor must be within the grid boundaries.
-        - The neighbor must not have been visited.
-        - The crucial connection check: The street at `(nr, nc)` must support the reverse move `(-dr, -dc)`. This ensures the two streets connect properly.
-    - If the move is valid, the neighbor is added to the queue and the `visited` set.
-4.  **Termination**: If the queue becomes empty and the destination has not been reached, it means no valid path exists, and the function returns `false`.
+This is a classic statistical problem: finding a point `v` that minimizes the sum of absolute differences to a set of numbers. The optimal choice for `v` is the median of the numbers.
 
-This BFS approach systematically explores all reachable cells from the start, guaranteeing that if a path exists, it will be found.
+The overall algorithm is as follows:
+1.  Flatten the 2D grid into a single 1D list of numbers.
+2.  Check the feasibility condition: iterate through the list and ensure all numbers have the same remainder when divided by `x`. If not, return -1.
+3.  Sort the flattened list to find the median. For a list of size `N`, the median is the element at index `N // 2`.
+4.  Calculate the total number of operations. The chosen median is one of the grid elements, so it's a valid target. The total operations is the sum of `abs(num - median) // x` for each number `num` in the list.
 
-**Complexity Analysis**:
--   **Time Complexity**: `O(m * n)`, where `m` and `n` are the grid dimensions. Each cell is enqueued and processed at most once.
--   **Space Complexity**: `O(m * n)` in the worst case, for storing the cells in the `queue` and the `visited` set.
+The time complexity is dominated by the sorting step, which is `O(N log N)`, where `N = m * n` is the total number of elements in the grid. The space complexity is `O(N)` to store the flattened list.
 
 LLM Testcase Validation:
-- Testcase 1: `grid = [[2,4,3],[6,5,2]]`
-  - Expected output: `true`
-  - My code's logic: A valid path exists: (0,0) -> (1,0) -> (1,1) -> (0,1) -> (0,2) -> (1,2). The algorithm will find this path and return `true`.
+- Testcase 1: `grid = [[2,4],[6,8]], x = 2`
+  - Flattened list: `[2, 4, 6, 8]`
+  - All numbers have remainder 0 when divided by 2. Possible.
+  - Sorted list: `[2, 4, 6, 8]`
+  - Median: `nums[4 // 2] = nums[2] = 6`
+  - Operations: `(|2-6|/2) + (|4-6|/2) + (|6-6|/2) + (|8-6|/2) = 2 + 1 + 0 + 1 = 4`.
+  - Expected: 4. Correct.
 
-- Testcase 2: `grid = [[1,2,1],[1,2,1]]`
-  - Expected output: `false`
-  - My code's logic: The starting cell (0,0) has street type 1 (left-right). It can't connect to the cell (0,1) which has street type 2 (up-down), as type 2 has no left-facing port. The path is blocked at the start. The algorithm returns `false`.
+- Testcase 2: `grid = [[1,5],[2,3]], x = 1`
+  - Flattened list: `[1, 5, 2, 3]`
+  - All numbers have remainder 0 when divided by 1. Possible.
+  - Sorted list: `[1, 2, 3, 5]`
+  - Median: `nums[4 // 2] = nums[2] = 3`
+  - Operations: `(|1-3|/1) + (|2-3|/1) + (|3-3|/1) + (|5-3|/1) = 2 + 1 + 0 + 2 = 5`.
+  - Expected: 5. Correct.
 
-- Testcase 3: `grid = [[1,1,2]]`
-  - Expected output: `false`
-  - My code's logic: The path can go from (0,0) to (0,1) as both are type 1. However, from (0,1), it cannot connect to (0,2) which is type 2 (up-down) because type 2 has no left-facing port. The path is blocked at (0,1). The algorithm returns `false`.
+- Testcase 3: `grid = [[1,2],[3,4]], x = 2`
+  - Flattened list: `[1, 2, 3, 4]`
+  - `1 % 2 = 1`, but `2 % 2 = 0`. Remainders are different. Impossible.
+  - The code will detect this and return -1.
+  - Expected: -1. Correct.
