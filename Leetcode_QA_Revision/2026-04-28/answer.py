@@ -1,50 +1,25 @@
-import collections
 from typing import List
 
 class Solution:
-    def hasValidPath(self, grid: List[List[int]]) -> bool:
-        m, n = len(grid), len(grid[0])
-
-        # Each street type maps to a set of possible moves (dr, dc).
-        # Using sets for O(1) lookup.
-        # Directions: (dr, dc)
-        # 1: left-right, 2: up-down, 3: left-down, 4: right-down, 5: left-up, 6: right-up
-        moves = {
-            1: {(0, -1), (0, 1)},  # Left, Right
-            2: {(-1, 0), (1, 0)},  # Up, Down
-            3: {(0, -1), (1, 0)},  # Left, Down
-            4: {(0, 1), (1, 0)},   # Right, Down
-            5: {(0, -1), (-1, 0)}, # Left, Up
-            6: {(0, 1), (-1, 0)}   # Right, Up
-        }
-
-        # BFS initialization
-        q = collections.deque([(0, 0)])
-        visited = {(0, 0)}
-
-        while q:
-            r, c = q.popleft()
-
-            # Check if we reached the destination
-            if r == m - 1 and c == n - 1:
-                return True
-
-            current_street_type = grid[r][c]
-            
-            # Explore neighbors based on the current street's connections
-            for dr, dc in moves[current_street_type]:
-                nr, nc = r + dr, c + dc
-
-                # Check if the neighbor is within bounds and not visited
-                if 0 <= nr < m and 0 <= nc < n and (nr, nc) not in visited:
-                    neighbor_street_type = grid[nr][nc]
-                    
-                    # The crucial check: the neighbor street must have a port
-                    # that connects back to the current cell.
-                    # The direction from neighbor to current is (-dr, -dc).
-                    if (-dr, -dc) in moves[neighbor_street_type]:
-                        visited.add((nr, nc))
-                        q.append((nr, nc))
+    def minOperations(self, grid: List[List[int]], x: int) -> int:
+        # Step 1: Flatten the 2D grid into a 1D list.
+        nums = [num for row in grid for num in row]
         
-        # If the queue becomes empty and we haven't reached the destination
-        return False
+        # Step 2: Check for possibility.
+        # For any two numbers 'a' and 'b' to be made equal by adding/subtracting x,
+        # their difference (a - b) must be a multiple of x.
+        # This is equivalent to all numbers having the same remainder when divided by x.
+        remainder = nums[0] % x
+        if any(num % x != remainder for num in nums):
+            return -1
+            
+        # Step 3: Find the optimal target value.
+        # The total number of operations is sum(|num - target| / x).
+        # To minimize this, we must minimize sum(|num - target|).
+        # This sum is minimized when the target is the median of the numbers.
+        nums.sort()
+        median = nums[len(nums) // 2]
+        
+        # Step 4: Calculate the total operations.
+        # Since we've confirmed (num - median) is a multiple of x, we can use integer division.
+        return sum(abs(num - median) // x for num in nums)
