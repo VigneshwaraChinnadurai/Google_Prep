@@ -3,26 +3,39 @@ Title: Maximum Score From Grid Operations
 URL: https://leetcode.com/problems/maximum-score-from-grid-operations/
 
 LLM Explanation:
-The provided code implements the dynamic programming solution described above.
+The problem asks for the maximum score achievable by coloring parts of columns black. The score is the sum of values of white cells that are horizontally adjacent to a black cell.
 
-1.  **`col_prefix_sum`**: A 2D array is created to store the prefix sums for each column. `col_prefix_sum[c][r+1]` holds the sum of elements in column `c` from row `0` to `r`. This allows for `O(1)` calculation of the sum of any vertical subsegment of a column.
+This problem can be modeled using dynamic programming. We process the grid column by column from left to right. The decision for each column is choosing a "high-water mark" row `k`, such that all cells from row 0 to `k` in that column are colored black. A choice of `k = -1` means the entire column remains white.
 
-2.  **`dp_prev`**: This list of size `n+1` stores the DP values for the previous column (`j-1`). It's initialized to all zeros for the base case (`j=0`).
+Let `dp[j][k_j]` be the maximum score considering columns `0` to `j`, where the high-water mark for column `j` is `k_j`. The total score is a sum of scores generated at the boundaries between adjacent columns. The score generated at the boundary between column `j-1` and `j` depends only on their respective high-water marks, `k_{j-1}` and `k_j`.
 
-3.  **Main Loop (`for j in range(1, n)`)**: The code iterates through columns `j` from `1` to `n-1`. In each iteration, it computes `dp_curr`, the DP values for column `j`, based on `dp_prev`.
+The DP state transition is as follows:
+`dp[j][k_j] = max_{k_{j-1}} (dp[j-1][k_{j-1}] + boundary_score(k_{j-1}, k_j))`
 
-4.  **`prefix_max_term` and `suffix_max_term`**: These are the helper arrays for optimization.
-    *   `prefix_max_term[p]` stores the maximum of `dp_prev[i] - col_prefix_sum[j-1][i]` for `i` from `0` to `p`.
-    *   `suffix_max_term[p]` stores the maximum of `dp_prev[i] + col_prefix_sum[j][i]` for `i` from `p` to `n`.
-    These are computed in `O(n)` time for each `j`.
+The `boundary_score(k_{j-1}, k_j)` is calculated as:
+- If `k_j > k_{j-1}`: The score is the sum of `grid[i][j-1]` for all `i` from `k_{j-1}+1` to `k_j`. These are the white cells in column `j-1` that become adjacent to black cells in column `j`.
+- If `k_{j-1} > k_j}`: The score is the sum of `grid[i][j]` for all `i` from `k_j+1` to `k_{j-1}`. These are the white cells in column `j` adjacent to existing black cells in column `j-1`.
+- If `k_j = k_{j-1}`: The score is 0.
 
-5.  **`dp_curr` Calculation**: For each possible coloring height `k` of the current column `j`, `dp_curr[k]` is calculated by taking the maximum of three possibilities, corresponding to `p < k`, `p = k`, and `p > k` for the previous column's coloring height `p`.
-    *   `val1`: Handles `p < k`, using `prefix_max_term`.
-    *   `val2`: Handles `p = k`, where the score contribution is zero.
-    *   `val3`: Handles `p > k`, using `suffix_max_term`.
-    This calculation is `O(1)` for each `k`.
+A naive implementation of this DP would be `O(n^3)` because for each of the `n * n` states `(j, k_j)`, we iterate through `n` possible values of `k_{j-1}`.
 
-6.  **Update and Final Result**: After computing `dp_curr` for the entire column `j`, `dp_prev` is updated to `dp_curr` for the next iteration. After the loop finishes, `dp_prev` holds the DP values for the last column (`n-1`). The maximum value in this list is the answer, as the choice for the last column does not constrain any future columns.
+We can optimize the transition to `O(1)`. For a fixed `j` and `k_j`, the maximization over `k_{j-1}` can be split into two parts: `k_{j-1} < k_j` and `k_{j-1} > k_j`. The expressions inside the `max` can be rearranged to separate terms depending on `k_j` and `k_{j-1}`. This allows us to precompute prefix and suffix maximums over the `dp[j-1]` values.
+- For the `k_{j-1} < k_j` case, we can use a precomputed prefix maximum array.
+- For the `k_{j-1} > k_j` case, we can use a precomputed suffix maximum array.
+
+This optimization reduces the time complexity of calculating each `dp[j]` column from `O(n^2)` to `O(n)`, leading to an overall time complexity of `O(n^2)`. The space complexity is `O(n^2)` to store column-wise prefix sums for efficient calculation of boundary scores. The DP table itself can be space-optimized to `O(n)` since we only need the results from the previous column.
+
+The algorithm is as follows:
+1. Precompute prefix sums for each column.
+2. Initialize a DP array `dp_prev` for column 0 with all zeros, as no score is generated initially.
+3. Iterate from column `j = 1` to `n-1`:
+    a. Compute `prefix_max` and `suffix_max` arrays based on `dp_prev` to aid in the optimized transition.
+    b. Compute the new DP array `dp_curr` for column `j` using the transition formula and the precomputed arrays.
+    c. Update `dp_prev = dp_curr`.
+4. The final answer is the maximum value in the last `dp_prev` array after the loop finishes.
+
+- **Time Complexity:** `O(n^2)` due to the nested loops (iterating through columns and then through possible high-water marks).
+- **Space Complexity:** `O(n^2)` for storing the column prefix sums. The DP state is optimized to `O(n)`.
 
 LLM Testcase Validation:
 ```
