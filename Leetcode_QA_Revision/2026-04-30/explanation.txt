@@ -3,42 +3,38 @@ Title: Maximum Path Score in a Grid
 URL: https://leetcode.com/problems/maximum-path-score-in-a-grid/
 
 LLM Explanation:
-The problem asks for the maximum score achievable by coloring parts of columns black. The score is the sum of values of white cells that are horizontally adjacent to a black cell.
+This problem asks for the maximum score of a path from the top-left to the bottom-right of a grid, with a constraint on the total cost of the path. Since we can only move right or down, this structure is ideal for a dynamic programming approach.
 
-This problem can be modeled using dynamic programming. We process the grid column by column from left to right. The decision for each column is choosing a "high-water mark" row `k`, such that all cells from row 0 to `k` in that column are colored black. A choice of `k = -1` means the entire column remains white.
+The state of our DP needs to capture not only the position in the grid but also the accumulated cost, as this is crucial for making future decisions. Let's define a DP state `dp[i][j][c]` as the maximum score to reach cell `(i, j)` with an exact total cost of `c`.
 
-Let `dp[j][k_j]` be the maximum score considering columns `0` to `j`, where the high-water mark for column `j` is `k_j`. The total score is a sum of scores generated at the boundaries between adjacent columns. The score generated at the boundary between column `j-1` and `j` depends only on their respective high-water marks, `k_{j-1}` and `k_j`.
+The transition to compute `dp[i][j][c]` would involve looking at the maximum scores from the cell above, `(i-1, j)`, and the cell to the left, `(i, j-1)`.
+Let `cell_score` and `cell_cost` be the score and cost of the current cell `(i, j)`.
+A path reaching `(i, j)` with cost `c` must have come from a previous cell with cost `c - cell_cost`.
+So, the recurrence relation is:
+`dp[i][j][c] = max(dp[i-1][j][c - cell_cost], dp[i][j-1][c - cell_cost]) + cell_score`
 
-The DP state transition is as follows:
-`dp[j][k_j] = max_{k_{j-1}} (dp[j-1][k_{j-1}] + boundary_score(k_{j-1}, k_j))`
+A DP table of size `m x n x (k+1)` would work, but we can optimize the space. Notice that to compute the values for the current row `i`, we only need the values from the previous row `i-1` and the current row `i` itself. This allows us to reduce the space complexity from `O(m * n * k)` to `O(n * k)`.
 
-The `boundary_score(k_{j-1}, k_j)` is calculated as:
-- If `k_j > k_{j-1}`: The score is the sum of `grid[i][j-1]` for all `i` from `k_{j-1}+1` to `k_j`. These are the white cells in column `j-1` that become adjacent to black cells in column `j`.
-- If `k_{j-1} > k_j}`: The score is the sum of `grid[i][j]` for all `i` from `k_j+1` to `k_{j-1}`. These are the white cells in column `j` adjacent to existing black cells in column `j-1`.
-- If `k_j = k_{j-1}`: The score is 0.
+The implementation uses a 2D array `dp` of size `n x (k+1)`. `dp[j][c]` stores the maximum score to reach column `j` in the current row being processed, with a total cost of `c`. We iterate through the grid row by row. When computing the DP values for cell `(i, j)`, `dp[j]` still holds the information from `(i-1, j)`, while `dp[j-1]` has already been updated with the information for `(i, j-1)`.
 
-A naive implementation of this DP would be `O(n^3)` because for each of the `n * n` states `(j, k_j)`, we iterate through `n` possible values of `k_{j-1}`.
+The algorithm proceeds as follows:
+1. Initialize an `n x (k+1)` DP table, `dp`, with -1 to represent unreachable states.
+2. Set the base case: `dp[0][0] = 0`, as we start at `(0,0)` with 0 score and 0 cost (since `grid[0][0]` is always 0).
+3. Iterate through each cell `(i, j)` of the grid.
+4. For each cell, calculate the possible maximum scores by considering paths from above `(i-1, j)` and from the left `(i, j-1)`.
+5. A temporary array `current_cell_dp` is used to store the new values for `(i, j)` to avoid overwriting the data from `(i-1, j)` which is needed for the next cell in the same row.
+6. After computing the new values for `(i, j)`, update `dp[j]`.
+7. After iterating through the entire grid, the last row of our DP table, `dp[n-1]`, contains the maximum scores to reach the bottom-right cell `(m-1, n-1)` for every possible cost from 0 to `k`.
+8. The final answer is the maximum value in `dp[n-1]`. If no path is valid, all values will be -1, and the maximum will also be -1.
 
-We can optimize the transition to `O(1)`. For a fixed `j` and `k_j`, the maximization over `k_{j-1}` can be split into two parts: `k_{j-1} < k_j` and `k_{j-1} > k_j`. The expressions inside the `max` can be rearranged to separate terms depending on `k_j` and `k_{j-1}`. This allows us to precompute prefix and suffix maximums over the `dp[j-1]` values.
-- For the `k_{j-1} < k_j` case, we can use a precomputed prefix maximum array.
-- For the `k_{j-1} > k_j` case, we can use a precomputed suffix maximum array.
-
-This optimization reduces the time complexity of calculating each `dp[j]` column from `O(n^2)` to `O(n)`, leading to an overall time complexity of `O(n^2)`. The space complexity is `O(n^2)` to store column-wise prefix sums for efficient calculation of boundary scores. The DP table itself can be space-optimized to `O(n)` since we only need the results from the previous column.
-
-The algorithm is as follows:
-1. Precompute prefix sums for each column.
-2. Initialize a DP array `dp_prev` for column 0 with all zeros, as no score is generated initially.
-3. Iterate from column `j = 1` to `n-1`:
-    a. Compute `prefix_max` and `suffix_max` arrays based on `dp_prev` to aid in the optimized transition.
-    b. Compute the new DP array `dp_curr` for column `j` using the transition formula and the precomputed arrays.
-    c. Update `dp_prev = dp_curr`.
-4. The final answer is the maximum value in the last `dp_prev` array after the loop finishes.
-
-- **Time Complexity:** `O(n^2)` due to the nested loops (iterating through columns and then through possible high-water marks).
-- **Space Complexity:** `O(n^2)` for storing the column prefix sums. The DP state is optimized to `O(n)`.
+**Complexity Analysis:**
+- **Time Complexity:** `O(m * n * k)`, due to the three nested loops iterating through rows, columns, and costs.
+- **Space Complexity:** `O(n * k)`, for the space-optimized DP table.
 
 LLM Testcase Validation:
 ```
-[[0,0,0,0,0],[0,0,3,0,0],[0,1,0,0,0],[5,0,0,3,0],[0,0,0,0,2]]
-[[10,9,0,0,15],[7,1,0,8,0],[5,20,0,11,0],[0,0,0,1,2],[8,12,1,10,3]]
+[[0, 1],[2, 0]]
+1
+[[0, 1],[1, 2]]
+1
 ```
