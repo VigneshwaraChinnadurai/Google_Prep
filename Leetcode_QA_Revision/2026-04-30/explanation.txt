@@ -1,0 +1,44 @@
+Date: 2026-04-30
+Title: Maximum Path Score in a Grid
+URL: https://leetcode.com/problems/maximum-path-score-in-a-grid/
+
+LLM Explanation:
+The problem asks for the maximum score achievable by coloring parts of columns black. The score is the sum of values of white cells that are horizontally adjacent to a black cell.
+
+This problem can be modeled using dynamic programming. We process the grid column by column from left to right. The decision for each column is choosing a "high-water mark" row `k`, such that all cells from row 0 to `k` in that column are colored black. A choice of `k = -1` means the entire column remains white.
+
+Let `dp[j][k_j]` be the maximum score considering columns `0` to `j`, where the high-water mark for column `j` is `k_j`. The total score is a sum of scores generated at the boundaries between adjacent columns. The score generated at the boundary between column `j-1` and `j` depends only on their respective high-water marks, `k_{j-1}` and `k_j`.
+
+The DP state transition is as follows:
+`dp[j][k_j] = max_{k_{j-1}} (dp[j-1][k_{j-1}] + boundary_score(k_{j-1}, k_j))`
+
+The `boundary_score(k_{j-1}, k_j)` is calculated as:
+- If `k_j > k_{j-1}`: The score is the sum of `grid[i][j-1]` for all `i` from `k_{j-1}+1` to `k_j`. These are the white cells in column `j-1` that become adjacent to black cells in column `j`.
+- If `k_{j-1} > k_j}`: The score is the sum of `grid[i][j]` for all `i` from `k_j+1` to `k_{j-1}`. These are the white cells in column `j` adjacent to existing black cells in column `j-1`.
+- If `k_j = k_{j-1}`: The score is 0.
+
+A naive implementation of this DP would be `O(n^3)` because for each of the `n * n` states `(j, k_j)`, we iterate through `n` possible values of `k_{j-1}`.
+
+We can optimize the transition to `O(1)`. For a fixed `j` and `k_j`, the maximization over `k_{j-1}` can be split into two parts: `k_{j-1} < k_j` and `k_{j-1} > k_j`. The expressions inside the `max` can be rearranged to separate terms depending on `k_j` and `k_{j-1}`. This allows us to precompute prefix and suffix maximums over the `dp[j-1]` values.
+- For the `k_{j-1} < k_j` case, we can use a precomputed prefix maximum array.
+- For the `k_{j-1} > k_j` case, we can use a precomputed suffix maximum array.
+
+This optimization reduces the time complexity of calculating each `dp[j]` column from `O(n^2)` to `O(n)`, leading to an overall time complexity of `O(n^2)`. The space complexity is `O(n^2)` to store column-wise prefix sums for efficient calculation of boundary scores. The DP table itself can be space-optimized to `O(n)` since we only need the results from the previous column.
+
+The algorithm is as follows:
+1. Precompute prefix sums for each column.
+2. Initialize a DP array `dp_prev` for column 0 with all zeros, as no score is generated initially.
+3. Iterate from column `j = 1` to `n-1`:
+    a. Compute `prefix_max` and `suffix_max` arrays based on `dp_prev` to aid in the optimized transition.
+    b. Compute the new DP array `dp_curr` for column `j` using the transition formula and the precomputed arrays.
+    c. Update `dp_prev = dp_curr`.
+4. The final answer is the maximum value in the last `dp_prev` array after the loop finishes.
+
+- **Time Complexity:** `O(n^2)` due to the nested loops (iterating through columns and then through possible high-water marks).
+- **Space Complexity:** `O(n^2)` for storing the column prefix sums. The DP state is optimized to `O(n)`.
+
+LLM Testcase Validation:
+```
+[[0,0,0,0,0],[0,0,3,0,0],[0,1,0,0,0],[5,0,0,3,0],[0,0,0,0,2]]
+[[10,9,0,0,15],[7,1,0,8,0],[5,20,0,11,0],[0,0,0,1,2],[8,12,1,10,3]]
+```
