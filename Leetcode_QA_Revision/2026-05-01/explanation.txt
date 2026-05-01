@@ -1,0 +1,51 @@
+Date: 2026-05-01
+Title: Rotate Function
+URL: https://leetcode.com/problems/rotate-function/
+
+LLM Explanation:
+The problem asks for the maximum value of a "rotation function" `F(k)` over all possible clockwise rotations `k` of a given array `nums`.
+
+A brute-force approach would be to simulate each of the `n` rotations. For each rotation, we would calculate the value of `F(k)` by iterating through the rotated array. This would involve an outer loop for the `n` rotations and an inner loop for the `n` elements to calculate the sum, leading to an `O(n^2)` time complexity. Given the constraint `n <= 10^5`, this approach would be too slow.
+
+A more optimal solution can be found by observing the mathematical relationship between `F(k)` and `F(k-1)`. Let `S` be the sum of all elements in `nums`, which remains constant regardless of rotation.
+
+Let's analyze the change from `F(k-1)` to `F(k)`. When we rotate the array once more (from `k-1` rotations to `k` rotations), each element's coefficient increases by 1, except for the last element, which moves to the front and its coefficient changes from `n-1` to `0`.
+
+Let `arr_{k-1}` be the array after `k-1` rotations.
+`F(k-1) = 0*arr_{k-1}[0] + 1*arr_{k-1}[1] + ... + (n-1)*arr_{k-1}[n-1]`
+
+Let `arr_k` be the array after `k` rotations. `arr_k` is just `arr_{k-1}` rotated by one position.
+`arr_k[0] = arr_{k-1}[n-1]`
+`arr_k[i] = arr_{k-1}[i-1]` for `i > 0`.
+
+`F(k) = 0*arr_k[0] + 1*arr_k[1] + ... + (n-1)*arr_k[n-1]`
+`F(k) = 0*arr_{k-1}[n-1] + 1*arr_{k-1}[0] + ... + (n-1)*arr_{k-1}[n-2]`
+
+Let's find `F(k) - F(k-1)`:
+`F(k) - F(k-1) = (arr_{k-1}[0] + ... + arr_{k-1}[n-2]) - (n-1)*arr_{k-1}[n-1]`
+The sum `arr_{k-1}[0] + ... + arr_{k-1}[n-2]` is equal to `S - arr_{k-1}[n-1]`.
+So, `F(k) - F(k-1) = (S - arr_{k-1}[n-1]) - (n-1)*arr_{k-1}[n-1] = S - n*arr_{k-1}[n-1]`.
+
+This gives us the recurrence relation:
+`F(k) = F(k-1) + S - n * arr_{k-1}[n-1]`
+
+The last element of the array rotated `k-1` times, `arr_{k-1}[n-1]`, corresponds to the element `nums[n-k]` from the original array.
+So, the final recurrence is: `F(k) = F(k-1) + S - n * nums[n-k]`.
+
+The algorithm is as follows:
+1.  Calculate the sum of all elements, `S`.
+2.  Calculate the initial value `F(0)`.
+3.  Initialize `max_val` with `F(0)`.
+4.  Iterate from `k = 1` to `n-1`, calculating each `F(k)` using the recurrence relation from `F(k-1)`.
+5.  Update `max_val` with the maximum `F(k)` found.
+
+This approach has a time complexity of `O(n)` because we compute `S` and `F(0)` in one pass and then iterate `n-1` times with `O(1)` work inside the loop. The space complexity is `O(1)` as we only use a few variables to store the sum, current F value, and the maximum.
+
+Edge cases:
+- If `n <= 1`, the only possible rotation function value is 0. The code handles this by returning 0.
+
+LLM Testcase Validation:
+```
+[4,3,2,6]
+[100]
+```
