@@ -1,0 +1,70 @@
+Date: 2026-05-02
+Title: Rotated Digits
+URL: https://leetcode.com/problems/rotated-digits/
+
+LLM Explanation:
+### Method Explanation
+
+The problem asks us to count the number of "good" integers up to `n`. A number is "good" if, after rotating each digit 180 degrees, it results in a valid number that is different from the original.
+
+First, let's analyze the digit rotation rules:
+- Digits `0`, `1`, `8` rotate to themselves.
+- Digits `2` and `5` rotate to each other.
+- Digits `6` and `9` rotate to each other.
+- Digits `3`, `4`, `7` do not rotate to a valid digit.
+
+From these rules, we can deduce the conditions for a number to be "good":
+1.  **Validity Condition**: To form a valid number after rotation, the original number must not contain any of the digits `3`, `4`, or `7`.
+2.  **Difference Condition**: For the rotated number to be different from the original, the original number must contain at least one digit that changes to a different digit. These are `2`, `5`, `6`, and `9`. If a number only contains `0`, `1`, and `8`, its rotated version will be identical to the original.
+
+So, a number `x` is "good" if and only if:
+- All of its digits are from the set `{0, 1, 2, 5, 6, 8, 9}`.
+- At least one of its digits is from the set `{2, 5, 6, 9}`.
+
+Given the constraint `1 <= n <= 10^4`, a straightforward brute-force approach is efficient enough. We can iterate through each integer `i` from 1 to `n` and check if it satisfies the two conditions for being a "good" number.
+
+The algorithm is as follows:
+1.  Initialize a counter `count` to 0.
+2.  Loop through each integer `i` from 1 to `n`.
+3.  For each `i`, convert it to its string representation `s` for easy digit inspection.
+4.  Check if `s` contains any invalid digits (`'3'`, `'4'`, `'7'`). If it does, `i` is not a good number, so we continue to the next integer.
+5.  If `s` contains only valid digits, check if it contains at least one of the "different" digits (`'2'`, `'5'`, `'6'`, `'9'`). If it does, `i` is a good number, and we increment `count`.
+6.  After the loop finishes, return `count`.
+
+This approach is simple to implement and understand. While a more complex Digit Dynamic Programming solution exists with `O(log n)` complexity, the `O(n * log n)` complexity of this brute-force method is perfectly acceptable for the given constraints.
+
+### Complexity Analysis
+-   **Time Complexity**: `O(n * log10(n))`. We iterate `n` times. In each iteration, we convert the number to a string and check its digits. The number of digits in `i` is proportional to `log10(i)`.
+-   **Space Complexity**: `O(log10(n))`. The space is dominated by the storage required for the string representation of the number `n`.
+
+LLM Testcase Validation:
+Testcase 1: n = 10
+Input: 10
+Expected output: 4
+My logic:
+- 1: no (rotates to 1)
+- 2: yes (rotates to 5)
+- 3: no (invalid digit)
+- 4: no (invalid digit)
+- 5: yes (rotates to 2)
+- 6: yes (rotates to 9)
+- 7: no (invalid digit)
+- 8: no (rotates to 8)
+- 9: yes (rotates to 6)
+- 10: no (rotates to 10)
+Count = 4. Correct.
+
+Testcase 2: n = 1
+Input: 1
+Expected output: 0
+My logic:
+- 1: no (rotates to 1)
+Count = 0. Correct.
+
+Testcase 3: n = 2
+Input: 2
+Expected output: 1
+My logic:
+- 1: no (rotates to 1)
+- 2: yes (rotates to 5)
+Count = 1. Correct.
