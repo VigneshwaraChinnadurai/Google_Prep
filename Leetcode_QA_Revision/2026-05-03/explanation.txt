@@ -1,0 +1,37 @@
+Date: 2026-05-03
+Title: Rotate String
+URL: https://leetcode.com/problems/rotate-string/
+
+LLM Explanation:
+### Method: String Concatenation and Substring Search
+
+This problem can be solved with a clever one-line trick after an initial check.
+
+1.  **Length Check:**
+    First, for `goal` to be a rotation of `s`, they must have the same length. If `len(s) != len(goal)`, we can immediately return `false`. This is a necessary condition.
+
+2.  **Core Idea:**
+    If `goal` is a rotation of `s`, then `goal` must be a substring of `s` concatenated with itself (`s + s`).
+
+    *   **Example 1:** `s = "abcde"`, `goal = "cdeab"`
+        *   `s + s` becomes `"abcdeabcde"`.
+        *   `goal` ("cdeab") is a substring of `"abcdeabcde"`. Thus, the result is `true`.
+
+    *   **Example 2:** `s = "abcde"`, `goal = "abced"`
+        *   `s + s` is still `"abcdeabcde"`.
+        *   `goal` ("abced") is not a substring. Thus, the result is `false`.
+
+    This works because the string `s + s` contains every possible cyclic shift of `s` as a substring.
+
+3.  **Implementation:**
+    The solution first checks if the lengths are equal. If they are, it returns the result of the check `goal in (s + s)`.
+
+### Complexity Analysis
+-   **Time Complexity:** `O(N)`, where `N` is the length of `s`. This is dominated by the string concatenation (`O(N)`) and the substring search (`O(N)` on average in Python).
+-   **Space Complexity:** `O(N)` to store the concatenated string `s + s`.
+
+LLM Testcase Validation:
+"abcde"
+"cdeab"
+"abcde"
+"abced"
