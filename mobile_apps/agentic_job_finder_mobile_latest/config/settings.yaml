@@ -1,0 +1,24 @@
+llm:
+  provider: gemini
+  model: gemini-2.5-flash
+  temperature: 0.2
+  api_key_env: GEMINI_API_KEY
+
+scraping:
+  max_concurrent: 5
+  cache_ttl_hours: 6
+  user_agent: "JobFinder/0.1 (+contact@example.com)"
+  respect_robots_txt: true
+  request_timeout_seconds: 30
+
+matching:
+  max_concurrent: 8
+  weights:
+    skills: 0.5
+    experience: 0.3
+    seniority: 0.2
+
+api:
+  host: 0.0.0.0
+  port: 8000
+  cors_origins: ["*"]

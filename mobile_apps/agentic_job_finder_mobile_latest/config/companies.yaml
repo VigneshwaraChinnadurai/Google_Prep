@@ -1,0 +1,384 @@
+# Target companies for Job Finder Agent
+# ATS types: greenhouse | lever | workday | generic (Playwright fallback)
+# All companies below have significant Bangalore (Bengaluru) engineering presence.
+#
+# Slugs marked "# TODO: verify" should be confirmed by visiting the company's
+# careers page and inspecting the URL (e.g. boards.greenhouse.io/<slug>).
+
+# ---------------------------------------------------------------------------
+# Big Tech — global product companies with Bangalore offices
+# ---------------------------------------------------------------------------
+- name: Google
+  ats: generic
+  url: https://www.google.com/about/careers/applications/jobs/results/?location=Bangalore%2C%20India
+  location_filter: Bangalore
+
+- name: Microsoft
+  ats: generic
+  url: https://jobs.careers.microsoft.com/global/en/search?lc=Bangalore%2C%20Karnataka%2C%20India
+  location_filter: Bangalore
+
+- name: Apple
+  ats: generic
+  url: https://jobs.apple.com/en-in/search?location=india-INDC
+  location_filter: Bangalore
+
+- name: Meta
+  ats: generic
+  url: https://www.metacareers.com/jobs/?offices[0]=Bangalore%2C%20India
+  location_filter: Bangalore
+
+- name: Amazon
+  ats: generic
+  url: https://www.amazon.jobs/en/locations/bangalore-india
+  location_filter: Bangalore
+
+- name: Netflix
+  ats: generic
+  url: https://explore.jobs.netflix.net/careers?location=Bangalore%2C%20India
+  location_filter: Bangalore
+
+- name: NVIDIA
+  ats: workday
+  url: https://nvidia.wd5.myworkdayjobs.com/NVIDIAExternalCareerSite
+  location_filter: Bangalore
+
+- name: Adobe
+  ats: workday
+  url: https://adobe.wd5.myworkdayjobs.com/external_experienced
+  location_filter: Bangalore
+
+- name: Oracle
+  ats: generic
+  url: https://careers.oracle.com/jobs/#en/sites/jobsearch/locations/300000000287840
+  location_filter: Bangalore
+
+- name: IBM
+  ats: workday
+  url: https://ibmglobal.wd5.myworkdayjobs.com/IBM
+  location_filter: Bangalore
+
+- name: Cisco
+  ats: generic
+  url: https://jobs.cisco.com/jobs/SearchJobs/?listFilterMode=1&21178=%5B169953%5D
+  location_filter: Bangalore
+
+- name: Intel
+  ats: generic
+  url: https://intel.wd1.myworkdayjobs.com/External
+  location_filter: Bangalore
+
+- name: Qualcomm
+  ats: workday
+  url: https://qualcomm.wd5.myworkdayjobs.com/External
+  location_filter: Bangalore
+
+- name: Samsung R&D
+  ats: generic
+  url: https://www.samsung.com/in/about-us/careers/
+  location_filter: Bangalore
+
+# ---------------------------------------------------------------------------
+# SaaS & Cloud — global product companies hiring heavily in Bangalore
+# ---------------------------------------------------------------------------
+- name: Salesforce
+  ats: workday
+  url: https://salesforce.wd12.myworkdayjobs.com/External_Career_Site
+  location_filter: Bangalore
+
+- name: ServiceNow
+  ats: greenhouse
+  slug: servicenow # TODO: verify
+
+- name: Atlassian
+  ats: lever
+  slug: atlassian
+
+- name: GitHub
+  ats: generic
+  url: https://github.com/about/careers
+  location_filter: Bangalore
+
+- name: GitLab
+  ats: greenhouse
+  slug: gitlab
+
+- name: HashiCorp
+  ats: greenhouse
+  slug: hashicorp
+
+- name: MongoDB
+  ats: greenhouse
+  slug: mongodb
+
+- name: Databricks
+  ats: greenhouse
+  slug: databricks
+
+- name: Snowflake
+  ats: greenhouse
+  slug: snowflake
+
+- name: Confluent
+  ats: greenhouse
+  slug: confluent
+
+- name: Elastic
+  ats: greenhouse
+  slug: elastic
+
+- name: Cloudflare
+  ats: greenhouse
+  slug: cloudflare
+
+- name: Twilio
+  ats: greenhouse
+  slug: twilio
+
+- name: Stripe
+  ats: greenhouse
+  slug: stripe
+
+- name: PayPal
+  ats: workday
+  url: https://paypal.eightfold.ai/careers
+  location_filter: Bangalore
+
+- name: Visa
+  ats: workday
+  url: https://corporate.visa.com/en/jobs.html
+  location_filter: Bangalore
+
+- name: Mastercard
+  ats: workday
+  url: https://mastercard.wd1.myworkdayjobs.com/CorporateCareers
+  location_filter: Bangalore
+
+- name: Intuit
+  ats: workday
+  url: https://intuit.wd5.myworkdayjobs.com/External
+  location_filter: Bangalore
+
+- name: Workday
+  ats: workday
+  url: https://workday.wd5.myworkdayjobs.com/Workday
+  location_filter: Bangalore
+
+- name: SAP Labs
+  ats: workday
+  url: https://jobs.sap.com/search/?locationsearch=bangalore
+  location_filter: Bangalore
+
+- name: VMware (Broadcom)
+  ats: workday
+  url: https://broadcom.wd1.myworkdayjobs.com/External_Career
+  location_filter: Bangalore
+
+- name: Dell
+  ats: workday
+  url: https://dell.wd1.myworkdayjobs.com/External
+  location_filter: Bangalore
+
+- name: HP
+  ats: workday
+  url: https://hp.wd5.myworkdayjobs.com/ExternalCareerSite
+  location_filter: Bangalore
+
+- name: HPE
+  ats: workday
+  url: https://hpe.wd5.myworkdayjobs.com/Jobsathpe
+  location_filter: Bangalore
+
+# ---------------------------------------------------------------------------
+# AI / ML / Data
+# ---------------------------------------------------------------------------
+- name: Anthropic
+  ats: greenhouse
+  slug: anthropic
+
+- name: OpenAI
+  ats: greenhouse
+  slug: openai
+
+- name: Hugging Face
+  ats: greenhouse
+  slug: huggingface
+
+- name: Scale AI
+  ats: greenhouse
+  slug: scaleai
+
+- name: Cohere
+  ats: greenhouse
+  slug: cohere # TODO: verify
+
+# ---------------------------------------------------------------------------
+# Indian product unicorns / scale-ups (HQ or major eng presence in Bangalore)
+# ---------------------------------------------------------------------------
+- name: Flipkart
+  ats: generic
+  url: https://www.flipkartcareers.com/
+  location_filter: Bangalore
+
+- name: Swiggy
+  ats: generic
+  url: https://careers.swiggy.com/
+  location_filter: Bangalore
+
+- name: Zomato
+  ats: generic
+  url: https://www.zomato.com/careers
+  location_filter: Bangalore
+
+- name: Razorpay
+  ats: lever
+  slug: razorpay # TODO: verify
+
+- name: Cred
+  ats: lever
+  slug: cred # TODO: verify
+
+- name: PhonePe
+  ats: generic
+  url: https://www.phonepe.com/careers/
+  location_filter: Bangalore
+
+- name: Paytm
+  ats: generic
+  url: https://jobs.paytm.com/
+  location_filter: Bangalore
+
+- name: Zerodha
+  ats: generic
+  url: https://zerodha.com/careers/
+  location_filter: Bangalore
+
+- name: Groww
+  ats: generic
+  url: https://groww.in/careers
+  location_filter: Bangalore
+
+- name: Meesho
+  ats: generic
+  url: https://www.meesho.io/careers
+  location_filter: Bangalore
+
+- name: Ola
+  ats: generic
+  url: https://www.olacabs.com/careers
+  location_filter: Bangalore
+
+- name: Uber
+  ats: greenhouse
+  slug: uber
+
+- name: Myntra
+  ats: generic
+  url: https://careers.myntra.com/
+  location_filter: Bangalore
+
+- name: BigBasket
+  ats: generic
+  url: https://www.bigbasket.com/careers/
+  location_filter: Bangalore
+
+- name: Dream11
+  ats: lever
+  slug: dream11 # TODO: verify
+
+- name: Freshworks
+  ats: greenhouse
+  slug: freshworks # TODO: verify
+
+- name: Zoho
+  ats: generic
+  url: https://www.zoho.com/careers/
+  location_filter: Bangalore
+
+- name: Postman
+  ats: lever
+  slug: postman
+
+- name: Chargebee
+  ats: lever
+  slug: chargebee # TODO: verify
+
+- name: Hasura
+  ats: greenhouse
+  slug: hasura # TODO: verify
+
+- name: BrowserStack
+  ats: lever
+  slug: browserstack # TODO: verify
+
+- name: Mu Sigma
+  ats: generic
+  url: https://www.mu-sigma.com/careers
+  location_filter: Bangalore
+
+- name: InMobi
+  ats: generic
+  url: https://www.inmobi.com/company/careers
+  location_filter: Bangalore
+
+- name: Nutanix
+  ats: workday
+  url: https://nutanix.wd1.myworkdayjobs.com/Nutanix
+  location_filter: Bangalore
+
+- name: Walmart Global Tech
+  ats: workday
+  url: https://walmart.wd5.myworkdayjobs.com/WalmartExternal
+  location_filter: Bangalore
+
+- name: Target
+  ats: workday
+  url: https://target.wd5.myworkdayjobs.com/targetcareers
+  location_filter: Bangalore
+
+# ---------------------------------------------------------------------------
+# Services with strong product engineering wings in Bangalore
+# ---------------------------------------------------------------------------
+- name: EPAM
+  ats: workday
+  url: https://epam.wd1.myworkdayjobs.com/EPAM
+  location_filter: Bangalore
+
+- name: ThoughtWorks
+  ats: greenhouse
+  slug: thoughtworks # TODO: verify
+
+- name: Persistent Systems
+  ats: workday
+  url: https://persistent.wd3.myworkdayjobs.com/PSL
+  location_filter: Bangalore
+
+- name: Mphasis
+  ats: workday
+  url: https://mphasis.wd3.myworkdayjobs.com/External
+  location_filter: Bangalore
+
+- name: Infosys
+  ats: generic
+  url: https://www.infosys.com/careers/
+  location_filter: Bangalore
+
+- name: TCS
+  ats: generic
+  url: https://www.tcs.com/careers
+  location_filter: Bangalore
+
+- name: Wipro
+  ats: workday
+  url: https://wipro.wd3.myworkdayjobs.com/Careers
+  location_filter: Bangalore
+
+- name: Accenture
+  ats: workday
+  url: https://accenture.wd3.myworkdayjobs.com/AccentureCareers
+  location_filter: Bangalore
+
+- name: Cognizant
+  ats: workday
+  url: https://cognizant.wd1.myworkdayjobs.com/CognizantCareerPortal
+  location_filter: Bangalore

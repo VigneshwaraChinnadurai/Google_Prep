@@ -1,0 +1,61 @@
+# Standalone companies list.
+# Standalone build supports ats: greenhouse | lever only.
+# Workday + generic are server-side only — see README "Limitations".
+
+# ---- Greenhouse ----
+- name: Anthropic
+  ats: greenhouse
+  slug: anthropic
+- name: OpenAI
+  ats: greenhouse
+  slug: openai
+- name: Stripe
+  ats: greenhouse
+  slug: stripe
+- name: Databricks
+  ats: greenhouse
+  slug: databricks
+- name: Snowflake
+  ats: greenhouse
+  slug: snowflake
+- name: Confluent
+  ats: greenhouse
+  slug: confluent
+- name: MongoDB
+  ats: greenhouse
+  slug: mongodb
+- name: HashiCorp
+  ats: greenhouse
+  slug: hashicorp
+- name: GitLab
+  ats: greenhouse
+  slug: gitlab
+- name: Elastic
+  ats: greenhouse
+  slug: elastic
+- name: Cloudflare
+  ats: greenhouse
+  slug: cloudflare
+- name: Twilio
+  ats: greenhouse
+  slug: twilio
+- name: Hugging Face
+  ats: greenhouse
+  slug: huggingface
+- name: Scale AI
+  ats: greenhouse
+  slug: scaleai
+- name: Uber
+  ats: greenhouse
+  slug: uber
+
+# ---- Lever ----
+- name: Atlassian
+  ats: lever
+  slug: atlassian
+- name: Postman
+  ats: lever
+  slug: postman
+- name: Netflix
+  ats: lever
+  slug: netflix
