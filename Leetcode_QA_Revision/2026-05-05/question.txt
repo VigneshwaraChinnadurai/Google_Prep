@@ -1,0 +1,85 @@
+Date: 2026-05-05
+Question ID: 61
+Title: Rotate List
+Difficulty: Medium
+Tags: Linked List, Two Pointers
+URL: https://leetcode.com/problems/rotate-list/
+
+Question:
+Given the head of a linked list, rotate the list to the right by k places. Example 1: Input: head = [1,2,3,4,5], k = 2 Output: [4,5,1,2,3] Example 2: Input: head = [0,1,2], k = 4 Output: [2,0,1] Constraints: The number of nodes in the list is in the range [0, 500] . -100 &lt;= Node.val &lt;= 100 0 &lt;= k &lt;= 2 * 10 9
+
+Starter Code (Python3):
+# Definition for singly-linked list.
+# class ListNode:
+#     def __init__(self, val=0, next=None):
+#         self.val = val
+#         self.next = next
+class Solution:
+    def rotateRight(self, head: Optional[ListNode], k: int) -> Optional[ListNode]:
+        
+
+Testcases:
+[1,2,3,4,5]
+2
+[0,1,2]
+4
+
+Expected Output / Validation:
+```python
+# Helper functions for testing
+class ListNode:
+    def __init__(self, val=0, next=None):
+        self.val = val
+        self.next = next
+
+def list_to_list_node(items):
+    if not items:
+        return None
+    head = ListNode(items[0])
+    current = head
+    for item in items[1:]:
+        current.next = ListNode(item)
+        current = current.next
+    return head
+
+def list_node_to_list(node):
+    result = []
+    while node:
+        result.append(node.val)
+        node = node.next
+    return result
+
+# Test cases
+test_cases = [
+    ([1,2,3,4,5], 2),
+    ([0,1,2], 4),
+    ([], 0),
+    ([1], 99),
+    ([1,2], 2)
+]
+
+expected_outputs = [
+    [4,5,1,2,3],
+    [2,0,1],
+    [],
+    [1],
+    [1,2]
+]
+
+solver = Solution()
+
+for i, (input_list, k) in enumerate(test_cases):
+    head = list_to_list_node(input_list)
+    result_head = solver.rotateRight(head, k)
+    result_list = list_node_to_list(result_head)
+    expected = expected_outputs[i]
+    
+    print(f"Test Case {i+1}:")
+    print(f"Input: head = {input_list}, k = {k}")
+    print(f"Output: {result_list}")
+    print(f"Expected: {expected}")
+    assert result_list == expected, f"Assertion failed for test case {i+1}"
+    print("------")
+
+print("All test cases passed!")
+```
