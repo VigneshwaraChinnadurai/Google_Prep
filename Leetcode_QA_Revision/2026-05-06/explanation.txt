@@ -1,0 +1,56 @@
+Date: 2026-05-06
+Title: Rotating the Box
+URL: https://leetcode.com/problems/rotating-the-box/
+
+LLM Explanation:
+The problem requires us to simulate two distinct physical processes: the settling of stones due to gravity and a 90-degree clockwise rotation of the box. The examples clarify that the intended order of operations is to first apply gravity in the original orientation and then perform the geometric rotation.
+
+### Step 1: Gravity Simulation
+
+In the initial side-view representation, "down" corresponds to the right direction within each row. Stones fall to the right until they hit an obstacle (`*`), another stone, or the right edge of the box. Obstacles act as barriers, effectively dividing each row into independent segments.
+
+We can simulate this process for each row using a two-pointer approach:
+1.  Iterate through each row of the `boxGrid`.
+2.  For each row, use a pointer `write_pos` to keep track of the rightmost available position for a stone to settle. This pointer starts at the last column index (`n-1`).
+3.  Scan the row from right to left (from `c = n-1` down to `0`).
+    - If an obstacle (`*`) is encountered at column `c`, it forms a new "floor". The available space for stones to its left is now bounded by this obstacle, so we update `write_pos` to `c-1`.
+    - If a stone (`#`) is found at column `c`, we move it to the `write_pos`. A simple swap between `boxGrid[r][c]` and `boxGrid[r][write_pos]` achieves this, as `write_pos` will always point to an empty cell or the stone's current position. After placing the stone, we decrement `write_pos` to mark the next available spot.
+    - Empty cells (`.`) require no action.
+
+This process is performed in-place on the input `boxGrid`.
+
+### Step 2: 90-Degree Clockwise Rotation
+
+After all stones have settled, we perform a standard matrix rotation. A 90-degree clockwise rotation transforms an `m x n` matrix into an `n x m` matrix. An element that was at `(r, c)` in the original matrix moves to the position `(c, m - 1 - r)` in the new, rotated matrix.
+
+We create a new `n x m` result grid and populate it by mapping each element from the gravity-adjusted `boxGrid` to its new coordinates.
+
+### Complexity Analysis
+
+-   **Time Complexity:** `O(m * n)`. The gravity simulation requires a single pass through the `m x n` grid. The rotation also requires a single pass.
+-   **Space Complexity:** `O(m * n)`. We need to create a new `n x m` matrix for the result. The gravity simulation is done in-place, so it does not require additional space relative to the input size.
+
+LLM Testcase Validation:
+- **Testcase 1:** `boxGrid = [["#",".","#"]]`
+  - **Gravity:** The row `["#",".","#"]` has two stones and one empty space. The stones settle to the right, resulting in `[".","#","#"]`.
+  - **Rotation:** The `1x3` matrix `[[".","#","#"]]` rotates to a `3x1` matrix `[[".",],["#",],["#",]]`.
+  - **Output:** `[[".",],["#",],["#",]]`. Correct.
+
+- **Testcase 2:** `boxGrid = [["#",".","*","."],["#","#","*","."]]`
+  - **Gravity:**
+    - Row 0: `["#",".","*","."]` -> `[".","#","*","."]` (stone at index 0 moves to index 1).
+    - Row 1: `["#","#","*","."]` -> `["#","#","*","."]` (stones are already settled against the obstacle).
+  - **After Gravity:** `[[".","#","*","."],["#","#","*","."]]`
+  - **Rotation:** The `2x4` matrix is rotated to a `4x2` matrix.
+    - `boxGrid[0]` becomes the second column (from the right) of the result.
+    - `boxGrid[1]` becomes the first column (from the right) of the result.
+  - **Output:** `[["#","."],["#","#"],["*","*"],[".","."]]`. Correct.
+
+- **Testcase 3:** `boxGrid = [["#","#","*",".","*","."],["#","#","#","*",".","."],["#","#","#",".","#","."]]`
+  - **Gravity:**
+    - Row 0: `["#","#","*",".","*","."]` -> No change.
+    - Row 1: `["#","#","#","*",".","."]` -> No change.
+    - Row 2: `["#","#","#",".","#","."]` -> `[".",".","#","#","#","#"]` (4 stones settle to the right).
+  - **After Gravity:** `[["#","#","*",".","*","."],["#","#","#","*",".","."], [".",".","#","#","#","#"]]`
+  - **Rotation:** The `3x6` matrix is rotated to a `6x3` matrix.
+  - **Output:** `[[".","#","#"],[".","#","#"],["#","#","*"],["#","*","."],["#",".","*"],["#",".","."]]`. Correct.
