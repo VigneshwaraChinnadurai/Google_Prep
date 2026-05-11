@@ -1,0 +1,41 @@
+Date: 2026-05-11
+Title: Separate the Digits in an Array
+URL: https://leetcode.com/problems/separate-the-digits-in-an-array/
+
+LLM Explanation:
+The problem asks us to take an array of positive integers and return a new array containing the individual digits of each number, in the order they appear.
+
+A straightforward and Pythonic approach is to leverage string conversion. For each number in the input array, we can convert it into a string. This allows us to easily iterate through its digits as characters, from left to right, preserving their original order. Each character can then be converted back into an integer.
+
+The implementation uses a nested list comprehension, which is a concise way to express this logic.
+1.  The outer part `for num in nums` iterates through each integer in the input array.
+2.  For each `num`, we get its string representation `str(num)`.
+3.  The inner part `for digit in str(num)` iterates through each character of that string.
+4.  `int(digit)` converts the character back to an integer.
+5.  The list comprehension collects all these individual integers into a single flat list, which is then returned.
+
+For example, with `nums = [13, 25]`:
+- The process starts with `num = 13`. `str(13)` is "13". The inner loop yields `int('1')` and `int('3')`.
+- Next, `num = 25`. `str(25)` is "25". The inner loop yields `int('2')` and `int('5')`.
+- The final result is `[1, 3, 2, 5]`.
+
+**Complexity Analysis:**
+- **Time Complexity:** O(M), where M is the total number of digits in all the numbers in the input array `nums`. We iterate through each number and then through each of its digits once.
+- **Space Complexity:** O(M), as we need to store all M digits in the output array. The auxiliary space used during computation is minimal.
+
+LLM Testcase Validation:
+- Testcase 1: `nums = [13,25,83,77]`
+  - `num = 13`: `str(13)` is "13". Digits are `int('1')` -> 1, `int('3')` -> 3.
+  - `num = 25`: `str(25)` is "25". Digits are `int('2')` -> 2, `int('5')` -> 5.
+  - `num = 83`: `str(83)` is "83". Digits are `int('8')` -> 8, `int('3')` -> 3.
+  - `num = 77`: `str(77)` is "77". Digits are `int('7')` -> 7, `int('7')` -> 7.
+  - The flattened list is `[1, 3, 2, 5, 8, 3, 7, 7]`.
+  - Expected output: `[1,3,2,5,8,3,7,7]`. The code produces the correct result.
+
+- Testcase 2: `nums = [7,1,3,9]`
+  - `num = 7`: `str(7)` is "7". Digit is `int('7')` -> 7.
+  - `num = 1`: `str(1)` is "1". Digit is `int('1')` -> 1.
+  - `num = 3`: `str(3)` is "3". Digit is `int('3')` -> 3.
+  - `num = 9`: `str(9)` is "9". Digit is `int('9')` -> 9.
+  - The flattened list is `[7, 1, 3, 9]`.
+  - Expected output: `[7,1,3,9]`. The code produces the correct result.
