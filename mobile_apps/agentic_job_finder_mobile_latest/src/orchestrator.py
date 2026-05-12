@@ -162,30 +162,45 @@ class Orchestrator:
     # --- cache I/O ---
     def _load_caches(self) -> None:
         DATA_DIR.mkdir(exist_ok=True)
-        if (p := DATA_DIR / "profile.json").exists():
-            self._resume = Resume.model_validate_json(p.read_text())
-        if (p := DATA_DIR / "jobs_cache.json").exists():
-            self._jobs = [Job.model_validate(j) for j in json.loads(p.read_text())]
-        if (p := DATA_DIR / "matches.json").exists():
-            data = json.loads(p.read_text())
-            self._matches = {k: MatchResult.model_validate(v) for k, v in data.items()}
-        if (p := DATA_DIR / "competitions_cache.json").exists():
-            data = json.loads(p.read_text())
-            self._competitions = {k: Competition.model_validate(v) for k, v in data.items()}
+        try:
+            if (p := DATA_DIR / "profile.json").exists() and p.stat().st_size > 0:
+                self._resume = Resume.model_validate_json(p.read_text(encoding="utf-8"))
+        except Exception:
+            logger.warning("Corrupt profile.json — ignoring")
+        try:
+            if (p := DATA_DIR / "jobs_cache.json").exists() and p.stat().st_size > 0:
+                self._jobs = [Job.model_validate(j) for j in json.loads(p.read_text(encoding="utf-8"))]
+        except Exception:
+            logger.warning("Corrupt jobs_cache.json — ignoring")
+        try:
+            if (p := DATA_DIR / "matches.json").exists() and p.stat().st_size > 0:
+                data = json.loads(p.read_text(encoding="utf-8"))
+                self._matches = {k: MatchResult.model_validate(v) for k, v in data.items()}
+        except Exception:
+            logger.warning("Corrupt matches.json — ignoring")
+        try:
+            if (p := DATA_DIR / "competitions_cache.json").exists() and p.stat().st_size > 0:
+                data = json.loads(p.read_text(encoding="utf-8"))
+                self._competitions = {k: Competition.model_validate(v) for k, v in data.items()}
+        except Exception:
+            logger.warning("Corrupt competitions_cache.json — ignoring")
 
     def _save_jobs(self) -> None:
         (DATA_DIR / "jobs_cache.json").write_text(
-            json.dumps([j.model_dump(mode="json") for j in self._jobs], indent=2)
+            json.dumps([j.model_dump(mode="json") for j in self._jobs], indent=2),
+            encoding="utf-8",
         )
 
     def _save_matches(self) -> None:
         (DATA_DIR / "matches.json").write_text(
-            json.dumps({k: v.model_dump(mode="json") for k, v in self._matches.items()}, indent=2)
+            json.dumps({k: v.model_dump(mode="json") for k, v in self._matches.items()}, indent=2),
+            encoding="utf-8",
         )
 
     def _save_competitions(self) -> None:
         (DATA_DIR / "competitions_cache.json").write_text(
-            json.dumps({k: v.model_dump(mode="json") for k, v in self._competitions.items()}, indent=2)
+            json.dumps({k: v.model_dump(mode="json") for k, v in self._competitions.items()}, indent=2),
+            encoding="utf-8",
         )
 
     @staticmethod
