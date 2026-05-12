@@ -11,10 +11,11 @@ RunStatus = Literal["pending", "running", "done", "error"]
 @dataclass
 class Run:
     id: str
-    kind: Literal["scrape", "match"]
+    kind: str  # scrape | match | competitions | full | resume
     status: RunStatus = "pending"
     progress: float = 0.0
     message: str = ""
+    phase: str = ""
     error: str | None = None
     queue: asyncio.Queue = field(default_factory=asyncio.Queue)
 
@@ -32,8 +33,14 @@ def get_run(run_id: str) -> Run | None:
     return _RUNS.get(run_id)
 
 
-async def emit(run: Run, *, progress: float, message: str, status: RunStatus = "running") -> None:
+async def emit(run: Run, *, progress: float, message: str,
+               status: RunStatus = "running", phase: str = "") -> None:
     run.progress = progress
     run.message = message
     run.status = status
-    await run.queue.put({"progress": progress, "message": message, "status": status})
+    if phase:
+        run.phase = phase
+    event = {"progress": progress, "message": message, "status": status}
+    if phase:
+        event["phase"] = phase
+    await run.queue.put(event)

@@ -1,7 +1,8 @@
 import os
 import platform
 import socket
-from fastapi import FastAPI, Depends
+from contextlib import asynccontextmanager
+from fastapi import FastAPI, BackgroundTasks, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from src.config import load_settings
 from src.api.deps import require_api_key
@@ -9,7 +10,19 @@ from src.api.routes import resume, pipeline, matches, apply, competitions
 
 cfg = load_settings()
 
-app = FastAPI(title="Job Finder API", version="0.2.0")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # ── Startup ──
+    from src import scheduler
+    if cfg.scheduler.enabled:
+        scheduler.start(cfg.scheduler.run_at)
+    yield
+    # ── Shutdown ──
+    scheduler.stop()
+
+
+app = FastAPI(title="Job Finder API", version="0.2.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -45,3 +58,22 @@ async def connection_info() -> dict[str, str]:
         "user": os.environ.get("USERNAME") or os.environ.get("USER") or "unknown",
         "python_version": platform.python_version(),
     }
+
+
+@app.get("/api/v1/scheduler", dependencies=[Depends(require_api_key)])
+async def scheduler_status() -> dict:
+    """Return current scheduler status."""
+    from src import scheduler as sched
+    return {
+        "enabled": cfg.scheduler.enabled,
+        "run_at": cfg.scheduler.run_at,
+        "running": sched._task is not None and not sched._task.done(),
+    }
+
+
+@app.post("/api/v1/scheduler/run-now", dependencies=[Depends(require_api_key)])
+async def scheduler_run_now(bg: BackgroundTasks) -> dict:
+    """Trigger an immediate pipeline run (scrape + match + competitions)."""
+    from src import scheduler as sched
+    bg.add_task(sched._run_pipeline_once)
+    return {"message": "Pipeline triggered"}

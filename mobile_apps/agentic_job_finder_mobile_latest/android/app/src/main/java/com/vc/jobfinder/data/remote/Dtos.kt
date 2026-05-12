@@ -58,6 +58,23 @@ import kotlinx.serialization.Serializable
     val message: String = "",
     val status: String = "running",
     val heartbeat: Boolean = false,
+    val phase: String = "",
+)
+
+@Serializable data class PipelinePhaseDto(
+    val status: String = "pending",
+    val started_at: String? = null,
+    val finished_at: String? = null,
+    val message: String = "",
+    val progress: Double = 0.0,
+)
+
+@Serializable data class PipelineStateDto(
+    val phases: Map<String, PipelinePhaseDto> = emptyMap(),
+    val current_phase: String? = null,
+    val is_complete: Boolean = false,
+    val can_resume: Boolean = false,
+    val last_updated: String = "",
 )
 
 @Serializable data class CompetitionDto(

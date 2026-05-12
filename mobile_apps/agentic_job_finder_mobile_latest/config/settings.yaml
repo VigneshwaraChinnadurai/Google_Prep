@@ -22,3 +22,13 @@ api:
   host: 0.0.0.0
   port: 8000
   cors_origins: ["*"]
+
+# ── Nightly scheduler ──────────────────────────────
+# The pipeline (scrape → match → competitions) runs
+# automatically at these times (24h HH:MM, local tz).
+# Set enabled: false to disable.
+scheduler:
+  enabled: true
+  run_at:
+    - "00:00"       # midnight
+    # - "06:00"     # uncomment to add a morning run

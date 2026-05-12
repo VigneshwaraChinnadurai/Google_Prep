@@ -41,6 +41,19 @@ class JobFinderRepository @Inject constructor(
         }.body()
 
     // ---- Pipeline ----
+    suspend fun pipelineState(): PipelineStateDto =
+        client.get("api/v1/pipeline/state").body()
+
+    suspend fun pipelineReset(): Unit {
+        client.post("api/v1/pipeline/reset")
+    }
+
+    suspend fun startFullPipeline(): String =
+        client.post("api/v1/pipeline/run").body<RunStartedDto>().run_id
+
+    suspend fun resumePipeline(): String =
+        client.post("api/v1/pipeline/resume").body<RunStartedDto>().run_id
+
     suspend fun startScrape(): String =
         client.post("api/v1/pipeline/scrape").body<RunStartedDto>().run_id
 

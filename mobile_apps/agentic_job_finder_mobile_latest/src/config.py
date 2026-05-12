@@ -51,11 +51,17 @@ class ApiConfig(BaseModel):
     cors_origins: list[str] = Field(default_factory=lambda: ["*"])
 
 
+class SchedulerConfig(BaseModel):
+    enabled: bool = True
+    run_at: list[str] = Field(default_factory=lambda: ["00:00"])
+
+
 class Settings(BaseModel):
     llm: LLMConfig = Field(default_factory=LLMConfig)
     scraping: ScrapingConfig = Field(default_factory=ScrapingConfig)
     matching: MatchingConfig = Field(default_factory=MatchingConfig)
     api: ApiConfig = Field(default_factory=ApiConfig)
+    scheduler: SchedulerConfig = Field(default_factory=SchedulerConfig)
 
 
 class Company(BaseModel):
