@@ -255,13 +255,6 @@ private fun ProblemStatsGrid(stats: LeetCodeActivityStorage.ProblemStats) {
             icon = "📈",
             color = Color(0xFF58A6FF)
         )
-        StatCard(
-            modifier = Modifier.weight(1f),
-            value = "${stats.averageTimeMinutes}m",
-            label = "Avg Time",
-            icon = "⏱️",
-            color = Color(0xFFF0883E)
-        )
     }
 }
 

@@ -213,11 +213,6 @@ private fun QuickStatsCard(stats: LeetCodeActivityStorage.ProblemStats) {
                 label = "Hard",
                 color = Color(0xFFFF375F)
             )
-            QuickStatItem(
-                value = "${stats.averageTimeMinutes}m",
-                label = "Avg Time",
-                color = Color(0xFF58A6FF)
-            )
         }
     }
 }
