@@ -1,6 +1,10 @@
-from fastapi import FastAPI
+import os
+import platform
+import socket
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from src.config import load_settings
+from src.api.deps import require_api_key
 from src.api.routes import resume, pipeline, matches, apply, competitions
 
 cfg = load_settings()
@@ -24,3 +28,20 @@ app.include_router(competitions.router, prefix="/api/v1/competitions", tags=["co
 @app.get("/healthz")
 async def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+@app.get("/api/v1/connection-info", dependencies=[Depends(require_api_key)])
+async def connection_info() -> dict[str, str]:
+    """Return info about the backend machine the phone is connected to."""
+    hostname = socket.gethostname()
+    try:
+        local_ip = socket.gethostbyname(hostname)
+    except socket.gaierror:
+        local_ip = "unknown"
+    return {
+        "hostname": hostname,
+        "local_ip": local_ip,
+        "os": f"{platform.system()} {platform.release()}",
+        "user": os.environ.get("USERNAME") or os.environ.get("USER") or "unknown",
+        "python_version": platform.python_version(),
+    }

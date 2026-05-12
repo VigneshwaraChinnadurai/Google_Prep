@@ -77,3 +77,11 @@ import kotlinx.serialization.Serializable
     val tags: List<String> = emptyList(),
     val description_snippet: String = "",
 )
+
+@Serializable data class ConnectionInfoDto(
+    val hostname: String = "",
+    val local_ip: String = "",
+    val os: String = "",
+    val user: String = "",
+    val python_version: String = "",
+)
