@@ -1,0 +1,37 @@
+Date: 2026-05-12
+Title: Minimum Initial Energy to Finish Tasks
+URL: https://leetcode.com/problems/minimum-initial-energy-to-finish-tasks/
+
+LLM Explanation:
+The problem asks for the minimum initial energy to complete a set of tasks, where each task has a `minimum` energy requirement to start and an `actual` energy cost to complete. We can perform the tasks in any order.
+
+This problem can be solved using a greedy approach. The key is to find the optimal order to perform the tasks. The crucial observation is related to the difference between the minimum required energy and the actual energy cost for each task, i.e., `minimum - actual`. This difference can be seen as an "energy buffer". Tasks with a larger buffer are less restrictive because they consume relatively less energy compared to their starting requirement.
+
+The optimal strategy is to perform tasks with a larger `minimum - actual` difference first. This is because when our energy is high (at the beginning), we can easily meet the high `minimum` requirements of these tasks. Completing them leaves us with a relatively higher amount of energy to tackle the more restrictive tasks (those with a smaller `minimum - actual` buffer) later on. This greedy choice can be formally proven to be optimal using an exchange argument.
+
+Once we establish the optimal order (sorting tasks by `minimum - actual` descending), we need to calculate the required initial energy. A straightforward way to do this is to work backward from the last task in the optimal sequence.
+
+Let's say the energy required for the sequence of tasks starting from task `i` is `R_i`.
+- For the very last task `t_n`, the energy required right before starting it is simply its `minimum_n`. So, `R_n = minimum_n`.
+- For the second to last task `t_{n-1}`, we must have enough energy to start it (`>= minimum_{n-1}`) and, after completing it (spending `actual_{n-1}`), we must have `R_n` energy remaining for the rest of the tasks. This means the energy before `t_{n-1}` must be at least `R_n + actual_{n-1}`. Combining these, the energy required before `t_{n-1}` is `R_{n-1} = max(minimum_{n-1}, R_n + actual_{n-1})`.
+- This gives a general recurrence: `R_i = max(minimum_i, R_{i+1} + actual_i)`. The final answer is `R_1`.
+
+To implement this, we can sort the tasks by `minimum - actual` in ascending order. This gives us the optimal sequence in reverse (`t_n, t_{n-1}, ..., t_1`). We can then iterate through this sorted list, applying the recurrence to find the total initial energy needed.
+
+The algorithm is as follows:
+1. Sort the `tasks` array based on the key `minimum - actual` in ascending order.
+2. Initialize a variable `needed_energy` to 0. This will represent `R_{i+1}` as we iterate.
+3. Iterate through the sorted tasks. For each task `[actual, minimum]`:
+   - Update `needed_energy` using the recurrence: `needed_energy = max(minimum, needed_energy + actual)`.
+4. The final value of `needed_energy` is the minimum initial energy required.
+
+**Complexity Analysis:**
+- **Time Complexity:** O(N log N), dominated by the sorting of the `N` tasks.
+- **Space Complexity:** O(N) or O(log N), depending on the implementation of the sorting algorithm. Python's Timsort can use up to O(N) space in the worst case.
+
+LLM Testcase Validation:
+```
+[[1,2],[2,4],[4,8]]
+[[1,3],[2,4],[10,11],[10,12],[8,9]]
+[[1,7],[2,8],[3,9],[4,10],[5,11],[6,12]]
+```
