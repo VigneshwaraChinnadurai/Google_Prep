@@ -1,12 +1,10 @@
 import asyncio
 import os
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, WebSocket
-from src.api.deps import require_api_key
+from src.api.deps import require_api_key, get_orchestrator
 from src.api.runs import create_run, get_run, emit
-from src.orchestrator import Orchestrator
 
 router = APIRouter()
-_orch = Orchestrator()
 
 
 @router.post("/scrape", dependencies=[Depends(require_api_key)])
@@ -18,7 +16,8 @@ async def start_scrape(bg: BackgroundTasks) -> dict:
 
 @router.post("/match", dependencies=[Depends(require_api_key)])
 async def start_match(bg: BackgroundTasks) -> dict:
-    if not _orch.has_resume():
+    orch = get_orchestrator()
+    if not orch.has_resume():
         raise HTTPException(409, "Upload resume first")
     run = create_run("match")
     bg.add_task(_run_match, run.id)
@@ -50,10 +49,11 @@ async def run_events(ws: WebSocket, run_id: str):
 async def _run_scrape(run_id: str):
     run = get_run(run_id)
     assert run
+    orch = get_orchestrator()
     try:
-        async for company, count in _orch.scrape_iter():
+        async for company, count in orch.scrape_iter():
             await emit(run,
-                       progress=count / max(_orch.target_count, 1),
+                       progress=count / max(orch.target_count, 1),
                        message=f"Scraped {company} ({count} jobs)")
         await emit(run, progress=1.0, message="Done", status="done")
     except Exception as e:
@@ -64,8 +64,9 @@ async def _run_scrape(run_id: str):
 async def _run_match(run_id: str):
     run = get_run(run_id)
     assert run
+    orch = get_orchestrator()
     try:
-        async for done, total in _orch.match_iter():
+        async for done, total in orch.match_iter():
             await emit(run,
                        progress=(done / total) if total else 1.0,
                        message=f"Matched {done}/{total}")

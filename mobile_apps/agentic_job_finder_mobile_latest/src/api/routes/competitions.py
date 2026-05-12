@@ -1,13 +1,11 @@
 import asyncio
 import os
 from fastapi import APIRouter, BackgroundTasks, Depends, Query, WebSocket
-from src.api.deps import require_api_key
+from src.api.deps import require_api_key, get_orchestrator
 from src.api.runs import create_run, get_run, emit
-from src.orchestrator import Orchestrator
 from src.schemas import Competition
 
 router = APIRouter()
-_orch = Orchestrator()
 
 
 @router.get("", response_model=list[Competition], dependencies=[Depends(require_api_key)])
@@ -17,7 +15,7 @@ async def list_competitions(
     platform: list[str] | None = Query(None, description="Filter by one or more platforms"),
     limit: int = Query(100, ge=1, le=500),
 ) -> list[Competition]:
-    return _orch.list_competitions(
+    return get_orchestrator().list_competitions(
         tracked_only=tracked_only,
         hiring_only=hiring_only,
         platforms=platform,
@@ -55,6 +53,7 @@ async def run_events(ws: WebSocket, run_id: str):
 async def _run_competitions(run_id: str):
     run = get_run(run_id)
     assert run
+    orch = get_orchestrator()
     try:
         platforms_done = 0
         # We don't know total ahead of time without inspecting the registry,
@@ -62,7 +61,7 @@ async def _run_competitions(run_id: str):
         from src.competitions import all_adapters
         total = max(len(all_adapters()), 1)
 
-        async for platform, count in _orch.competitions_iter():
+        async for platform, count in orch.competitions_iter():
             platforms_done += 1
             await emit(run,
                        progress=platforms_done / total,

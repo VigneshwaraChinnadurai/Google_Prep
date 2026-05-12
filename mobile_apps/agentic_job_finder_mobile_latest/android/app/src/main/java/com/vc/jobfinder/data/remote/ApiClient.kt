@@ -10,10 +10,18 @@ import io.ktor.client.plugins.websocket.WebSockets
 import io.ktor.http.HttpHeaders
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
+import java.util.concurrent.TimeUnit
 
 data class ApiConfig(val baseUrl: String, val apiKey: String)
 
 fun buildClient(config: ApiConfig) = HttpClient(OkHttp) {
+    engine {
+        config {
+            connectTimeout(30, TimeUnit.SECONDS)
+            readTimeout(120, TimeUnit.SECONDS)
+            writeTimeout(60, TimeUnit.SECONDS)
+        }
+    }
     install(ContentNegotiation) {
         json(Json { ignoreUnknownKeys = true; explicitNulls = false })
     }

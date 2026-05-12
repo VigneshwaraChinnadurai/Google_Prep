@@ -1,14 +1,12 @@
 import pathlib
 import tempfile
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException
-from src.api.deps import require_api_key
+from src.api.deps import require_api_key, get_orchestrator
 from src.agents.resume_parser import ResumeParserAgent
-from src.orchestrator import Orchestrator
 from src.schemas import Resume
 
 router = APIRouter(dependencies=[Depends(require_api_key)])
 _parser = ResumeParserAgent()
-_orch = Orchestrator()
 
 
 @router.post("/upload", response_model=Resume)
@@ -20,7 +18,7 @@ async def upload_resume(file: UploadFile = File(...)) -> Resume:
         tmp.write(await file.read())
         tmp_path = tmp.name
     resume = await _parser.parse(tmp_path, persist=True)
-    _orch.set_resume(resume)
+    get_orchestrator().set_resume(resume)
     return resume
 
 
