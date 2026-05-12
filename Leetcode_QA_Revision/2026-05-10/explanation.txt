@@ -1,0 +1,43 @@
+Date: 2026-05-10
+Title: Maximum Number of Jumps to Reach the Last Index
+URL: https://leetcode.com/problems/maximum-number-of-jumps-to-reach-the-last-index/
+
+LLM Explanation:
+### Method Explanation
+
+This problem asks for the maximum number of jumps to get from index 0 to index `n-1`. This can be modeled as finding the longest path in a Directed Acyclic Graph (DAG). The indices of the array `nums` represent the nodes of the graph. A directed edge exists from node `j` to node `i` if a valid jump is possible (i.e., `j < i` and `-target <= nums[i] - nums[j] <= target`).
+
+The longest path problem in a DAG is a classic application of dynamic programming.
+
+#### Dynamic Programming Approach
+
+1.  **DP State**: Let `dp[i]` be the maximum number of jumps required to reach index `i` from the starting index 0. Our goal is to find `dp[n-1]`.
+
+2.  **Initialization**:
+    *   We start at index 0 with 0 jumps, so `dp[0] = 0`.
+    *   We initialize `dp[i] = -1` for all `i > 0`. This value signifies that these indices are not yet reachable. It also aligns with the required output of -1 if the final index is unreachable.
+
+3.  **Recurrence Relation**: To calculate `dp[i]`, we need to consider all possible previous indices `j` (where `0 <= j < i`) from which we could jump to `i`.
+    *   A jump from `j` to `i` is valid if `dp[j]` is not -1 (meaning `j` is reachable) and the condition `abs(nums[i] - nums[j]) <= target` holds.
+    *   If a valid jump from `j` to `i` is possible, we can reach `i` in `dp[j] + 1` jumps.
+    *   Since we want the maximum number of jumps, we take the maximum over all possible valid predecessors `j`.
+    *   The recurrence is: `dp[i] = max(dp[i], dp[j] + 1)` for all valid `j < i`.
+
+4.  **Implementation**: We can implement this using a bottom-up approach. We iterate with an outer loop for `i` from 1 to `n-1` and an inner loop for `j` from 0 to `i-1`. Inside the inner loop, we check the conditions and update `dp[i]` according to the recurrence relation.
+
+5.  **Final Result**: After the loops complete, `dp[n-1]` will contain the maximum number of jumps to reach the last index. If `dp[n-1]` remains -1, it means the last index is unreachable.
+
+#### Complexity Analysis
+
+*   **Time Complexity**: `O(n^2)`, where `n` is the number of elements in `nums`. This is due to the nested loops, where the outer loop runs `n-1` times and the inner loop runs up to `n-1` times.
+*   **Space Complexity**: `O(n)` to store the `dp` array.
+
+LLM Testcase Validation:
+```
+[1,3,6,4,1,2]
+2
+[1,3,6,4,1,2]
+3
+[1,3,6,4,1,2]
+0
+```

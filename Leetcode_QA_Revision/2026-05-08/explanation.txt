@@ -1,0 +1,54 @@
+Date: 2026-05-08
+Title: Minimum Jumps to Reach End via Prime Teleportation
+URL: https://leetcode.com/problems/minimum-jumps-to-reach-end-via-prime-teleportation/
+
+LLM Explanation:
+The problem asks for the minimum number of jumps to get from index 0 to `n-1`. This is a classic shortest path problem on an unweighted graph, making Breadth-First Search (BFS) the ideal algorithm.
+
+### Graph Representation
+- **Nodes**: The indices of the `nums` array, from `0` to `n-1`.
+- **Edges**: The allowed jumps:
+    1. **Adjacent**: An edge exists between `i` and `i-1`, and `i` and `i+1`.
+    2. **Teleport**: If `nums[i]` is a prime `p`, an edge exists between `i` and every other index `j` where `nums[j]` is a multiple of `p`.
+
+### Challenge and Optimization
+A naive BFS that checks all `n` indices for teleportation from a prime location would be too slow (`O(N^2)` in some cases). The key is to efficiently find all possible teleportation destinations.
+
+### Approach
+The solution uses pre-computation to build a map that allows for fast lookups of teleportation targets, followed by an optimized BFS.
+
+1.  **Pre-computation for Prime Factorization**:
+    - We need to efficiently find prime factors for numbers up to `10^6`. A sieve method is perfect for this.
+    - We compute the **Smallest Prime Factor (SPF)** for every number up to `10^6`. The `spf` array allows us to find all prime factors of any number `k` in `O(log k)` time by repeatedly dividing `k` by `spf[k]`.
+
+2.  **Building Teleportation Links**:
+    - We create a hash map, `prime_factor_to_indices`, which maps each prime number `p` to a list of all indices `i` where `nums[i]` is a multiple of `p`.
+    - We iterate through `nums`. For each `nums[i]`, we find its prime factors using our `spf` array and populate the map.
+
+3.  **Optimized BFS**:
+    - We start a standard BFS from index 0 with distance 0.
+    - A `visited_indices` set is used to avoid cycles and redundant computations.
+    - From the current index `i`, we explore its neighbors:
+        - **Adjacent**: Add `i-1` and `i+1` to the queue if they are within bounds and not visited.
+        - **Teleport**: If `nums[i]` is a prime `p` (which we can check in `O(1)` using `spf[nums[i]] == nums[i]`), we look up `p` in our `prime_factor_to_indices` map. This gives us a list of all indices we can teleport to. We add any unvisited indices from this list to the queue.
+    - **Crucial Optimization**: After processing teleportations for a prime `p` for the first time, we delete its entry from `prime_factor_to_indices`. This ensures that the (potentially large) set of connections for any prime is processed only once, significantly improving performance. This is valid because all nodes reachable via `p` have been added to the queue and will be explored in due course.
+
+### Complexity Analysis
+-   **Time Complexity**: `O(M log log M + N log M)`, where `M` is the maximum possible value in `nums` (`10^6`) and `N` is the length of `nums`.
+    - `O(M log log M)` for the Sieve of Eratosthenes to build the `spf` array.
+    - `O(N log M)` to build the `prime_factor_to_indices` map.
+    - `O(N + sum of lengths of all lists in the map) = O(N + N log M)` for the BFS.
+-   **Space Complexity**: `O(M + N log M)`.
+    - `O(M)` for the `spf` array.
+    - `O(N log M)` in the worst case for the `prime_factor_to_indices` map.
+    - `O(N)` for the BFS queue and visited set.
+
+LLM Testcase Validation:
+```
+[1,2,4,6]
+[2,3,4,7,9]
+[4,6,5,8]
+[1]
+[7]
+[2, 5, 10]
+```

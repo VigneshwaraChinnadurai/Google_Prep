@@ -1,0 +1,91 @@
+Date: 2026-05-05
+Title: Rotate List
+URL: https://leetcode.com/problems/rotate-list/
+
+LLM Explanation:
+The problem requires rotating a linked list to the right by `k` places. This is equivalent to taking the last `k` nodes and moving them to the beginning of the list.
+
+### Core Idea
+The key insight is that rotations are cyclical. For a list of length `n`, rotating by `n` places results in the original list. Therefore, a rotation by `k` is identical to a rotation by `k % n`. This is crucial for handling large values of `k`.
+
+The overall strategy is to find the new head and new tail of the list after the rotation and then re-wire the pointers accordingly. If we rotate right by `k` places, the node that was `k` positions from the end will become the new head. This corresponds to the node at index `n - k` (0-indexed). Consequently, the node just before it, at index `n - k - 1`, will become the new tail.
+
+### Algorithm
+1.  **Handle Edge Cases:** First, check for simple cases where no action is needed: an empty list (`head` is `None`), a list with only one node (`head.next` is `None`), or `k` is 0. In these scenarios, the list remains unchanged, so we return the original `head`.
+
+2.  **Find List Length and Tail:** Traverse the list to find its total length, `n`. During this traversal, we also locate the last node, which we'll call `old_tail`.
+
+3.  **Calculate Effective Rotations:** Compute the effective number of rotations using the modulo operator: `k = k % n`. If `k` becomes 0, it means the list completes full rotations and ends up in its original state, so we can return the `head`.
+
+4.  **Locate the New Tail:** The new tail will be the `(n - k - 1)`-th node from the beginning. We can find this node by starting a pointer at the `head` and advancing it `n - k - 1` times.
+
+5.  **Re-wire Pointers:** Once the `new_tail` is found, we perform the rotation by rearranging the pointers:
+    *   The node immediately following `new_tail` becomes the `new_head`.
+    *   The link after `new_tail` is broken by setting `new_tail.next = None`. This correctly terminates the new, rotated list.
+    *   The `old_tail`'s `next` pointer is set to the original `head`, connecting the end of the original list to its beginning. This completes the rotation.
+
+6.  **Return New Head:** Finally, return the `new_head` of the rotated list.
+
+### Complexity Analysis
+*   **Time Complexity:** O(N), where N is the number of nodes in the list. We traverse the list once to find its length and tail, and a second time to find the new tail. Both are linear operations.
+*   **Space Complexity:** O(1). The solution uses a constant amount of extra space for pointers, regardless of the list's size.
+
+LLM Testcase Validation:
+```python
+# Helper functions for testing
+class ListNode:
+    def __init__(self, val=0, next=None):
+        self.val = val
+        self.next = next
+
+def list_to_list_node(items):
+    if not items:
+        return None
+    head = ListNode(items[0])
+    current = head
+    for item in items[1:]:
+        current.next = ListNode(item)
+        current = current.next
+    return head
+
+def list_node_to_list(node):
+    result = []
+    while node:
+        result.append(node.val)
+        node = node.next
+    return result
+
+# Test cases
+test_cases = [
+    ([1,2,3,4,5], 2),
+    ([0,1,2], 4),
+    ([], 0),
+    ([1], 99),
+    ([1,2], 2)
+]
+
+expected_outputs = [
+    [4,5,1,2,3],
+    [2,0,1],
+    [],
+    [1],
+    [1,2]
+]
+
+solver = Solution()
+
+for i, (input_list, k) in enumerate(test_cases):
+    head = list_to_list_node(input_list)
+    result_head = solver.rotateRight(head, k)
+    result_list = list_node_to_list(result_head)
+    expected = expected_outputs[i]
+    
+    print(f"Test Case {i+1}:")
+    print(f"Input: head = {input_list}, k = {k}")
+    print(f"Output: {result_list}")
+    print(f"Expected: {expected}")
+    assert result_list == expected, f"Assertion failed for test case {i+1}"
+    print("------")
+
+print("All test cases passed!")
+```

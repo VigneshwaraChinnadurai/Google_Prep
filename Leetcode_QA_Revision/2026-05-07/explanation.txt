@@ -1,0 +1,51 @@
+Date: 2026-05-07
+Title: Jump Game IX
+URL: https://leetcode.com/problems/jump-game-ix/
+
+LLM Explanation:
+The user wants to solve the "Jump Game IX" problem.
+
+### Method Explanation
+
+This problem asks for the maximum value reachable from each starting index `i` in an array `nums`, following specific jump rules. The jump rules define a directed graph where indices are nodes and valid jumps are edges. For each node `i`, we need to find the maximum `nums[j]` over all nodes `j` reachable from `i`.
+
+A naive approach of building the graph and running graph traversal (like BFS or DFS) from each node would be too slow, as the graph can have up to O(n^2) edges, leading to an O(n^3) complexity.
+
+A more efficient approach is to use dynamic programming with optimizations. Let `ans[i]` be the maximum value reachable from index `i`. Initially, `ans[i] = nums[i]`. The value `ans[i]` can be updated by the maximum values reachable from its neighbors. This suggests an iterative process:
+
+`ans[i] = max(ans[i], max_{j reachable from i} ans[j])`
+
+This process is repeated until the `ans` array no longer changes, i.e., it reaches a fixed point. This is guaranteed to converge because `ans[i]` values are non-decreasing and bounded by the maximum value in `nums`.
+
+The updates can be broken down into two types based on the jump rules:
+1.  **Forward Jumps:** From `i` to `j > i` if `nums[j] < nums[i]`. This propagates information from right to left.
+2.  **Backward Jumps:** From `i` to `j < i` if `nums[j] > nums[i]`. This propagates information from left to right.
+
+We can perform these updates in passes. A full iteration consists of a "forward pass" followed by a "backward pass".
+
+-   **Forward Pass:** We iterate `i` from `n-1` down to `0`. For each `i`, we update `ans[i]` based on the `ans[j]` values where `j > i` and `nums[j] < nums[i]`. A naive check for all `j` would be O(n), making the pass O(n^2). To optimize, we use a segment tree (or Fenwick tree). The segment tree will store `ans` values, indexed by the rank of `nums` values (after coordinate compression). This allows us to query for the maximum `ans[j]` in the required value range in O(log n) time. The total time for a forward pass becomes O(n log n).
+
+-   **Backward Pass:** Similarly, we iterate `i` from `0` to `n-1` and use another segment tree to efficiently find the maximum `ans[j]` for `j < i` and `nums[j] > nums[i]`. This pass also takes O(n log n).
+
+We repeat these forward and backward passes until the `ans` array stabilizes. The number of iterations depends on the structure of the graph, specifically the longest path in terms of alternating jump types. While the worst-case number of iterations could be large, for many graph structures, it converges quickly.
+
+The overall algorithm is:
+1.  Initialize `ans` with `nums`.
+2.  Coordinate compress the values in `nums` to create ranks, as the values themselves can be large.
+3.  Enter a loop that continues as long as the `ans` array changes:
+    a. Perform a forward pass using a segment tree to update `ans` based on forward jumps.
+    b. Perform a backward pass using another segment tree to update `ans` based on backward jumps.
+4.  Once `ans` stabilizes, return it.
+
+### Complexity Analysis
+-   **Time Complexity:** `O(I * n log n)`, where `I` is the number of iterations required for convergence. `n` is the number of elements in `nums`. The `log n` factor comes from the segment tree operations. In the worst case, `I` can be `O(n)`, but it's often a small constant in practice for such problems.
+-   **Space Complexity:** `O(n)` for storing the `ans` array, ranks for coordinate compression, and the segment tree (which has a size proportional to the number of unique elements, at most `n`).
+
+### Edge Cases
+-   An array with all elements in increasing or decreasing order.
+-   An array with duplicate values. Coordinate compression handles this correctly.
+-   The segment tree queries need to handle empty ranges (e.g., when `nums[i]` is the smallest or largest value seen so far), which should result in a default value like 0.
+
+LLM Testcase Validation:
+[2,1,3]
+[2,3,1]

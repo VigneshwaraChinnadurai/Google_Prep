@@ -1,0 +1,44 @@
+Date: 2026-05-06
+Question ID: 1861
+Title: Rotating the Box
+Difficulty: Medium
+Tags: Array, Two Pointers, Matrix
+URL: https://leetcode.com/problems/rotating-the-box/
+
+Question:
+You are given an m x n matrix of characters boxGrid representing a side-view of a box. Each cell of the box is one of the following: A stone &#39;#&#39; A stationary obstacle &#39;*&#39; Empty &#39;.&#39; The box is rotated 90 degrees clockwise , causing some of the stones to fall due to gravity. Each stone falls down until it lands on an obstacle, another stone, or the bottom of the box. Gravity does not affect the obstacles&#39; positions, and the inertia from the box&#39;s rotation does not affect the stones&#39; horizontal positions. It is guaranteed that each stone in boxGrid rests on an obstacle, another stone, or the bottom of the box. Return an n x m matrix representing the box after the rotation described above . Example 1: Input: boxGrid = [[&quot;#&quot;,&quot;.&quot;,&quot;#&quot;]] Output: [[&quot;.&quot;], [&quot;#&quot;], [&quot;#&quot;]] Example 2: Input: boxGrid = [[&quot;#&quot;,&quot;.&quot;,&quot;*&quot;,&quot;.&quot;], [&quot;#&quot;,&quot;#&quot;,&quot;*&quot;,&quot;.&quot;]] Output: [[&quot;#&quot;,&quot;.&quot;], [&quot;#&quot;,&quot;#&quot;], [&quot;*&quot;,&quot;*&quot;], [&quot;.&quot;,&quot;.&quot;]] Example 3: Input: boxGrid = [[&quot;#&quot;,&quot;#&quot;,&quot;*&quot;,&quot;.&quot;,&quot;*&quot;,&quot;.&quot;], [&quot;#&quot;,&quot;#&quot;,&quot;#&quot;,&quot;*&quot;,&quot;.&quot;,&quot;.&quot;], [&quot;#&quot;,&quot;#&quot;,&quot;#&quot;,&quot;.&quot;,&quot;#&quot;,&quot;.&quot;]] Output: [[&quot;.&quot;,&quot;#&quot;,&quot;#&quot;], [&quot;.&quot;,&quot;#&quot;,&quot;#&quot;], [&quot;#&quot;,&quot;#&quot;,&quot;*&quot;], [&quot;#&quot;,&quot;*&quot;,&quot;.&quot;], [&quot;#&quot;,&quot;.&quot;,&quot;*&quot;], [&quot;#&quot;,&quot;.&quot;,&quot;.&quot;]] Constraints: m == boxGrid.length n == boxGrid[i].length 1 &lt;= m, n &lt;= 500 boxGrid[i][j] is either &#39;#&#39; , &#39;*&#39; , or &#39;.&#39; .
+
+Starter Code (Python3):
+class Solution:
+    def rotateTheBox(self, boxGrid: List[List[str]]) -> List[List[str]]:
+        
+
+Testcases:
+[["#",".","#"]]
+[["#",".","*","."],["#","#","*","."]]
+[["#","#","*",".","*","."],["#","#","#","*",".","."],["#","#","#",".","#","."]]
+
+Expected Output / Validation:
+- **Testcase 1:** `boxGrid = [["#",".","#"]]`
+  - **Gravity:** The row `["#",".","#"]` has two stones and one empty space. The stones settle to the right, resulting in `[".","#","#"]`.
+  - **Rotation:** The `1x3` matrix `[[".","#","#"]]` rotates to a `3x1` matrix `[[".",],["#",],["#",]]`.
+  - **Output:** `[[".",],["#",],["#",]]`. Correct.
+
+- **Testcase 2:** `boxGrid = [["#",".","*","."],["#","#","*","."]]`
+  - **Gravity:**
+    - Row 0: `["#",".","*","."]` -> `[".","#","*","."]` (stone at index 0 moves to index 1).
+    - Row 1: `["#","#","*","."]` -> `["#","#","*","."]` (stones are already settled against the obstacle).
+  - **After Gravity:** `[[".","#","*","."],["#","#","*","."]]`
+  - **Rotation:** The `2x4` matrix is rotated to a `4x2` matrix.
+    - `boxGrid[0]` becomes the second column (from the right) of the result.
+    - `boxGrid[1]` becomes the first column (from the right) of the result.
+  - **Output:** `[["#","."],["#","#"],["*","*"],[".","."]]`. Correct.
+
+- **Testcase 3:** `boxGrid = [["#","#","*",".","*","."],["#","#","#","*",".","."],["#","#","#",".","#","."]]`
+  - **Gravity:**
+    - Row 0: `["#","#","*",".","*","."]` -> No change.
+    - Row 1: `["#","#","#","*",".","."]` -> No change.
+    - Row 2: `["#","#","#",".","#","."]` -> `[".",".","#","#","#","#"]` (4 stones settle to the right).
+  - **After Gravity:** `[["#","#","*",".","*","."],["#","#","#","*",".","."], [".",".","#","#","#","#"]]`
+  - **Rotation:** The `3x6` matrix is rotated to a `6x3` matrix.
+  - **Output:** `[[".","#","#"],[".","#","#"],["#","#","*"],["#","*","."],["#",".","*"],["#",".","."]]`. Correct.

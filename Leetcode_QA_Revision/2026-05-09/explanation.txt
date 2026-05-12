@@ -1,0 +1,36 @@
+Date: 2026-05-09
+Title: Cyclically Rotating a Grid
+URL: https://leetcode.com/problems/cyclically-rotating-a-grid/
+
+LLM Explanation:
+The problem requires cyclically rotating concentric layers of a matrix `k` times in a counter-clockwise direction.
+
+The core idea is to process the matrix layer by layer, from the outermost to the innermost. For each layer, we perform the required number of rotations.
+
+The overall algorithm is as follows:
+
+1.  **Iterate Through Layers**: We can define the layers by their boundaries. The outermost layer is defined by `top=0, bottom=m-1, left=0, right=n-1`. We can process this layer and then shrink the boundaries inwards (`top+1, bottom-1, left+1, right-1`) to work on the next layer. This continues as long as a valid layer (of at least 2x2 size) exists, which is checked by `top < bottom and left < right`.
+
+2.  **Handle Large `k`**: The number of rotations `k` can be up to 10^9. Since the rotations are cyclic, rotating a layer `L` times (where `L` is the number of elements in the layer) brings it back to the original state. Therefore, we only need to perform `k_eff = k % L` rotations. We first calculate the perimeter `L` of the current layer.
+
+3.  **Unroll, Rotate, and Roll Back**: For each layer that needs rotation (`k_eff > 0`):
+    a.  **Unroll**: We traverse the perimeter of the layer in a consistent order (e.g., counter-clockwise) and store all its elements in a temporary 1D list. This process is like "unrolling" the layer.
+    b.  **Rotate**: A counter-clockwise rotation of the 2D layer corresponds to a simple left shift of the 1D list. In Python, this is efficiently done using list slicing: `rotated_list = original_list[k_eff:] + original_list[:k_eff]`.
+    c.  **Roll Back**: We traverse the layer's perimeter again in the exact same order as the unrolling step. This time, we place the elements from the `rotated_list` back into the grid cells.
+
+This process is repeated for all layers. The grid is modified in-place, which is safe because we read an entire layer into a temporary list before writing the rotated values back to that layer.
+
+**Complexity Analysis**:
+*   **Time Complexity**: O(m * n). Each cell in the grid is visited a constant number of times (once for extraction and once for placement) during the processing of its corresponding layer.
+*   **Space Complexity**: O(m + n). The space is dominated by the temporary list used to store the elements of the largest (outermost) layer. The perimeter of the outermost layer is `2*m + 2*n - 4`, which is O(m + n).
+
+LLM Testcase Validation:
+```
+Input: grid = [[40,10],[30,20]], k = 1
+Output: [[10,20],[40,30]]
+Expected: [[10,20],[40,30]]
+---
+Input: grid = [[1,2,3,4],[5,6,7,8],[9,10,11,12],[13,14,15,16]], k = 2
+Output: [[3,4,8,12],[2,11,10,16],[1,7,6,15],[5,9,13,14]]
+Expected: [[3,4,8,12],[2,11,10,16],[1,7,6,15],[5,9,13,14]]
+```
