@@ -68,7 +68,7 @@ class ResumeParserAgent:
     def load_cached(self) -> Resume | None:
         if not self._cache_path.exists():
             return None
-        return Resume.model_validate_json(self._cache_path.read_text())
+        return Resume.model_validate_json(self._cache_path.read_text(encoding="utf-8"))
 
     async def parse(self, file_path: str | Path, *, persist: bool = True) -> Resume:
         path = Path(file_path)
@@ -109,7 +109,7 @@ class ResumeParserAgent:
 
         # 4. Cache
         if persist:
-            self._cache_path.write_text(resume.model_dump_json(indent=2))
+            self._cache_path.write_text(resume.model_dump_json(indent=2), encoding="utf-8")
             log.info("Cached resume to %s", self._cache_path)
 
         return resume
