@@ -104,7 +104,15 @@ class ResumeParserAgent:
             lines = [l for l in lines if not l.strip().startswith("```")]
             response_text = "\n".join(lines)
 
-        resume = Resume.model_validate_json(response_text)
+        # Normalize URLs — Gemini often omits https://
+        import re
+        data = json.loads(response_text)
+        for url_field in ("linkedin_url", "github_url", "portfolio_url"):
+            val = data.get(url_field)
+            if val and isinstance(val, str) and not val.startswith(("http://", "https://")):
+                data[url_field] = "https://" + val
+
+        resume = Resume.model_validate(data)
         log.info("Parsed resume for %s", resume.full_name)
 
         # 4. Cache

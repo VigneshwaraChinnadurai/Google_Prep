@@ -63,7 +63,7 @@ class Orchestrator:
 
     def set_resume(self, resume: Resume) -> None:
         self._resume = resume
-        (DATA_DIR / "profile.json").write_text(resume.model_dump_json(indent=2))
+        (DATA_DIR / "profile.json").write_text(resume.model_dump_json(indent=2), encoding="utf-8")
 
     def list_competitions(
         self, *,

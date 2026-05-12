@@ -1,5 +1,6 @@
 """Applicator agent — generates an ApplyPacket. Never auto-submits."""
 from __future__ import annotations
+import os
 from datetime import datetime, timezone
 from strands import Agent
 from strands.models.gemini import GeminiModel
@@ -11,8 +12,10 @@ from src.schemas.apply_packet import ApplyPacket, FieldHint
 class ApplicatorAgent:
     def __init__(self) -> None:
         cfg = load_settings()
+        # Strands SDK reads GEMINI_API_KEY from env — ensure it's set
+        os.environ.setdefault("GEMINI_API_KEY", cfg.llm.api_key)
         self.agent = Agent(
-            model=GeminiModel(model_id=cfg.llm.model, api_key=cfg.llm.api_key),
+            model=GeminiModel(model_id=cfg.llm.model),
             system_prompt=(
                 "You write concise, role-specific cover letters (180-220 words). "
                 "Match tone to seniority. No clichés. No 'I am writing to apply'."
