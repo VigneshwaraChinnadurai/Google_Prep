@@ -25,7 +25,9 @@ fun buildClient(config: ApiConfig) = HttpClient(OkHttp) {
     install(ContentNegotiation) {
         json(Json { ignoreUnknownKeys = true; explicitNulls = false })
     }
-    install(WebSockets)
+    install(WebSockets) {
+        pingIntervalMillis = 20_000   // Keep-alive every 20 s
+    }
     install(Logging) { level = LogLevel.INFO }
     defaultRequest {
         url(config.baseUrl)

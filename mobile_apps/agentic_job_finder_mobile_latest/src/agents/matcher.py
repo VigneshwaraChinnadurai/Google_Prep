@@ -4,6 +4,7 @@ Uses Gemini to produce a structured fit assessment with score, reasoning,
 matched skills, and gap skills.
 """
 from __future__ import annotations
+import asyncio
 import hashlib
 import json
 import logging
@@ -12,6 +13,9 @@ from src.config import load_settings
 from src.schemas import Resume, Job, MatchResult
 
 log = logging.getLogger(__name__)
+
+_MAX_RETRIES = 4          # up to ~30 s total backoff
+_RETRY_BASE_DELAY = 2.0   # seconds
 
 _SCORE_PROMPT = """\
 You are a job-fit evaluator. Given the candidate's resume data and a job posting,
@@ -73,13 +77,31 @@ class MatcherAgent:
         import google.genai as genai
 
         client = genai.Client(api_key=llm_cfg.api_key)
-        response = client.models.generate_content(
-            model=llm_cfg.model,
-            contents=prompt,
-            config=genai.types.GenerateContentConfig(
-                temperature=llm_cfg.temperature,
-            ),
-        )
+
+        # Retry with exponential backoff on transient 503 / 429 errors
+        last_exc: Exception | None = None
+        for attempt in range(_MAX_RETRIES + 1):
+            try:
+                response = await client.aio.models.generate_content(
+                    model=llm_cfg.model,
+                    contents=prompt,
+                    config=genai.types.GenerateContentConfig(
+                        temperature=llm_cfg.temperature,
+                    ),
+                )
+                break  # success
+            except Exception as exc:
+                last_exc = exc
+                status = getattr(exc, 'status_code', None) or getattr(exc, 'code', 0)
+                if status in (429, 503) and attempt < _MAX_RETRIES:
+                    delay = _RETRY_BASE_DELAY * (2 ** attempt)
+                    log.warning("Gemini %s (attempt %d/%d), retrying in %.0fs…",
+                                status, attempt + 1, _MAX_RETRIES + 1, delay)
+                    await asyncio.sleep(delay)
+                else:
+                    raise
+        else:
+            raise last_exc  # type: ignore[misc]
 
         response_text = response.text.strip()
         # Strip markdown fences if the model added them
