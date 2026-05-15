@@ -1,0 +1,63 @@
+Date: 2026-05-13
+Title: Minimum Moves to Make Array Complementary
+URL: https://leetcode.com/problems/minimum-moves-to-make-array-complementary/
+
+LLM Explanation:
+The problem asks for the minimum moves to make an array "complementary," which means for all `i`, `nums[i] + nums[n-1-i]` must equal a constant target sum `T`. We can change any number to a value between 1 and `limit`.
+
+The core idea is to find the optimal target sum `T` that minimizes the total number of moves. The possible values for `T` range from `1+1=2` to `limit+limit=2*limit`. A brute-force approach of checking every possible `T` would be too slow, as `limit` can be large.
+
+Instead, we can use a sweep-line algorithm with a difference array. Let's analyze the number of moves required for a single pair `(a, b) = (nums[i], nums[n-1-i])` to sum to `T`:
+- **0 moves:** If `a + b` is already equal to `T`.
+- **1 move:** If we can change just one of `a` or `b` to reach the sum `T`. This is possible if `T` is in the range `[min(a,b) + 1, max(a,b) + limit]`.
+- **2 moves:** If both numbers need to be changed. This is required for all other values of `T`.
+
+The total number of moves for a given `T` is the sum of moves for all `n/2` pairs. This total move count, as a function of `T`, is a sum of simple step functions. We can find the minimum of this sum efficiently.
+
+We use a difference array, `diff`, to track how the total move count changes as `T` increases. `diff[T]` will store `moves(T) - moves(T-1)`.
+
+The algorithm proceeds as follows:
+1. Initialize a difference array `diff` of size `2 * limit + 2` with zeros.
+2. For each pair `(a, b)` from the input array:
+   - We determine the "event points" for `T` where the number of moves for this pair changes: `min(a,b) + 1`, `a+b`, `a+b+1`, and `max(a,b) + limit + 1`.
+   - We update the `diff` array at these event points. For example, at `T = min(a,b) + 1`, the cost for the pair drops from 2 to 1, so we decrement `diff[min(a,b) + 1]`.
+   - A base cost of 2 moves for every `T` is added at `diff[2]`.
+3. After processing all `n/2` pairs, the `diff` array holds the aggregated changes.
+4. We iterate from `T = 2` to `2 * limit`, calculating the prefix sum of the `diff` array. This prefix sum at each `T` gives the total moves required for that target sum.
+5. We keep track of the minimum value encountered during the prefix sum calculation. This minimum value is our answer.
+
+This approach effectively calculates the moves for all possible target sums in a single pass, leading to an efficient solution.
+
+**Complexity Analysis:**
+- **Time Complexity:** O(n + limit). We iterate through `n/2` pairs to build the difference array, which takes O(n) time. Then, we iterate through the `diff` array of size `2*limit+1` to find the minimum moves, which takes O(limit) time.
+- **Space Complexity:** O(limit). We use a difference array of size proportional to `limit`.
+
+LLM Testcase Validation:
+```python
+# Testcase 1
+nums1 = [1,2,4,3]
+limit1 = 4
+# Expected: 1
+sol = Solution()
+print(f"Testcase 1: {sol.minMoves(nums1, limit1)}")
+
+# Testcase 2
+nums2 = [1,2,2,1]
+limit2 = 2
+# Expected: 2
+print(f"Testcase 2: {sol.minMoves(nums2, limit2)}")
+
+# Testcase 3
+nums3 = [1,2,1,2]
+limit3 = 2
+# Expected: 0
+print(f"Testcase 3: {sol.minMoves(nums3, limit3)}")
+```
+
+**Output of testcase validation:**
+```
+Testcase 1: 1
+Testcase 2: 2
+Testcase 3: 0
+```
+The code passes all provided test cases.
