@@ -1,0 +1,26 @@
+{
+  "phases": {
+    "scrape": {
+      "status": "done",
+      "started_at": "2026-05-15T01:05:26.500355",
+      "finished_at": "2026-05-16T11:04:37.379868",
+      "message": "2978 jobs",
+      "progress": 1.0
+    },
+    "match": {
+      "status": "running",
+      "started_at": "2026-05-16T11:04:37.380730",
+      "finished_at": null,
+      "message": "",
+      "progress": 0.0
+    },
+    "competitions": {
+      "status": "pending",
+      "started_at": null,
+      "finished_at": null,
+      "message": "",
+      "progress": 0.0
+    }
+  },
+  "last_updated": "2026-05-16T11:04:37.380756"
+}
