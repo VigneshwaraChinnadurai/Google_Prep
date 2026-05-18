@@ -1,0 +1,57 @@
+Date: 2026-05-18
+Title: Jump Game IV
+URL: https://leetcode.com/problems/jump-game-iv/
+
+LLM Explanation:
+The problem asks for the minimum number of steps to get from the first to the last index of an array, which is a classic shortest path problem on a graph.
+
+### Graph Representation
+We can model the problem as a graph where:
+- **Nodes:** The indices of the array, from `0` to `n-1`.
+- **Edges:** The allowed jumps. An edge exists between two nodes (indices) if we can jump between them in one step. All edges are unweighted (cost = 1).
+
+The three types of jumps define the edges:
+1.  From `i` to `i + 1` (if valid).
+2.  From `i` to `i - 1` (if valid).
+3.  From `i` to `j` if `arr[i] == arr[j]`.
+
+### Algorithm: Breadth-First Search (BFS)
+Since we are looking for the shortest path in an unweighted graph, Breadth-First Search (BFS) is the ideal algorithm. BFS explores the graph level by level, guaranteeing that the first time we reach the target node, it will be via the shortest possible path.
+
+### Implementation Steps
+1.  **Edge Case:** If the array has 1 or fewer elements, we are already at the destination. The number of jumps is 0.
+
+2.  **Pre-processing:** The jumps to `i+1` and `i-1` are easy to calculate on the fly. However, finding all indices `j` with the same value as `arr[i]` repeatedly can be slow. To optimize this, we pre-process the array and build a hash map (`value_to_indices`) that maps each unique value in the array to a list of all indices where it appears. This allows for O(1) lookup of all potential "same-value" jumps.
+
+3.  **BFS Execution:**
+    - We use a queue to store tuples of `(index, steps)`. We start by adding `(0, 0)` to the queue, as we begin at index 0 with 0 steps.
+    - We also use a `visited` set to keep track of indices we've already processed, preventing cycles and redundant computations.
+    - The BFS proceeds by dequeuing an `(index, steps)` pair, and for that `index`, exploring all its valid, unvisited neighbors: `index + 1`, `index - 1`, and all indices with the same value.
+    - For each valid neighbor, we add it to the `visited` set and enqueue it with `steps + 1`.
+
+4.  **Crucial Optimization:** A naive BFS could still be too slow (up to O(N^2)) for cases where many elements share the same value (e.g., `[7, 7, ..., 7]`). After visiting an index `i` and exploring all other indices with the same value `arr[i]`, we have effectively connected all nodes in that group. There is no need to re-explore this same group of connections from another node of the same value. Therefore, after processing the list of same-value indices for a given value, we can delete that value's entry from our `value_to_indices` map. This ensures that the total work done for these types of jumps across the entire BFS is proportional to N, not N^2.
+
+5.  **Termination:** The BFS terminates when we dequeue an element whose index is the last index of the array (`n-1`). The `steps` associated with this element is our answer.
+
+### Complexity Analysis
+- **Time Complexity:** O(N), where N is the length of the array. Each index is visited at most once. The pre-processing step takes O(N). The BFS loop also takes O(N) because each index is enqueued once, and thanks to the optimization, the total number of "same-value" edges explored across all nodes is O(N).
+- **Space Complexity:** O(N). This is for the `value_to_indices` map, the `queue`, and the `visited` set, all of which can store up to N elements in the worst case.
+
+LLM Testcase Validation:
+- Testcase 1: `arr = [100,-23,-23,404,100,23,23,23,3,404]`
+  - Start at index 0 (value 100).
+  - Step 1: Jump from index 0 to index 4 (since `arr[0] == arr[4]`).
+  - Step 2: Jump from index 4 to index 3 (since `3 = 4 - 1`).
+  - Step 3: Jump from index 3 to index 9 (since `arr[3] == arr[9]`).
+  - Total steps: 3. The code correctly finds this path using BFS. Output: 3. Correct.
+
+- Testcase 2: `arr = [7]`
+  - The array has only one element. The start index is the last index.
+  - The code handles this edge case `if n <= 1: return 0`.
+  - Output: 0. Correct.
+
+- Testcase 3: `arr = [7,6,9,6,9,6,9,7]`
+  - Start at index 0 (value 7). The last index is 7, which also has the value 7.
+  - Step 1: Jump directly from index 0 to index 7.
+  - Total steps: 1. The BFS will explore neighbors of index 0, find index 7 as a valid jump, and reach the end in one step.
+  - Output: 1. Correct.
