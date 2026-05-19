@@ -1,0 +1,44 @@
+Date: 2026-05-19
+Title: Minimum Common Value
+URL: https://leetcode.com/problems/minimum-common-value/
+
+LLM Explanation:
+The problem asks for the minimum common integer in two sorted arrays, `nums1` and `nums2`. Since both arrays are sorted in non-decreasing order, the most efficient approach is the two-pointer technique.
+
+1.  **Initialization**: We start with two pointers, `i` for `nums1` and `j` for `nums2`, both initialized to `0`. These pointers will traverse the arrays from left to right.
+
+2.  **Traversal and Comparison**: We iterate as long as both pointers are within the bounds of their respective arrays (`i < len(nums1)` and `j < len(nums2)`). In each step, we compare the elements `nums1[i]` and `nums2[j]`:
+    *   If `nums1[i] == nums2[j]`: We have found a common element. Because we are scanning both sorted arrays from the beginning, this first match is guaranteed to be the minimum common value. We can immediately return this value.
+    *   If `nums1[i] < nums2[j]`: The current element in `nums1` is smaller. To find a match, we need to look at a larger element in `nums1`. Therefore, we advance the pointer `i` by one (`i += 1`).
+    *   If `nums1[i] > nums2[j]`: The current element in `nums2` is smaller. To find a match, we need to look at a larger element in `nums2`. So, we advance the pointer `j` by one (`j += 1`).
+
+3.  **Termination**: If the `while` loop finishes, it means one of the pointers has reached the end of its array without finding any common elements. In this case, no common value exists, and we return `-1`.
+
+This method ensures that we only pass through each array once, making it highly efficient.
+
+**Complexity Analysis**:
+*   **Time Complexity**: O(N + M), where N is the length of `nums1` and M is the length of `nums2`. In each iteration of the loop, we increment either `i` or `j` (or terminate). The total number of increments cannot exceed N + M.
+*   **Space Complexity**: O(1), as we only use a constant amount of extra space for the two pointers.
+
+LLM Testcase Validation:
+```
+[1,2,3]
+[2,4]
+```
+**Execution:**
+1. Initialize `i = 0`, `j = 0`. `n1 = 3`, `n2 = 2`.
+2. `i=0, j=0`: `nums1[0]` (1) < `nums2[0]` (2). Increment `i` to 1.
+3. `i=1, j=0`: `nums1[1]` (2) == `nums2[0]` (2). Found a common element.
+4. Return `nums1[1]`, which is 2.
+**Expected Output:** 2. **My code's output:** 2. Correct.
+
+```
+[1,2,3,6]
+[2,3,4,5]
+```
+**Execution:**
+1. Initialize `i = 0`, `j = 0`. `n1 = 4`, `n2 = 4`.
+2. `i=0, j=0`: `nums1[0]` (1) < `nums2[0]` (2). Increment `i` to 1.
+3. `i=1, j=0`: `nums1[1]` (2) == `nums2[0]` (2). Found a common element.
+4. Return `nums1[1]`, which is 2.
+**Expected Output:** 2. **My code's output:** 2. Correct.
