@@ -1,0 +1,40 @@
+Date: 2026-05-20
+Title: Find the Prefix Common Array of Two Arrays
+URL: https://leetcode.com/problems/find-the-prefix-common-array-of-two-arrays/
+
+LLM Explanation:
+The problem asks us to compute an array `C` where `C[i]` is the number of common elements in the prefixes `A[0...i]` and `B[0...i]`.
+
+A naive approach would be to iterate from `i = 0` to `n-1`, and for each `i`, build sets from the prefixes `A[0...i]` and `B[0...i]` and find the size of their intersection. This would work but would have a time complexity of O(n^2) due to repeated work.
+
+A more optimal approach is to solve this incrementally in a single pass, achieving O(n) time complexity. We can iterate from `i = 0` to `n-1` and maintain a running count of the common elements.
+
+The core idea is to keep track of the numbers we have seen so far in both prefixes combined. Since the input numbers are a permutation from 1 to `n`, we can use a frequency array, let's call it `freq`, of size `n+1`. `freq[x]` will store how many times the number `x` has appeared in total across `A[0...i]` and `B[0...i]`.
+
+The logic is as follows:
+1. Initialize a frequency array `freq` of size `n+1` to all zeros.
+2. Initialize a `common_count` to 0, which will store the number of common elements found so far.
+3. Initialize the result array `C` of size `n`.
+4. Iterate from `i = 0` to `n-1`:
+   a. Take the current elements `val_A = A[i]` and `val_B = B[i]`.
+   b. For `val_A`, increment its count in the `freq` array. If `freq[val_A]` becomes 2, it means `val_A` was already present in `B`'s prefix, so it has just become a common element. We increment `common_count`.
+   c. Do the same for `val_B`. Increment `freq[val_B]`. If `freq[val_B]` becomes 2, it means `val_B` was already present in `A`'s prefix (or we just saw it in `A[i]` if `A[i] == B[i]`), so it's also a new common element. Increment `common_count`.
+   d. After processing both `A[i]` and `B[i]`, the `common_count` is the total number of common elements for the prefixes ending at index `i`. So, we set `C[i] = common_count`.
+
+This method correctly handles all cases, including when `A[i] == B[i]`. In that case, the frequency of that number is incremented twice, and `common_count` is correctly incremented by one.
+
+- **Time Complexity:** O(n), as we iterate through the arrays once.
+- **Space Complexity:** O(n), for the frequency array and the result array.
+
+LLM Testcase Validation:
+- Testcase 1:
+  - Input: A = [1,3,2,4], B = [3,1,2,4]
+  - Expected Output: [0,2,3,4]
+  - My code's output: [0, 2, 3, 4]
+  - Validation: Correct.
+
+- Testcase 2:
+  - Input: A = [2,3,1], B = [3,1,2]
+  - Expected Output: [0,1,3]
+  - My code's output: [0, 1, 3]
+  - Validation: Correct.
