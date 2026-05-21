@@ -1,0 +1,41 @@
+Date: 2026-05-21
+Title: Find the Length of the Longest Common Prefix
+URL: https://leetcode.com/problems/find-the-length-of-the-longest-common-prefix/
+
+LLM Explanation:
+### Method Explanation
+
+The problem asks for the length of the longest common prefix among all pairs of numbers, one from `arr1` and one from `arr2`. A brute-force approach, checking every pair, would be too slow given the constraints (up to 5 * 10^4 elements in each array), leading to a complexity of O(N*M*K), where K is the number of digits.
+
+A more efficient solution uses a Trie (Prefix Tree), which is a data structure well-suited for problems involving prefixes. The core idea is to first build a collection of all possible prefixes from one array and then efficiently check for their existence as prefixes in the second array.
+
+The algorithm proceeds in two main steps:
+
+1.  **Build a Trie:** We iterate through each number in the first array (`arr1`). For each number, we convert it to a string and insert it into a Trie, digit by digit. Each path from the root of the Trie to a node represents a unique prefix of at least one number in `arr1`.
+
+2.  **Search the Trie:** We then iterate through each number in the second array (`arr2`). For each number, we traverse the Trie from the root, following the path defined by its digits. The length of the path we can successfully traverse corresponds to the length of the longest common prefix between this number and some number from `arr1`. We keep track of the maximum length found across all numbers in `arr2`.
+
+This approach avoids redundant comparisons by consolidating all prefixes from `arr1` into a single structure.
+
+As a minor optimization, we can build the Trie from the smaller of the two arrays to potentially reduce the space required for the Trie.
+
+### Complexity Analysis
+
+-   **Time Complexity:** `O((N + M) * K)`
+    -   `N` is the length of `arr1`, `M` is the length of `arr2`.
+    -   `K` is the maximum number of digits in any number (in this problem, `K <= 9` since numbers are up to `10^8`).
+    -   Building the Trie takes `O(N * K)` time, as we process `N` numbers, each with up to `K` digits.
+    -   Searching the Trie for all numbers in `arr2` takes `O(M * K)` time.
+
+-   **Space Complexity:** `O(min(N, M) * K)`
+    -   The space is dominated by the Trie. In the worst case, every prefix of every number in the smaller array is unique, creating a new path in the Trie.
+
+An alternative solution using a Hash Set to store prefixes has a similar time and space complexity and is also a valid approach.
+
+LLM Testcase Validation:
+```
+[1,10,100]
+[1000]
+[1,2,3]
+[4,4,4]
+```
