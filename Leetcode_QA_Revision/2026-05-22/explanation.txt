@@ -1,0 +1,60 @@
+Date: 2026-05-22
+Title: Search in Rotated Sorted Array
+URL: https://leetcode.com/problems/search-in-rotated-sorted-array/
+
+LLM Explanation:
+The problem requires finding a target in a rotated sorted array in O(log n) time. This complexity points towards a binary search algorithm. A standard binary search cannot be directly applied because the array is not fully sorted. However, the array's structure—being composed of two sorted subarrays—allows for a modified binary search.
+
+The core idea is to adapt the binary search to handle the rotation. In each step, we divide the current search space into two halves using a middle index `mid`. At least one of these halves must be sorted. We can identify the sorted half and then determine if the target lies within it.
+
+1.  **Identify the Sorted Half:** We compare the element at the `left` pointer with the element at the `mid` pointer.
+    *   If `nums[left] <= nums[mid]`, it implies that the subarray from `left` to `mid` is sorted in ascending order.
+    *   Otherwise (`nums[left] > nums[mid]`), the rotation point is in the left half, meaning the right half from `mid` to `right` must be sorted.
+
+2.  **Locate the Target:** After identifying the sorted half, we check if the `target` value falls within the range of this sorted subarray.
+    *   If the target is within the sorted half's range, we can discard the other half by adjusting the `left` or `right` pointer accordingly.
+    *   If the target is not in the sorted half's range, it must logically be in the other, unsorted half. We then proceed to search in that half.
+
+3.  **Repeat:** This process of identifying the sorted half and narrowing the search space is repeated until the target is found or the search space is exhausted (i.e., `left > right`).
+
+**Algorithm Steps:**
+1.  Initialize two pointers, `left = 0` and `right = len(nums) - 1`.
+2.  Loop as long as `left <= right`.
+3.  Calculate the middle index: `mid = left + (right - left) // 2`.
+4.  If `nums[mid]` is the target, return `mid`.
+5.  If the left half (`[left...mid]`) is sorted (`nums[left] <= nums[mid]`):
+    *   If `target` is in the range `[nums[left], nums[mid])`, search in the left half by setting `right = mid - 1`.
+    *   Otherwise, search in the right half by setting `left = mid + 1`.
+6.  If the right half (`[mid...right]`) is sorted:
+    *   If `target` is in the range `(nums[mid], nums[right]]`, search in the right half by setting `left = mid + 1`.
+    *   Otherwise, search in the left half by setting `right = mid - 1`.
+7.  If the loop finishes, the target is not in the array, so return -1.
+
+This approach guarantees a time complexity of O(log n) because it halves the search space in each iteration. The space complexity is O(1) as it only uses a constant amount of extra space for pointers.
+
+LLM Testcase Validation:
+Testcase 1: `nums = [4,5,6,7,0,1,2]`, `target = 0`
+- `left=0, right=6, mid=3, nums[mid]=7`. `nums[left] <= nums[mid]` (4 <= 7) is true. The left half `[4,5,6,7]` is sorted.
+- Is `target` (0) in the range `[4, 7)`? No. So, search in the right half. `left = mid + 1 = 4`.
+- `left=4, right=6, mid=5, nums[mid]=1`. `nums[left] <= nums[mid]` (0 <= 1) is true. The left half `[0,1]` is sorted.
+- Is `target` (0) in the range `[0, 1)`? Yes, `0 <= 0 < 1`. So, search in this left half. `right = mid - 1 = 4`.
+- `left=4, right=4, mid=4, nums[mid]=0`. `nums[mid] == target`. Return `mid`, which is 4.
+- Output: 4. Correct.
+
+Testcase 2: `nums = [4,5,6,7,0,1,2]`, `target = 3`
+- `left=0, right=6, mid=3, nums[mid]=7`. `nums[left] <= nums[mid]` (4 <= 7) is true. Left half `[4,5,6,7]` is sorted.
+- Is `target` (3) in `[4, 7)`? No. Search right. `left = mid + 1 = 4`.
+- `left=4, right=6, mid=5, nums[mid]=1`. `nums[left] <= nums[mid]` (0 <= 1) is true. Left half `[0,1]` is sorted.
+- Is `target` (3) in `[0, 1)`? No. Search right. `left = mid + 1 = 6`.
+- `left=6, right=6, mid=6, nums[mid]=2`. `nums[left] <= nums[mid]` (2 <= 2) is true. Left half `[2]` is sorted.
+- Is `target` (3) in `[2, 2)`? No. Search right. `left = mid + 1 = 7`.
+- `left=7, right=6`. The loop condition `left <= right` is false. Loop terminates.
+- Return -1.
+- Output: -1. Correct.
+
+Testcase 3: `nums = [1]`, `target = 0`
+- `left=0, right=0, mid=0, nums[mid]=1`. `nums[left] <= nums[mid]` (1 <= 1) is true. Left half `[1]` is sorted.
+- Is `target` (0) in `[1, 1)`? No. Search right. `left = mid + 1 = 1`.
+- `left=1, right=0`. The loop condition `left <= right` is false. Loop terminates.
+- Return -1.
+- Output: -1. Correct.
