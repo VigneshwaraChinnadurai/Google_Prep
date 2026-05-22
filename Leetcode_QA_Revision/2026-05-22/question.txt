@@ -1,0 +1,49 @@
+Date: 2026-05-22
+Question ID: 33
+Title: Search in Rotated Sorted Array
+Difficulty: Medium
+Tags: Array, Binary Search
+URL: https://leetcode.com/problems/search-in-rotated-sorted-array/
+
+Question:
+There is an integer array nums sorted in ascending order (with distinct values). Prior to being passed to your function, nums is possibly left rotated at an unknown index k ( 1 &lt;= k &lt; nums.length ) such that the resulting array is [nums[k], nums[k+1], ..., nums[n-1], nums[0], nums[1], ..., nums[k-1]] ( 0-indexed ). For example, [0,1,2,4,5,6,7] might be left rotated by 3 indices and become [4,5,6,7,0,1,2] . Given the array nums after the possible rotation and an integer target , return the index of target if it is in nums , or -1 if it is not in nums . You must write an algorithm with O(log n) runtime complexity. Example 1: Input: nums = [4,5,6,7,0,1,2], target = 0 Output: 4 Example 2: Input: nums = [4,5,6,7,0,1,2], target = 3 Output: -1 Example 3: Input: nums = [1], target = 0 Output: -1 Constraints: 1 &lt;= nums.length &lt;= 5000 -10 4 &lt;= nums[i] &lt;= 10 4 All values of nums are unique . nums is an ascending array that is possibly rotated. -10 4 &lt;= target &lt;= 10 4
+
+Starter Code (Python3):
+class Solution:
+    def search(self, nums: List[int], target: int) -> int:
+        
+
+Testcases:
+[4,5,6,7,0,1,2]
+0
+[4,5,6,7,0,1,2]
+3
+[1]
+0
+
+Expected Output / Validation:
+Testcase 1: `nums = [4,5,6,7,0,1,2]`, `target = 0`
+- `left=0, right=6, mid=3, nums[mid]=7`. `nums[left] <= nums[mid]` (4 <= 7) is true. The left half `[4,5,6,7]` is sorted.
+- Is `target` (0) in the range `[4, 7)`? No. So, search in the right half. `left = mid + 1 = 4`.
+- `left=4, right=6, mid=5, nums[mid]=1`. `nums[left] <= nums[mid]` (0 <= 1) is true. The left half `[0,1]` is sorted.
+- Is `target` (0) in the range `[0, 1)`? Yes, `0 <= 0 < 1`. So, search in this left half. `right = mid - 1 = 4`.
+- `left=4, right=4, mid=4, nums[mid]=0`. `nums[mid] == target`. Return `mid`, which is 4.
+- Output: 4. Correct.
+
+Testcase 2: `nums = [4,5,6,7,0,1,2]`, `target = 3`
+- `left=0, right=6, mid=3, nums[mid]=7`. `nums[left] <= nums[mid]` (4 <= 7) is true. Left half `[4,5,6,7]` is sorted.
+- Is `target` (3) in `[4, 7)`? No. Search right. `left = mid + 1 = 4`.
+- `left=4, right=6, mid=5, nums[mid]=1`. `nums[left] <= nums[mid]` (0 <= 1) is true. Left half `[0,1]` is sorted.
+- Is `target` (3) in `[0, 1)`? No. Search right. `left = mid + 1 = 6`.
+- `left=6, right=6, mid=6, nums[mid]=2`. `nums[left] <= nums[mid]` (2 <= 2) is true. Left half `[2]` is sorted.
+- Is `target` (3) in `[2, 2)`? No. Search right. `left = mid + 1 = 7`.
+- `left=7, right=6`. The loop condition `left <= right` is false. Loop terminates.
+- Return -1.
+- Output: -1. Correct.
+
+Testcase 3: `nums = [1]`, `target = 0`
+- `left=0, right=0, mid=0, nums[mid]=1`. `nums[left] <= nums[mid]` (1 <= 1) is true. Left half `[1]` is sorted.
+- Is `target` (0) in `[1, 1)`? No. Search right. `left = mid + 1 = 1`.
+- `left=1, right=0`. The loop condition `left <= right` is false. Loop terminates.
+- Return -1.
+- Output: -1. Correct.
