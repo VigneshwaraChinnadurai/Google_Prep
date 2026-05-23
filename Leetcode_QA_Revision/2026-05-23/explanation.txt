@@ -1,0 +1,56 @@
+Date: 2026-05-23
+Title: Check if Array Is Sorted and Rotated
+URL: https://leetcode.com/problems/check-if-array-is-sorted-and-rotated/
+
+LLM Explanation:
+The problem asks us to determine if an array `nums` could have been formed by rotating a non-decreasingly sorted array.
+
+The core insight is to analyze the properties of such an array. If we have a sorted array (e.g., `[1, 2, 3, 4, 5]`) and rotate it, the non-decreasing order is mostly preserved. A "break" or "descent" in this order, where an element is greater than the one following it, can occur at most once when the array is viewed cyclically.
+
+- **Case 0 breaks:** If there are no such descents, it means `nums[0] <= nums[1] <= ... <= nums[n-1] <= nums[0]`. This chain of inequalities implies that all elements must be equal (e.g., `[3, 3, 3]`). An array with all equal elements is sorted, so this is a valid case.
+
+- **Case 1 break:** This is the typical scenario.
+    - For a sorted array like `[1, 2, 5]`, the break occurs at the wrap-around point (`5 > 1`).
+    - For a rotated array like `[3, 4, 5, 1, 2]`, the break occurs where the larger end of the original array meets the smaller start (`5 > 1`).
+    In both sub-cases, there's exactly one point of descent when viewed cyclically.
+
+- **Case >1 breaks:** If there are two or more such descents (e.g., `[2, 1, 3, 4]`, which has descents at `2 > 1` and `4 > 2`), the array cannot be formed by rotating a single sorted sequence.
+
+**Algorithm:**
+1. Initialize a counter, `break_count`, to zero.
+2. Iterate through the array from `i = 0` to `n-1`, where `n` is the length of the array.
+3. In each iteration, compare the current element `nums[i]` with the next element `nums[(i + 1) % n]`. The modulo operator `% n` elegantly handles the wrap-around from the last element to the first.
+4. If `nums[i] > nums[(i + 1) % n]`, it signifies a break in the non-decreasing order, so we increment `break_count`.
+5. After the loop finishes, if `break_count` is less than or equal to 1, it means the array fits the criteria. We return `True`. Otherwise, we return `False`.
+
+**Complexity:**
+- **Time Complexity:** O(n), as we iterate through the array once. This is optimal as we must inspect every element.
+- **Space Complexity:** O(1), as we only use a constant amount of extra space for the counter and loop variable.
+
+LLM Testcase Validation:
+Testcase 1: nums = [3,4,5,1,2]
+- n = 5
+- i = 0: nums[0] (3) <= nums[1] (4). No break.
+- i = 1: nums[1] (4) <= nums[2] (5). No break.
+- i = 2: nums[2] (5) > nums[3] (1). break_count becomes 1.
+- i = 3: nums[3] (1) <= nums[4] (2). No break.
+- i = 4: nums[4] (2) <= nums[0] (3) (wrap-around). No break.
+- Final break_count = 1. `1 <= 1` is true.
+- Expected output: true. My code output: true. Correct.
+
+Testcase 2: nums = [2,1,3,4]
+- n = 4
+- i = 0: nums[0] (2) > nums[1] (1). break_count becomes 1.
+- i = 1: nums[1] (1) <= nums[2] (3). No break.
+- i = 2: nums[2] (3) <= nums[3] (4). No break.
+- i = 3: nums[3] (4) > nums[0] (2) (wrap-around). break_count becomes 2.
+- Final break_count = 2. `2 <= 1` is false.
+- Expected output: false. My code output: false. Correct.
+
+Testcase 3: nums = [1,2,3]
+- n = 3
+- i = 0: nums[0] (1) <= nums[1] (2). No break.
+- i = 1: nums[1] (2) <= nums[2] (3). No break.
+- i = 2: nums[2] (3) > nums[0] (1) (wrap-around). break_count becomes 1.
+- Final break_count = 1. `1 <= 1` is true.
+- Expected output: true. My code output: true. Correct.
