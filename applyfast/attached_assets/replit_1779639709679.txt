@@ -1,0 +1,51 @@
+Build a web app called "ApplyFast" — a job application assistant that helps a single 
+user submit 50+ tailored applications per day.
+
+TECH STACK
+- Frontend: React + Vite + Tailwind CSS
+- Backend: Node.js + Express
+- Database: Replit DB (or SQLite for local dev)
+- AI: Anthropic Claude API (model: claude-sonnet-4-6), key from env var ANTHROPIC_API_KEY
+- Auth: simple single-user password login (no multi-tenant)
+
+FEATURES (build in this order)
+
+1. PROFILE & RESUME
+   - Upload master resume (PDF or DOCX); parse text with pdf-parse or mammoth
+   - Profile form: name, email, phone, location, work auth, links, skills, work history
+   - Store everything in DB
+
+2. JOB AGGREGATION (use only ToS-compliant sources)
+   - Adzuna API, Jobicy API, RemoteOK API, USAJobs API, The Muse API
+   - Greenhouse and Lever public job boards (their JSON endpoints are public)
+   - User sets filters: keywords, location, remote-only, min salary, seniority
+   - Cron job pulls fresh listings every 6 hours, dedupes by URL
+
+3. AI TAILORING (per job)
+   - For each job in the queue, call Claude with the resume + job description
+   - Generate: (a) 3 tailored resume bullets, (b) a 150-word cover letter, 
+     (c) a match score 0-100 with reasoning
+   - Cache results in DB so we don't re-bill for the same job
+
+4. REVIEW & APPLY UI
+   - Swipe/card interface showing: job title, company, match score, tailored bullets, 
+     cover letter, "Apply" / "Skip" / "Edit" buttons
+   - On "Apply":
+     - If Greenhouse/Lever job board: open prefilled application in new tab
+     - If email-based posting: open mailto: with cover letter prefilled
+     - Otherwise: copy cover letter to clipboard + open posting URL
+   - Mark as "applied" with timestamp
+
+5. DASHBOARD
+   - Daily counter with 50-app goal and progress bar
+   - Pipeline view: Queued / Applied / Response / Interview / Offer / Rejected
+   - Weekly stats: apps sent, response rate, avg match score
+   - Status updates via manual button or by forwarding emails to a parser endpoint
+
+DO NOT BUILD
+- LinkedIn or Indeed scrapers (ToS violation)
+- Captcha solvers or anti-bot evasion
+- Fully headless auto-submission to sites that require human verification
+
+START WITH a working skeleton I can run: auth + profile + resume upload + one job 
+source (RemoteOK) + Claude tailoring for one job. Then I'll iterate.
