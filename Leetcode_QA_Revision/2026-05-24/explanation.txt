@@ -1,0 +1,46 @@
+Date: 2026-05-24
+Title: Jump Game V
+URL: https://leetcode.com/problems/jump-game-v/
+
+LLM Explanation:
+The problem asks for the maximum number of indices we can visit by following a set of specific jump rules, starting from any index. This can be modeled as finding the longest path in a Directed Acyclic Graph (DAG).
+
+### Graph Representation
+- **Nodes**: Each index `i` of the array `arr` is a node in the graph.
+- **Edges**: A directed edge exists from index `i` to `j` if a valid jump is possible.
+- **Acyclicity**: The jump condition `arr[i] > arr[j]` ensures that we always move from a higher value to a lower one. This guarantees that there are no cycles in the graph.
+
+### Dynamic Programming with Memoization (Top-Down)
+We can solve the "longest path in a DAG" problem using dynamic programming. Let `dp[i]` be the maximum number of indices we can visit starting from index `i`. Our goal is to find the maximum value of `dp[i]` over all possible starting indices `i`.
+
+The recurrence relation for `dp[i]` is:
+`dp[i] = 1 + max({0} U {dp[j] | there is a valid jump from i to j})`
+
+The `1` accounts for visiting the starting index `i` itself. If no valid jumps are possible from `i`, `dp[i]` is simply `1`.
+
+We can implement this using a recursive function `solve(i)` that computes `dp[i]`. To avoid recomputing the same subproblems, we use memoization (caching the results in a `dp` array).
+
+### Algorithm
+1.  Initialize a `dp` array of size `n` with zeros, where `dp[i]` will store the result for starting at index `i`. A zero indicates the value has not been computed.
+2.  Define a recursive helper function `solve(i)`:
+    a. If `dp[i]` is not zero, return the cached value.
+    b. Initialize a variable `res = 1` for the current path length (for visiting index `i`).
+    c. **Explore rightward jumps**: Iterate from `j = i + 1` to `i + d`. For a jump from `i` to `j` to be valid, all intermediate indices `k` must have `arr[k] < arr[i]`. This is efficiently checked by breaking the loop as soon as we encounter an index `j` where `arr[j] >= arr[i]`, as this `j` would block all subsequent jumps in that direction. If a jump to `j` is valid (`arr[j] < arr[i]`), we update `res = max(res, 1 + solve(j))`.
+    d. **Explore leftward jumps**: Perform a symmetric search for jumps to the left, from `j = i - 1` down to `i - d`.
+    e. Cache the final result `res` in `dp[i]` and return it.
+3.  Since we can start from any index, iterate from `i = 0` to `n-1`, calling `solve(i)` for each index to populate the `dp` table.
+4.  The final answer is the maximum value found across all `solve(i)` calls.
+
+### Complexity Analysis
+-   **Time Complexity**: `O(n * d)`. The `solve` function is called for each index `i` at most once due to memoization. Inside `solve(i)`, we have two loops that each run at most `d` times.
+-   **Space Complexity**: `O(n)`. This is for the `dp` array and the recursion stack depth, which in the worst case can be `n`.
+
+LLM Testcase Validation:
+```
+[6,4,14,6,8,13,9,7,10,6,12]
+2
+[3,3,3,3,3]
+3
+[7,6,5,4,3,2,1]
+1
+```
