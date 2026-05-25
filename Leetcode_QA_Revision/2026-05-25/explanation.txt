@@ -1,0 +1,36 @@
+Date: 2026-05-25
+Title: Jump Game VII
+URL: https://leetcode.com/problems/jump-game-vii/
+
+LLM Explanation:
+The problem asks if we can reach the last index of a binary string `s` starting from index 0, following specific jump rules. This can be modeled as a reachability problem on a graph where the indices are nodes.
+
+A naive Breadth-First Search (BFS) or Dynamic Programming (DP) approach would check all possible jumps from each reachable index, leading to an `O(n * (maxJump - minJump))` complexity, which can be up to `O(n^2)` and is too slow given the constraints.
+
+An optimal `O(n)` solution can be achieved using Dynamic Programming with a sliding window optimization. Let `dp[i]` be a boolean indicating whether index `i` is reachable.
+
+1.  **State Definition**: `dp[i]` is `True` if index `i` is reachable, `False` otherwise.
+2.  **Base Case**: We start at index 0, so `dp[0] = True`.
+3.  **Recurrence Relation**: An index `i` is reachable if `s[i] == '0'` and there exists a previously reached index `j` from which we can jump to `i`. The jump condition from `j` to `i` is `j + minJump <= i <= j + maxJump`, which can be rearranged to `i - maxJump <= j <= i - minJump`. Therefore, `dp[i]` is `True` if `s[i] == '0'` and there is at least one `j` in the window `[i - maxJump, i - minJump]` for which `dp[j]` is `True`.
+
+To efficiently check this condition for each `i` from 1 to `n-1`, we can avoid re-scanning the window every time. As `i` increments, the window `[i - maxJump, i - minJump]` slides one position to the right. We can maintain a `count` of how many reachable positions (where `dp` is `True`) are inside the current window.
+
+The algorithm proceeds as follows:
+- Initialize a `dp` array of size `n` to `False`, with `dp[0] = True`.
+- Initialize a `count` of reachable positions in the window to 0.
+- Iterate `i` from 1 to `n-1`:
+    - Update `count` for the new window position:
+        - If `i >= minJump`, the index `i - minJump` enters the window. We add `dp[i - minJump]` to `count`. (In Python, `True` is 1 and `False` is 0 in arithmetic).
+        - If `i > maxJump`, the index `i - maxJump - 1` leaves the window. We subtract `dp[i - maxJump - 1]` from `count`.
+    - After updating `count`, if `s[i] == '0'` and `count > 0`, it means `i` is reachable, so we set `dp[i] = True`.
+- The final answer is the value of `dp[n-1]`.
+
+This approach has a time complexity of `O(n)` because we iterate through the string once with constant time operations inside the loop. The space complexity is `O(n)` for the `dp` array.
+
+LLM Testcase Validation:
+"011010"
+2
+3
+"01101110"
+2
+3
