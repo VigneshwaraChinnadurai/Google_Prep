@@ -1,0 +1,29 @@
+Date: 2026-05-26
+Title: Count the Number of Special Characters I
+URL: https://leetcode.com/problems/count-the-number-of-special-characters-i/
+
+LLM Explanation:
+The problem asks us to count the number of "special" letters, which are letters that appear in the input string `word` in both lowercase and uppercase forms.
+
+A highly efficient method for this problem is to use bitmasks. Since the English alphabet is a small, fixed set of 26 letters, we can use two integers as bitmasks to track the presence of each letter: one for lowercase and one for uppercase. Each of the first 26 bits in an integer can represent a letter from 'a' to 'z'.
+
+The algorithm is as follows:
+1.  Initialize two integer variables, `lower_present` and `upper_present`, to 0. These will serve as our bitmasks.
+2.  Iterate through each character in the input `word`.
+3.  For each character:
+    *   If it's a lowercase letter (e.g., 'c'), we calculate its corresponding bit position (0 for 'a', 1 for 'b', 2 for 'c', etc.) using `ord(char) - ord('a')`. We then set this bit in the `lower_present` mask using the bitwise OR operation: `lower_present |= 1 << position`.
+    *   If it's an uppercase letter, we do the same for the `upper_present` mask.
+4.  After iterating through the entire string, `lower_present` will have a bit set for each lowercase letter found, and `upper_present` will have a bit set for each uppercase letter found.
+5.  A letter is special if it appeared in both cases, meaning its corresponding bit is set in *both* masks. We can find all such letters simultaneously by performing a bitwise AND (`&`) operation on the two masks: `special_chars_mask = lower_present & upper_present`.
+6.  The resulting `special_chars_mask` has bits set only for the special letters. The final answer is the number of set bits in this mask, which can be easily calculated in Python using `bin(special_chars_mask).count('1')`.
+
+This approach is optimal as it processes the string in a single pass and uses a constant amount of extra space.
+
+**Complexity Analysis:**
+*   **Time Complexity:** O(N), where N is the length of `word`. We iterate through the string once to build the masks. The final bitwise operations and bit counting take constant time.
+*   **Space Complexity:** O(1), as we only use a few integer variables for the masks, regardless of the input string's size.
+
+LLM Testcase Validation:
+"aaAbcBC"
+"abc"
+"abBCab"
