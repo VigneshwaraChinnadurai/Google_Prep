@@ -1,0 +1,38 @@
+Date: 2026-05-27
+Title: Count the Number of Special Characters II
+URL: https://leetcode.com/problems/count-the-number-of-special-characters-ii/
+
+LLM Explanation:
+### Method Explanation
+
+The problem asks us to count "special" characters. A character `c` is special if it appears in both lowercase and uppercase forms, and every occurrence of the lowercase `c` appears before the first occurrence of the uppercase `C`.
+
+A key insight is that the condition "every lowercase occurrence of `c` appears before the first uppercase occurrence of `C`" can be simplified. We only need to check if the **last** occurrence of the lowercase `c` appears before the **first** occurrence of the uppercase `C`. If the last lowercase `c` comes before the first uppercase `C`, then all other lowercase `c`s (which appear at earlier or same indices) must also come before it.
+
+This simplifies the problem to finding two specific indices for each of the 26 letters of the alphabet:
+1. The index of the last occurrence of the lowercase letter.
+2. The index of the first occurrence of the uppercase letter.
+
+We can find these indices efficiently in a single pass through the input string `word`.
+
+**Algorithm:**
+1.  Initialize two dictionaries: `last_lower_idx` to store the last seen index of each lowercase character, and `first_upper_idx` to store the first seen index of each uppercase character.
+2.  Iterate through the `word` with both index `i` and character `char`.
+    *   If `char` is lowercase, we update `last_lower_idx[char] = i`. By always updating, this dictionary will hold the index of the last occurrence of each lowercase character at the end of the loop.
+    *   If `char` is uppercase, we check if it's already in `first_upper_idx`. If not, we set `first_upper_idx[char] = i`. This ensures we only record the index of its first appearance.
+3.  After the pass is complete, we have all the necessary index information.
+4.  Initialize a `special_count` to 0.
+5.  Iterate through the 26 letters of the alphabet (from 'a' to 'z'). For each letter:
+    *   Check if both its lowercase and uppercase versions exist as keys in our dictionaries.
+    *   If they do, compare their stored indices: `last_lower_idx[lowercase] < first_upper_idx[uppercase]`.
+    *   If this condition is true, the character is special, so we increment `special_count`.
+6.  Return the final `special_count`.
+
+**Complexity Analysis:**
+*   **Time Complexity:** O(N), where N is the length of `word`. The initial pass through the string takes O(N) time. The final loop iterates 26 times, which is a constant O(1). Thus, the total time complexity is dominated by the single pass, making it O(N).
+*   **Space Complexity:** O(1). The dictionaries will store at most 26 entries for lowercase characters and 26 for uppercase characters. The space required is constant and does not depend on the length of the input string.
+
+LLM Testcase Validation:
+"aaAbcBC"
+"abc"
+"AbBCab"
