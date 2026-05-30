@@ -1,0 +1,44 @@
+Date: 2026-05-30
+Title: Block Placement Queries
+URL: https://leetcode.com/problems/block-placement-queries/
+
+LLM Explanation:
+The user wants me to solve the LeetCode problem "Block Placement Queries".
+
+### Method Explanation
+
+The problem requires us to dynamically add obstacles to a number line and, for given queries, check if a block of a certain size can be placed within a specified range `[0, x]`.
+
+A block of size `sz` can be placed in `[0, x]` if there's an empty continuous interval of length at least `sz` within `[0, x]`. Such an empty interval is defined by the space between two consecutive obstacles, the space from the origin `0` to the first obstacle, or the space from the last obstacle before `x` to `x` itself.
+
+Let the sorted obstacle positions be `p_1, p_2, ...`. The empty intervals (gaps) are of lengths `p_1 - 0`, `p_2 - p_1`, and so on. For a query `[2, x, sz]`, we need to find the maximum available gap within `[0, x]`. This is the maximum of:
+1. The largest gap between any two consecutive obstacles `p_i, p_{i+1}` where `p_{i+1} <= x`.
+2. The gap from the last obstacle `p_m <= x` to `x`, which is `x - p_m`.
+
+This problem involves dynamic updates (adding obstacles) and range queries (finding the max gap in a prefix of the number line). This structure suggests using a segment tree. Since we need to handle two different types of information (obstacle locations and gap sizes), we use two segment trees over the coordinate space:
+
+1.  **`obs_tree`**: This segment tree keeps track of the locations of obstacles. A value of `1` at a leaf `i` indicates an obstacle at position `i`. This tree is augmented with custom `find_prev(pos)` and `find_next(pos)` methods, which efficiently find the nearest obstacle to the left or right of a given position in `O(log M)` time, where `M` is the maximum possible coordinate.
+
+2.  **`gap_tree`**: This segment tree stores the lengths of the gaps. For a gap between obstacles at `p_prev` and `p_curr`, its length `p_curr - p_prev` is stored at index `p_curr` in the tree. This tree supports standard range maximum queries, allowing us to find the largest gap ending at or before a certain position `x` in `O(log M)` time.
+
+The overall algorithm is as follows:
+- We initialize by placing a conceptual obstacle at position `0`.
+- **For a type 1 query `[1, x_new]` (add obstacle):**
+    1.  Use `obs_tree.find_prev(x_new - 1)` and `obs_tree.find_next(x_new + 1)` to find the obstacles `p_prev` and `p_next` surrounding the new obstacle.
+    2.  The new obstacle at `x_new` splits the gap `(p_prev, p_next)` into two smaller gaps: `(p_prev, x_new)` and `(x_new, p_next)`.
+    3.  Update `gap_tree`: the gap of length `x_new - p_prev` is now associated with position `x_new`, and the gap of length `p_next - x_new` is associated with `p_next`.
+    4.  Update `obs_tree` to mark an obstacle at `x_new`.
+
+- **For a type 2 query `[2, x, sz]` (check placement):**
+    1.  Use `obs_tree.find_prev(x)` to find the last obstacle `p_m` at or before `x`.
+    2.  Calculate the gap at the end: `gap_at_end = x - p_m`.
+    3.  Use `gap_tree.query(1, x)` to find the maximum gap between any two consecutive obstacles within `[0, x]`.
+    4.  The block can be placed if `max(gap_at_end, max_internal_gap) >= sz`.
+
+Each query is processed in `O(log M)` time, leading to a total time complexity of `O(Q * log M)`, where `Q` is the number of queries. The space complexity is `O(M)` for the segment trees.
+
+LLM Testcase Validation:
+```
+[[1,2],[2,3,3],[2,3,1],[2,2,2]]
+[[1,7],[2,7,6],[1,2],[2,7,5],[2,7,6]]
+```
