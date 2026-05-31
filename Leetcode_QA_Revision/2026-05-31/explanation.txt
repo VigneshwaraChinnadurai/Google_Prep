@@ -1,0 +1,44 @@
+Date: 2026-05-31
+Title: Destroying Asteroids
+URL: https://leetcode.com/problems/destroying-asteroids/
+
+LLM Explanation:
+The problem asks if there exists *any* order of collisions that allows the planet to destroy all asteroids. This suggests finding an optimal strategy.
+
+The core of the problem lies in the collision condition: `planet_mass >= asteroid_mass`. A successful collision increases the planet's mass, making subsequent collisions easier. To maximize our chances of success at every step, it's best to face the easiest possible challenge. The easiest challenge is the asteroid with the smallest mass.
+
+This leads to a greedy strategy: always collide with the smallest available asteroid. By sorting the asteroids by mass, we can simulate this optimal process.
+
+The algorithm is as follows:
+1.  **Sort**: Sort the `asteroids` array in non-decreasing order. This ensures we always consider the smallest remaining asteroid.
+2.  **Iterate and Simulate**: Initialize a variable `current_mass` with the planet's initial `mass`. Iterate through the sorted `asteroids`.
+3.  **Check Condition**: For each `asteroid_mass`, check if `current_mass >= asteroid_mass`.
+    *   If the condition is true, the asteroid is destroyed. Update the planet's mass by adding the asteroid's mass: `current_mass += asteroid_mass`.
+    *   If the condition is false, the planet cannot destroy this asteroid. Since the asteroids are sorted, it also cannot destroy any subsequent, larger asteroids. Thus, it's impossible to destroy them all. We can immediately return `False`.
+4.  **Conclusion**: If the loop finishes without returning `False`, it means every asteroid was successfully destroyed in order. We return `True`.
+
+This greedy strategy is optimal. An exchange argument can prove that if any successful collision sequence exists, the sequence where asteroids are taken in increasing order of mass must also be successful. Therefore, we only need to check this one specific order.
+
+**Complexity Analysis:**
+*   **Time Complexity**: `O(N log N)`, dominated by the sorting step, where `N` is the number of asteroids. The subsequent iteration is `O(N)`.
+*   **Space Complexity**: `O(1)` if the sorting is done in-place (like Python's `list.sort()`).
+
+LLM Testcase Validation:
+`mass = 10, asteroids = [3,9,19,5,21]`
+- Sorted asteroids: `[3, 5, 9, 19, 21]`
+- `mass` starts at 10.
+- `10 >= 3` -> `mass` becomes 13.
+- `13 >= 5` -> `mass` becomes 18.
+- `18 >= 9` -> `mass` becomes 27.
+- `27 >= 19` -> `mass` becomes 46.
+- `46 >= 21` -> `mass` becomes 67.
+- All asteroids destroyed. Output: `True`. Correct.
+
+`mass = 5, asteroids = [4,9,23,4]`
+- Sorted asteroids: `[4, 4, 9, 23]`
+- `mass` starts at 5.
+- `5 >= 4` -> `mass` becomes 9.
+- `9 >= 4` -> `mass` becomes 13.
+- `13 >= 9` -> `mass` becomes 22.
+- `22 < 23` -> Planet is destroyed.
+- Output: `False`. Correct.
