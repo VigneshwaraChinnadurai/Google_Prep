@@ -1,0 +1,69 @@
+Date: 2026-06-01
+Title: Minimum Cost of Buying Candies With Discount
+URL: https://leetcode.com/problems/minimum-cost-of-buying-candies-with-discount/
+
+LLM Explanation:
+The problem asks for the minimum cost to acquire all candies, given a special discount: for every two candies you buy, you can get a third one for free. The only condition is that the cost of the free candy must be less than or equal to the minimum cost of the two candies you purchased.
+
+A greedy approach is the most suitable for this problem. To minimize the total cost, our goal should be to maximize the value of the candies we get for free. This intuitively means we should try to make the most expensive candies free.
+
+The strategy is as follows:
+1.  **Sort:** First, sort the `cost` array in descending order. This arranges the candies from most expensive to least expensive.
+2.  **Group and Discount:** We can now process the candies in groups of three. Consider the first three candies from the sorted list, with costs `c1, c2, c3`, where `c1 >= c2 >= c3`.
+3.  **Apply Freebie:** If we buy the two most expensive candies in this group (`c1` and `c2`), the minimum cost of our purchase is `c2`. According to the rule, we can get any candy with a cost up to `c2` for free. Since `c3 <= c2`, we are eligible to take the candy with cost `c3` for free. This is the best possible discount we can get for this group, as `c3` is the most expensive candy we can get for free with this specific purchase.
+
+This greedy strategy is optimal. By always pairing the two most expensive available candies, we enable ourselves to get the next most expensive candy for free, thus maximizing our savings at every step.
+
+The implementation reflects this logic:
+1.  The `cost` array is sorted in reverse.
+2.  We iterate through the sorted array. For every group of three candies, we add the costs of the first two to our `total_cost` and skip the third one.
+3.  In a 0-indexed array, the candies we get for free are at indices 2, 5, 8, and so on. We can identify these by checking if `(i + 1)` is a multiple of 3. If it's not, we add the candy's cost to our total.
+
+The time complexity of this solution is O(N log N), dominated by the sorting step, where N is the number of candies. The space complexity is O(log N) or O(N), depending on the space used by the sorting algorithm (often considered O(1) auxiliary space for in-place sorts).
+
+LLM Testcase Validation:
+```python
+# Testcase 1
+cost1 = [1, 2, 3]
+# Expected output: 5
+# Sorted: [3, 2, 1]. Buy 3, 2. Get 1 free. Cost = 3 + 2 = 5.
+sol = Solution()
+print(f"Testcase 1: cost = {cost1}, Output: {sol.minimumCost(cost1)}")
+
+# Testcase 2
+cost2 = [6, 5, 7, 9, 2, 2]
+# Expected output: 23
+# Sorted: [9, 7, 6, 5, 2, 2].
+# Group 1: Buy 9, 7. Get 6 free.
+# Group 2: Buy 5, 2. Get 2 free.
+# Cost = 9 + 7 + 5 + 2 = 23.
+print(f"Testcase 2: cost = {cost2}, Output: {sol.minimumCost(cost2)}")
+
+# Testcase 3
+cost3 = [5, 5]
+# Expected output: 10
+# Sorted: [5, 5]. Buy both. No third candy to get for free. Cost = 5 + 5 = 10.
+print(f"Testcase 3: cost = {cost3}, Output: {sol.minimumCost(cost3)}")
+
+# Additional Testcase 4: Single candy
+cost4 = [10]
+# Expected output: 10
+print(f"Testcase 4: cost = {cost4}, Output: {sol.minimumCost(cost4)}")
+
+# Additional Testcase 5: Four candies
+cost5 = [10, 8, 8, 2]
+# Expected output: 26
+# Sorted: [10, 8, 8, 2]. Buy 10, 8. Get 8 free. Buy 2. Cost = 10 + 8 + 2 = 20.
+# My code logic: (0+1)%3!=0 -> add 10. (1+1)%3!=0 -> add 8. (2+1)%3==0 -> skip 8. (3+1)%3!=0 -> add 2. Total = 20.
+# Let's re-check the logic. Yes, cost = 10+8+2 = 20.
+# Wait, the example output is 23 for [6,5,7,9,2,2]. My calculation was 9+7+5+2=23.
+# Let's re-check my testcase 5. Sorted: [10, 8, 8, 2].
+# Buy 10, 8. Get 8 free. Remaining: [2]. Must buy 2. Total cost = 10 + 8 + 2 = 20.
+# The code gives 20. Let's trace it again.
+# i=0, cost=10, (0+1)%3!=0, total=10
+# i=1, cost=8, (1+1)%3!=0, total=18
+# i=2, cost=8, (2+1)%3==0, skip
+# i=3, cost=2, (3+1)%3!=0, total=20
+# The code is correct. My manual calculation was wrong.
+print(f"Testcase 5: cost = {cost5}, Output: {sol.minimumCost(cost5)}")
+```
