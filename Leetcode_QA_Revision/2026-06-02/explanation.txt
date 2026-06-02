@@ -1,0 +1,57 @@
+Date: 2026-06-02
+Title: Earliest Finish Time for Land and Water Rides I
+URL: https://leetcode.com/problems/earliest-finish-time-for-land-and-water-rides-i/
+
+LLM Explanation:
+The problem asks for the earliest time a tourist can finish exactly one land ride and one water ride. The rides can be done in any order.
+
+The core idea is to break the problem into two independent scenarios and find the best possible outcome for each:
+1.  The tourist does a land ride first, followed by a water ride.
+2.  The tourist does a water ride first, followed by a land ride.
+
+The final answer will be the minimum of the earliest finish times from these two scenarios.
+
+### Scenario 1: Land Ride &rarr; Water Ride
+
+To minimize the final finish time, the tourist should aim to finish the first ride (the land ride) as early as possible. This makes them available at the earliest possible time for the second ride (the water ride), which is always an optimal strategy.
+
+1.  **Find the best first ride:** We calculate the earliest possible finish time for any land ride. This is `min(landStartTime[i] + landDuration[i])` over all land rides `i`. Let's call this `min_land_finish`.
+
+2.  **Find the best second ride:** Now that the tourist is available at `min_land_finish`, we need to choose a water ride to minimize the final time. For each water ride `j`, the tourist can start it at `max(min_land_finish, waterStartTime[j])`. The total finish time for this sequence would be `max(min_land_finish, waterStartTime[j]) + waterDuration[j]`. We calculate this for every water ride and take the minimum to find the best finish time for this scenario.
+
+### Scenario 2: Water Ride &rarr; Land Ride
+
+The logic is perfectly symmetrical to the first scenario:
+
+1.  **Find the best first ride:** Calculate the earliest possible finish time for any water ride: `min_water_finish = min(waterStartTime[j] + waterDuration[j])`.
+
+2.  **Find the best second ride:** With the tourist available at `min_water_finish`, find the minimum total time by iterating through all land rides: `min(max(min_water_finish, landStartTime[i]) + landDuration[i])`.
+
+### Final Result
+
+The overall earliest finish time is the minimum of the results from Scenario 1 and Scenario 2. This greedy approach is optimal because the choice of the first ride only affects the availability time for the second ride, and making this time earlier can never lead to a worse outcome.
+
+### Complexity Analysis
+-   **Time Complexity:** O(N + M), where N is the number of land rides and M is the number of water rides. We iterate through each list a constant number of times to find minimums.
+-   **Space Complexity:** O(1), as we only use a few variables to store the minimum times.
+
+LLM Testcase Validation:
+```
+# Testcase 1
+landStartTime = [2,8]
+landDuration = [4,1]
+waterStartTime = [6]
+waterDuration = [3]
+# Expected: 9
+sol = Solution()
+print(sol.earliestFinishTime(landStartTime, landDuration, waterStartTime, waterDuration))
+
+# Testcase 2
+landStartTime = [5]
+landDuration = [3]
+waterStartTime = [1]
+waterDuration = [10]
+# Expected: 14
+sol = Solution()
+print(sol.earliestFinishTime(landStartTime, landDuration, waterStartTime, waterDuration))
+```
