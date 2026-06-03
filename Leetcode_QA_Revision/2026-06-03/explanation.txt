@@ -1,0 +1,50 @@
+Date: 2026-06-03
+Title: Earliest Finish Time for Land and Water Rides II
+URL: https://leetcode.com/problems/earliest-finish-time-for-land-and-water-rides-ii/
+
+LLM Explanation:
+The problem asks for the earliest possible time to finish one land ride and one water ride. A tourist can choose any land ride, any water ride, and do them in either order (Land -> Water or Water -> Land).
+
+A naive solution would be to check every possible pair of a land ride and a water ride, for both possible orderings. With `N` land rides and `M` water rides, this would be an O(N*M) approach, which is too slow given the constraints.
+
+A more optimal approach involves sorting and a two-pointer technique. We can solve the problem by finding the minimum finish time for each order separately and then taking the overall minimum.
+
+Let's analyze the `Land -> Water` case. The logic for `Water -> Land` is symmetrical.
+For a chosen land ride `i` and water ride `j`, the total finish time is `max(finish_time_land_i, start_time_water_j) + duration_water_j`.
+Let `F_i = landStartTime[i] + landDuration[i]` be the natural finish time of land ride `i`.
+Let `S_j` and `D_j` be the start time and duration of water ride `j`.
+The total time is `max(F_i, S_j) + D_j`.
+
+To find the minimum over all pairs `(i, j)`, we can iterate through each land ride `i` and efficiently find the best matching water ride `j`.
+For a fixed land ride `i` with finish time `F_i`, the best water ride `j` minimizes `max(F_i, S_j) + D_j`. We can split water rides into two groups:
+1.  Those starting at or before `F_i` (`S_j <= F_i`): The total time is `F_i + D_j`. We need to find the `j` in this group with the minimum duration `D_j`.
+2.  Those starting after `F_i` (`S_j > F_i`): The total time is `S_j + D_j`. We need to find the `j` in this group with the minimum `S_j + D_j`.
+
+To implement this efficiently for all land rides, we can:
+1.  Sort the land rides by their natural finish time `F_i`.
+2.  Sort the water rides by their start time `S_j`.
+3.  Precompute suffix minimums for the water rides, where `suffix_min[j]` stores the minimum `S_k + D_k` for all `k >= j`.
+4.  Use a two-pointer approach. Iterate through the sorted land rides with pointer `i`. Use another pointer `j` for the sorted water rides. As `i` advances, `F_i` increases. We advance `j` to maintain the partition between water rides starting before and after `F_i`.
+5.  While advancing `j`, we keep track of the minimum duration `D_j` seen so far (for group 1).
+6.  For each land ride `i`, we calculate the best possible total time using the minimum duration for group 1 and the precomputed suffix minimum for group 2.
+
+This algorithm runs in O(N log N + M log M) due to sorting. The two-pointer scan is O(N + M). We apply this logic for both `Land -> Water` and `Water -> Land` scenarios and return the minimum of the two results.
+
+LLM Testcase Validation:
+```
+[2,8]
+[4,1]
+[6]
+[3]
+```
+Expected: 9
+My output: 9
+
+```
+[5]
+[3]
+[1]
+[10]
+```
+Expected: 14
+My output: 14
