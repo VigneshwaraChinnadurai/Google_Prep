@@ -1,0 +1,58 @@
+Date: 2026-06-04
+Title: Total Waviness of Numbers in Range I
+URL: https://leetcode.com/problems/total-waviness-of-numbers-in-range-i/
+
+LLM Explanation:
+### Method Explanation
+
+The problem asks for the sum of "waviness" for all numbers in an inclusive range `[num1, num2]`. The waviness of a number is the count of its "peaks" and "valleys". A digit is a peak if it's strictly greater than its neighbors, and a valley if it's strictly less.
+
+#### Constraints Analysis
+The key observation is the constraint `num2 <= 10^5`. This upper bound is relatively small, suggesting that a direct, brute-force approach of iterating through each number and calculating its waviness will be efficient enough to pass within the time limit.
+
+#### Algorithm
+The solution follows a straightforward brute-force strategy:
+1.  Initialize a variable `total_waviness` to 0.
+2.  Iterate through each integer `i` from `num1` to `num2`, inclusive.
+3.  For each number `i`, calculate its individual waviness using a helper function, `get_waviness(i)`.
+4.  Add the result to `total_waviness`.
+5.  After the loop finishes, return `total_waviness`.
+
+#### `get_waviness` Helper Function
+This function calculates the waviness for a single number `n`:
+1.  Convert the number `n` into a list of its digits for easy indexed access.
+2.  Handle the base case: if the number has fewer than 3 digits, its waviness is 0, as peaks and valleys require two neighbors.
+3.  Iterate through the digits from the second to the second-to-last (i.e., from index 1 to `len(digits) - 2`). The first and last digits cannot be peaks or valleys.
+4.  For each digit `d_i`, compare it with its neighbors `d_{i-1}` and `d_{i+1}`.
+    - If `d_{i-1} < d_i > d_{i+1}`, it's a peak.
+    - If `d_{i-1} > d_i < d_{i+1}`, it's a valley.
+5.  Increment a local `waviness` counter for each peak or valley found.
+6.  Return the final count.
+
+This approach is simple to implement, easy to understand, and is the most practical solution given the problem's constraints. A more complex approach like Digit DP would be necessary for much larger ranges (e.g., up to 10^18), but is overkill here.
+
+#### Complexity Analysis
+- **Time Complexity:** `O((num2 - num1) * log10(num2))`. The loop runs `num2 - num1 + 1` times. Inside the loop, `get_waviness` takes time proportional to the number of digits in the number, which is `O(log10(num2))`. Given `num2 <= 10^5`, the number of digits is at most 6, making the operation very fast.
+- **Space Complexity:** `O(log10(num2))`. This is the space required to store the digits of a number. It's constant for practical purposes within the given constraints.
+
+LLM Testcase Validation:
+- **Testcase 1:** `num1 = 120, num2 = 130`
+  - `120`: waviness = 1 (peak at '2' because `1 < 2 > 0`)
+  - `121`: waviness = 1 (peak at '2' because `1 < 2 > 1`)
+  - `130`: waviness = 1 (peak at '3' because `1 < 3 > 0`)
+  - Other numbers in the range have waviness 0.
+  - Total = 1 + 1 + 1 = 3. **Correct.**
+
+- **Testcase 2:** `num1 = 198, num2 = 202`
+  - `198`: waviness = 1 (peak at '9' because `1 < 9 > 8`)
+  - `199`: waviness = 0
+  - `200`: waviness = 0
+  - `201`: waviness = 1 (valley at '0' because `2 > 0 < 1`)
+  - `202`: waviness = 1 (valley at '0' because `2 > 0 < 2`)
+  - Total = 1 + 1 + 1 = 3. **Correct.**
+
+- **Testcase 3:** `num1 = 4848, num2 = 4848`
+  - `4848`:
+    - Digit '8' at index 1: `4 < 8 > 4` -> peak.
+    - Digit '4' at index 2: `8 > 4 < 8` -> valley.
+  - Total waviness = 1 + 1 = 2. **Correct.**
