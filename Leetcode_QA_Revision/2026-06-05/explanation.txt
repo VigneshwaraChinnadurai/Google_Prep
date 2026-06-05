@@ -1,0 +1,61 @@
+Date: 2026-06-05
+Title: Total Waviness of Numbers in Range II
+URL: https://leetcode.com/problems/total-waviness-of-numbers-in-range-ii/
+
+LLM Explanation:
+The problem asks for the sum of "waviness" for all numbers in a given range `[num1, num2]`. This can be solved using the principle of inclusion-exclusion: `TotalWaviness(num1, num2) = TotalWaviness(1, num2) - TotalWaviness(1, num1 - 1)`. This transforms the problem into creating a function that calculates the total waviness for all numbers from 1 up to a given number `N`.
+
+This is a classic "Digit Dynamic Programming" problem. We can build numbers digit by digit from left to right and count the waviness as we go. The core idea is a recursive function, `dp`, which is memoized to avoid recomputing results for the same state.
+
+The state of our `dp` function needs to capture all information required to make decisions for the subsequent digits:
+1.  `index`: The current digit position we are filling (from left, 0-indexed).
+2.  `p1`, `p2`: The previous two digits. These are needed to check if the digit `p1` forms a peak (`p2 < p1 > current_digit`) or a valley (`p2 > p1 < current_digit`). We use a sentinel value (e.g., 10) to indicate that a previous digit does not exist.
+3.  `is_less`: A boolean flag that tells us if the number prefix we have constructed so far is already smaller than the prefix of `N`. If it is, we can place any digit (0-9) at the current position. Otherwise, we are restricted to digits from 0 up to `N`'s digit at the current `index`.
+4.  `is_leading_zero`: A boolean flag to handle numbers with fewer digits than `N`. While this flag is true, we can place leading zeros, which don't count as part of the number's digits until a non-zero digit is placed.
+
+The `dp` function returns a pair `(count, total_waviness)`:
+- `count`: The number of valid numbers that can be formed from the current state.
+- `total_waviness`: The sum of waviness of all those `count` numbers.
+
+The recurrence works as follows:
+- For each possible digit `d` at the current `index`, we make a recursive call to `dp` for the next state.
+- If the current state allows for checking a peak/valley (i.e., we have at least three digits: `p2`, `p1`, and `d`), we calculate the waviness contributed at this position (`waviness_here`, which is 1 or 0).
+- The total waviness is updated by adding the waviness from the recursive call (`sub_waviness`) and the waviness generated at the current step, which is `waviness_here * sub_count`. We multiply by `sub_count` because this peak/valley contributes to all numbers that can be formed from the subproblem.
+
+The base case for the recursion is when `index` reaches the length of the number `N`. At this point, we have successfully formed one valid number, so we return `(1, 0)`.
+
+By calling this `solve(N)` function for `num2` and `num1 - 1`, we can find the desired total waviness in the range.
+
+**Complexity:**
+- Time Complexity: O(L * 10 * 10 * 10), where L is the number of digits in `num2` (at most 16). The state space is `L * 11 * 11 * 2 * 2`, and each state computation involves a loop of up to 10. This is very efficient.
+- Space Complexity: O(L) for the memoization table, as the state space is proportional to the number of digits.
+
+LLM Testcase Validation:
+- **Testcase 1:** `num1 = 120, num2 = 130`
+  - `solve(130)` calculates total waviness for numbers in `[0, 130]`.
+    - Waviness for `101..109` is 9 (9 valleys).
+    - Waviness for `120, 121` is 2 (2 peaks).
+    - Waviness for `130` is 1 (1 peak).
+    - Total waviness up to 130 is `9 + 2 + 1 = 12`.
+  - `solve(119)` calculates total waviness for numbers in `[0, 119]`.
+    - Waviness for `101..109` is 9 (9 valleys).
+    - Total waviness up to 119 is `9`.
+  - Result: `12 - 9 = 3`. **Correct.**
+
+- **Testcase 2:** `num1 = 198, num2 = 202`
+  - `solve(202)` calculates total waviness for `[0, 202]`.
+    - Waviness for `100-199`: 53 (calculated in thought process).
+    - Waviness for `201`: 1.
+    - Waviness for `202`: 1.
+    - Total waviness up to 202 is `53 + 1 + 1 = 55`.
+  - `solve(197)` calculates total waviness for `[0, 197]`.
+    - Waviness for `100-197`: 52 (calculated in thought process).
+    - Total waviness up to 197 is `52`.
+  - Result: `55 - 52 = 3`. **Correct.**
+
+- **Testcase 3:** `num1 = 4848, num2 = 4848`
+  - `solve(4848) - solve(4847)`. This is equivalent to the waviness of the number 4848.
+  - Number `4848`:
+    - Digit `8` at index 1: `4 < 8 > 4` (peak).
+    - Digit `4` at index 2: `8 > 4 < 8` (valley).
+  - Total waviness is `1 + 1 = 2`. **Correct.**
