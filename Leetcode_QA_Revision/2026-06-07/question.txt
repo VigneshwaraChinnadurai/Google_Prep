@@ -1,0 +1,64 @@
+Date: 2026-06-07
+Question ID: 2196
+Title: Create Binary Tree From Descriptions
+Difficulty: Medium
+Tags: Array, Hash Table, Tree, Binary Tree
+URL: https://leetcode.com/problems/create-binary-tree-from-descriptions/
+
+Question:
+You are given a 2D integer array descriptions where descriptions[i] = [parent i , child i , isLeft i ] indicates that parent i is the parent of child i in a binary tree of unique values. Furthermore, If isLeft i == 1 , then child i is the left child of parent i . If isLeft i == 0 , then child i is the right child of parent i . Construct the binary tree described by descriptions and return its root . The test cases will be generated such that the binary tree is valid . Example 1: Input: descriptions = [[20,15,1],[20,17,0],[50,20,1],[50,80,0],[80,19,1]] Output: [50,20,80,15,17,19] Explanation: The root node is the node with value 50 since it has no parent. The resulting binary tree is shown in the diagram. Example 2: Input: descriptions = [[1,2,1],[2,3,0],[3,4,1]] Output: [1,2,null,null,3,4] Explanation: The root node is the node with value 1 since it has no parent. The resulting binary tree is shown in the diagram. Constraints: 1 &lt;= descriptions.length &lt;= 10 4 descriptions[i].length == 3 1 &lt;= parent i , child i &lt;= 10 5 0 &lt;= isLeft i &lt;= 1 The binary tree described by descriptions is valid.
+
+Starter Code (Python3):
+# Definition for a binary tree node.
+# class TreeNode:
+#     def __init__(self, val=0, left=None, right=None):
+#         self.val = val
+#         self.left = left
+#         self.right = right
+class Solution:
+    def createBinaryTree(self, descriptions: List[List[int]]) -> Optional[TreeNode]:
+        
+
+Testcases:
+[[20,15,1],[20,17,0],[50,20,1],[50,80,0],[80,19,1]]
+[[1,2,1],[2,3,0],[3,4,1]]
+
+Expected Output / Validation:
+```python
+# Helper function to convert tree to list for validation
+import collections
+def tree_to_list(root: Optional[TreeNode]) -> List[Optional[int]]:
+    if not root:
+        return []
+    result = []
+    queue = collections.deque([root])
+    while queue:
+        node = queue.popleft()
+        if node:
+            result.append(node.val)
+            queue.append(node.left)
+            queue.append(node.right)
+        else:
+            result.append(None)
+    while result and result[-1] is None:
+        result.pop()
+    return result
+
+# Testcase 1
+descriptions1 = [[20,15,1],[20,17,0],[50,20,1],[50,80,0],[80,19,1]]
+expected_output1 = [50,20,80,15,17,19]
+solver = Solution()
+root1 = solver.createBinaryTree(descriptions1)
+actual_output1 = tree_to_list(root1)
+assert actual_output1 == expected_output1, f"Testcase 1 Failed: Expected {expected_output1}, Got {actual_output1}"
+
+# Testcase 2
+descriptions2 = [[1,2,1],[2,3,0],[3,4,1]]
+expected_output2 = [1,2,None,None,3,4]
+solver = Solution()
+root2 = solver.createBinaryTree(descriptions2)
+actual_output2 = tree_to_list(root2)
+assert actual_output2 == expected_output2, f"Testcase 2 Failed: Expected {expected_output2}, Got {actual_output2}"
+
+print("All testcases passed!")
+```
