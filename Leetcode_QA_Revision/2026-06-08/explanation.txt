@@ -1,0 +1,56 @@
+Date: 2026-06-08
+Title: Partition Array According to Given Pivot
+URL: https://leetcode.com/problems/partition-array-according-to-given-pivot/
+
+LLM Explanation:
+The problem requires rearranging an array `nums` based on a `pivot` value. The final arrangement must have three contiguous sections: elements less than `pivot`, followed by elements equal to `pivot`, and finally elements greater than `pivot`. A crucial constraint is that the relative order of elements within the "less than" and "greater than" groups must be preserved from the original array.
+
+A straightforward and efficient approach is to iterate through the input array once and categorize each element into one of three groups. We can use three separate lists for this purpose: `less` for elements smaller than the pivot, `equal` for elements equal to the pivot, and `greater` for elements larger than the pivot.
+
+The algorithm is as follows:
+1.  Initialize three empty lists: `less`, `equal`, and `greater`.
+2.  Iterate through each number `num` in the input array `nums` from left to right.
+3.  For each `num`:
+    - If `num < pivot`, append it to the `less` list.
+    - If `num == pivot`, append it to the `equal` list.
+    - If `num > pivot`, append it to the `greater` list.
+4.  By processing `nums` in its original order and appending to the lists, we naturally preserve the relative ordering within each category.
+5.  After the loop completes, concatenate the three lists in the required order: `less + equal + greater`. This combined list is the desired result.
+
+This method is optimal for this problem because it correctly handles the relative order constraint while being easy to understand and implement.
+
+**Complexity Analysis:**
+-   **Time Complexity:** O(N), where N is the number of elements in `nums`. We perform a single pass through the array to categorize elements, and the final concatenation also takes O(N) time.
+-   **Space Complexity:** O(N), as we use auxiliary lists to store the partitioned elements. In the worst case, the total size of these lists will be equal to the size of the input array.
+
+LLM Testcase Validation:
+```
+Input: nums = [9,12,5,10,14,3,10], pivot = 10
+My code's execution:
+1. Initialize `less = []`, `equal = []`, `greater = []`.
+2. Iterate through `nums`:
+   - 9 < 10: `less` = [9]
+   - 12 > 10: `greater` = [12]
+   - 5 < 10: `less` = [9, 5]
+   - 10 == 10: `equal` = [10]
+   - 14 > 10: `greater` = [12, 14]
+   - 3 < 10: `less` = [9, 5, 3]
+   - 10 == 10: `equal` = [10, 10]
+3. Concatenate: `less + equal + greater` -> `[9, 5, 3] + [10, 10] + [12, 14]`
+4. Return `[9, 5, 3, 10, 10, 12, 14]`.
+Expected output: `[9,5,3,10,10,12,14]`
+The output matches.
+
+Input: nums = [-3,4,3,2], pivot = 2
+My code's execution:
+1. Initialize `less = []`, `equal = []`, `greater = []`.
+2. Iterate through `nums`:
+   - -3 < 2: `less` = [-3]
+   - 4 > 2: `greater` = [4]
+   - 3 > 2: `greater` = [4, 3]
+   - 2 == 2: `equal` = [2]
+3. Concatenate: `less + equal + greater` -> `[-3] + [2] + [4, 3]`
+4. Return `[-3, 2, 4, 3]`.
+Expected output: `[-3,2,4,3]`
+The output matches.
+```
