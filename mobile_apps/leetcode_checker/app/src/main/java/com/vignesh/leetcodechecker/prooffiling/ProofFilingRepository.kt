@@ -542,7 +542,7 @@ class ProofFilingRepository(private val context: Context) {
                 })
             }.toString()
             
-            val url = "$GEMINI_API_BASE/models/gemini-2.0-flash:generateContent?key=$apiKey"
+            val url = "$GEMINI_API_BASE/models/gemini-2.5-flash:generateContent?key=$apiKey"
             Log.d(TAG, "Calling Gemini API at: ${url.substringBefore("?")}")
             
             val request = Request.Builder()
@@ -660,7 +660,7 @@ class ProofFilingRepository(private val context: Context) {
                 })
             }.toString()
             
-            val url = "$GEMINI_API_BASE/models/gemini-2.0-flash:generateContent?key=$apiKey"
+            val url = "$GEMINI_API_BASE/models/gemini-2.5-flash:generateContent?key=$apiKey"
             Log.d(TAG, "Calling Gemini for weekly summary")
             
             val request = Request.Builder()
