@@ -1,0 +1,76 @@
+Date: 2026-06-06
+Title: Left and Right Sum Differences
+URL: https://leetcode.com/problems/left-and-right-sum-differences/
+
+LLM Explanation:
+The problem requires us to compute an array `answer` where `answer[i]` is the absolute difference between the sum of elements to the left of index `i` (`leftSum[i]`) and the sum of elements to the right of index `i` (`rightSum[i]`).
+
+A naive approach of recalculating these sums for each index would be inefficient, leading to an O(n^2) time complexity. A more optimal solution can be achieved in O(n) time by using a single pass after an initial sum calculation, leveraging the concept of prefix sums.
+
+The algorithm is as follows:
+
+1.  **Pre-calculate Total Sum:** First, we compute the sum of all elements in the `nums` array. Let's call this `total_sum`. This initial step takes O(n) time.
+
+2.  **Single Pass Calculation:** We then iterate through the `nums` array once more. During this iteration, we maintain a running sum of elements encountered so far, which we'll call `left_sum`. This variable is initialized to 0.
+
+3.  **For each element `num` at index `i`:**
+    *   The sum of elements to the left, `leftSum[i]`, is the current value of our `left_sum` variable.
+    *   The sum of elements to the right, `rightSum[i]`, can be derived efficiently without another loop. It is simply `total_sum - left_sum - num`.
+    *   We then calculate the required absolute difference, `|left_sum - right_sum|`, and append it to our `answer` array.
+    *   To prepare for the next iteration, we update `left_sum` by adding the current element `num` to it.
+
+This method avoids redundant computations by building the `left_sum` on the fly and using the pre-calculated `total_sum` to find the `right_sum`.
+
+**Complexity Analysis:**
+*   **Time Complexity:** O(n), as we iterate through the array twice in total (once for `sum()` and once in the main loop).
+*   **Space Complexity:** O(1) for auxiliary space, as we only use a few variables. The space for the output array is typically not counted, but if it is, the complexity is O(n).
+
+LLM Testcase Validation:
+```python
+# Testcase 1
+# Input: nums = [10,4,8,3]
+# Expected Output: [15,1,11,22]
+
+# Execution Trace:
+# total_sum = 10 + 4 + 8 + 3 = 25
+# left_sum = 0
+# answer = []
+#
+# Iteration 1 (num = 10):
+#   right_sum = 25 - 0 - 10 = 15
+#   answer.append(abs(0 - 15)) -> [15]
+#   left_sum becomes 10
+#
+# Iteration 2 (num = 4):
+#   right_sum = 25 - 10 - 4 = 11
+#   answer.append(abs(10 - 11)) -> [15, 1]
+#   left_sum becomes 14
+#
+# Iteration 3 (num = 8):
+#   right_sum = 25 - 14 - 8 = 3
+#   answer.append(abs(14 - 3)) -> [15, 1, 11]
+#   left_sum becomes 22
+#
+# Iteration 4 (num = 3):
+#   right_sum = 25 - 22 - 3 = 0
+#   answer.append(abs(22 - 0)) -> [15, 1, 11, 22]
+#   left_sum becomes 25
+#
+# Final answer: [15, 1, 11, 22]. Correct.
+
+# Testcase 2
+# Input: nums = [1]
+# Expected Output: [0]
+
+# Execution Trace:
+# total_sum = 1
+# left_sum = 0
+# answer = []
+#
+# Iteration 1 (num = 1):
+#   right_sum = 1 - 0 - 1 = 0
+#   answer.append(abs(0 - 0)) -> [0]
+#   left_sum becomes 1
+#
+# Final answer: [0]. Correct.
+```

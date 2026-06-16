@@ -1,0 +1,50 @@
+Date: 2026-06-10
+Title: Maximum Total Subarray Value II
+URL: https://leetcode.com/problems/maximum-total-subarray-value-ii/
+
+LLM Explanation:
+The problem asks for the maximum total value achievable by choosing exactly `k` non-empty subarrays. The value of a subarray is its maximum element minus its minimum element. A crucial detail is that subarrays can overlap and be chosen multiple times.
+
+This ability to repeat choices simplifies the problem significantly. To maximize the sum of `k` values, we should make each individual value as large as possible. If we can find the single subarray that yields the maximum possible value, say `V_max`, the optimal strategy is to choose this best subarray `k` times. The total value would then be `k * V_max`.
+
+The task thus reduces to finding the maximum value of `max(nums[l..r]) - min(nums[l..r])` over all possible subarrays `nums[l..r]`.
+
+Let's analyze this expression. We want to maximize the difference between the largest and smallest elements in a subarray. This difference is maximized when the largest element is as large as possible and the smallest element is as small as possible.
+
+Consider the global maximum `M` and global minimum `m` of the entire array `nums`.
+For any subarray `nums[l..r]`:
+- The maximum element in this subarray, `max(nums[l..r])`, cannot be greater than the global maximum `M`. So, `max(nums[l..r]) <= M`.
+- The minimum element in this subarray, `min(nums[l..r])`, cannot be smaller than the global minimum `m`. So, `min(nums[l..r]) >= m`.
+
+Combining these, the value of any subarray is bounded:
+`max(nums[l..r]) - min(nums[l..r]) <= M - m`.
+
+This maximum possible value, `M - m`, is achievable. We can simply choose a subarray that contains both the global maximum and global minimum elements. The entire array `nums` is one such subarray, and its value is `max(nums) - min(nums)`.
+
+Therefore, the maximum value for a single subarray is `max(nums) - min(nums)`.
+The maximum total value for `k` choices is `k * (max(nums) - min(nums))`.
+
+The algorithm is as follows:
+1. Find the maximum element in the `nums` array.
+2. Find the minimum element in the `nums` array.
+3. Calculate the difference, which is the maximum single subarray value.
+4. Multiply this value by `k` to get the final answer.
+
+This approach has a time complexity of O(n) due to the single pass required to find the minimum and maximum elements, and a space complexity of O(1).
+
+LLM Testcase Validation:
+- Testcase 1:
+  - Input: `nums = [1,3,2]`, `k = 2`
+  - `max(nums)` = 3
+  - `min(nums)` = 1
+  - Maximum single subarray value = 3 - 1 = 2
+  - Total value = `k * 2` = `2 * 2` = 4
+  - Expected: 4. Correct.
+
+- Testcase 2:
+  - Input: `nums = [4,2,5,1]`, `k = 3`
+  - `max(nums)` = 5
+  - `min(nums)` = 1
+  - Maximum single subarray value = 5 - 1 = 4
+  - Total value = `k * 4` = `3 * 4` = 12
+  - Expected: 12. Correct.

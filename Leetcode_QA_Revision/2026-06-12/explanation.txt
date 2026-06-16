@@ -1,0 +1,57 @@
+Date: 2026-06-12
+Title: Number of Ways to Assign Edge Weights II
+URL: https://leetcode.com/problems/number-of-ways-to-assign-edge-weights-ii/
+
+LLM Explanation:
+The problem asks for the number of ways to assign weights (1 or 2) to edges on a specific path between two nodes `u` and `v` such that the total path cost is odd. This needs to be done for several independent queries.
+
+### Core Idea: Combinatorics
+The sum of weights is odd if and only if there is an odd number of odd weights. Since the available weights are 1 (odd) and 2 (even), the path cost is odd if and only if an odd number of edges on the path are assigned a weight of 1.
+
+Let the path between `u` and `v` have `k` edges. The problem reduces to finding the number of ways to choose an odd number of these `k` edges to assign weight 1. This is a classic combinatorial problem:
+- The number of ways to choose 1 edge is `C(k, 1)`.
+- The number of ways to choose 3 edges is `C(k, 3)`.
+- ... and so on.
+The total number of ways is `C(k, 1) + C(k, 3) + C(k, 5) + ...`.
+
+From the binomial theorem, we know that `C(k, 0) + C(k, 2) + ... = C(k, 1) + C(k, 3) + ...`. Since the sum of all combinations `C(k, 0) + ... + C(k, k)` is `2^k`, each of these sums must be `2^k / 2 = 2^(k-1)` for `k > 0`.
+
+- If `k > 0`, the number of ways is `2^(k-1)`.
+- If `k = 0` (i.e., `u == v`), the path cost is 0 (even), so there are 0 ways to make it odd.
+
+### Algorithmic Approach
+The problem now is to efficiently find the path length `k` for each query `[u, v]`. In a tree, the number of edges on the unique path between two nodes `u` and `v` is given by their distance. This distance can be calculated using their depths and the depth of their Lowest Common Ancestor (LCA):
+`path_length(u, v) = depth(u) + depth(v) - 2 * depth(lca(u, v))`
+
+To implement this, we can use the **Binary Lifting** technique for fast LCA queries.
+
+### Implementation Steps:
+1.  **Preprocessing:**
+    a.  Build an adjacency list for the tree.
+    b.  Perform a Depth First Search (DFS) starting from the root (node 1) to compute `depth[i]` for each node `i` and its immediate parent `parent[i]`.
+    c.  Use the parent information to build a binary lifting table, `up[i][j]`, which stores the `2^j`-th ancestor of node `i`. This table can be filled in `O(n log n)` time.
+
+2.  **Query Processing:**
+    a.  For each query `[u, v]`, use the precomputed `up` table and `depth` array to find `lca(u, v)` in `O(log n)` time.
+    b.  Calculate the path length `k = depth[u] + depth[v] - 2 * depth(lca(u, v))`.
+    c.  If `k == 0`, the answer is 0.
+    d.  Otherwise, the answer is `pow(2, k - 1, 10^9 + 7)`.
+
+### Complexity Analysis:
+-   **Time Complexity:** `O((n + q) * log n)`, where `n` is the number of nodes and `q` is the number of queries. The preprocessing takes `O(n log n)`, and each of the `q` queries takes `O(log n)`.
+-   **Space Complexity:** `O(n log n)` primarily for the binary lifting table.
+
+This approach is efficient enough to pass within the given constraints.
+
+LLM Testcase Validation:
+```
+Input: edges = [[1,2]], queries = [[1,1],[1,2]]
+Output: [0,1]
+My output: [0, 1]
+Testcase passed.
+
+Input: edges = [[1,2],[1,3],[3,4],[3,5]], queries = [[1,4],[3,4],[2,5]]
+Output: [2,1,4]
+My output: [2, 1, 4]
+Testcase passed.
+```

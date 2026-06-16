@@ -1,0 +1,63 @@
+Date: 2026-06-14
+Title: Maximum Twin Sum of a Linked List
+URL: https://leetcode.com/problems/maximum-twin-sum-of-a-linked-list/
+
+LLM Explanation:
+The problem asks for the maximum twin sum in a linked list of even length `n`. The twin of node `i` is node `n-1-i`. To calculate the sum of a node and its twin, we need to access both simultaneously. This is challenging in a singly-linked list where we can only traverse forward.
+
+The optimal approach solves this by reversing the second half of the list, which allows us to traverse both halves concurrently from their respective starting points. This method uses constant extra space.
+
+The algorithm consists of three main steps:
+
+1.  **Find the Middle of the List**: We use the classic "slow and fast pointer" technique. A `slow` pointer moves one step at a time, while a `fast` pointer moves two steps. Since the list length `n` is guaranteed to be even, when the `fast` pointer reaches the end of the list, the `slow` pointer will be exactly at the beginning of the second half (i.e., at index `n/2`).
+
+2.  **Reverse the Second Half**: Starting from the `slow` pointer, we reverse the remainder of the list. This is done iteratively using three pointers: `prev`, `curr`, and `next_node`. After this step, the `prev` pointer will be the head of the now-reversed second half.
+
+3.  **Calculate Maximum Twin Sum**: We now have two pointers: one at the original `head` of the list (let's call it `first_half_ptr`) and another at the head of the reversed second half (`second_half_ptr`). We iterate through both halves simultaneously. In each step, we calculate the sum of the values pointed to by `first_half_ptr` and `second_half_ptr`. This sum is a twin sum because reversing the second half aligns the `i`-th node from the beginning with the `(n-1-i)`-th node. We keep track of the maximum sum found during this traversal. The loop continues until we have processed all nodes in the first half (which is when `second_half_ptr` becomes `None`).
+
+**Complexity Analysis**:
+*   **Time Complexity**: O(n). We traverse the list roughly 1.5 times: O(n/2) to find the middle, O(n/2) to reverse the second half, and O(n/2) to find the maximum sum. This simplifies to O(n).
+*   **Space Complexity**: O(1). We only use a few extra pointers (`slow`, `fast`, `prev`, `curr`, etc.) regardless of the list's size. This makes the solution highly space-efficient.
+
+LLM Testcase Validation:
+```python
+# Helper class to define ListNode for local testing
+class ListNode:
+    def __init__(self, val=0, next=None):
+        self.val = val
+        self.next = next
+
+def create_linked_list(items):
+    if not items:
+        return None
+    head = ListNode(items[0])
+    current = head
+    for item in items[1:]:
+        current.next = ListNode(item)
+        current = current.next
+    return head
+
+# Instantiate the solution
+solver = Solution()
+
+# Testcase 1
+head1 = create_linked_list([5,4,2,1])
+output1 = solver.pairSum(head1)
+expected1 = 6
+assert output1 == expected1, f"Testcase 1 Failed: Expected {expected1}, Got {output1}"
+
+# Testcase 2
+head2 = create_linked_list([4,2,2,3])
+output2 = solver.pairSum(head2)
+expected2 = 7
+assert output2 == expected2, f"Testcase 2 Failed: Expected {expected2}, Got {output2}"
+
+# Testcase 3
+head3 = create_linked_list([1,100000])
+output3 = solver.pairSum(head3)
+expected3 = 100001
+assert output3 == expected3, f"Testcase 3 Failed: Expected {expected3}, Got {output3}"
+
+print("All test cases passed.")
+
+```

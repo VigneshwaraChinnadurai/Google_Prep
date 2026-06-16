@@ -1,0 +1,102 @@
+Date: 2026-06-15
+Title: Delete the Middle Node of a Linked List
+URL: https://leetcode.com/problems/delete-the-middle-node-of-a-linked-list/
+
+LLM Explanation:
+The problem requires us to delete the middle node of a linked list. The middle node for a list of size `n` is defined as the node at index `floor(n / 2)` (0-based).
+
+The optimal solution uses a single pass with the classic **fast and slow pointer** technique. To delete a node, we need access to its predecessor. Therefore, we'll use three pointers: `fast`, `slow`, and `prev_slow`.
+
+### Algorithm:
+1.  **Handle Edge Case**: First, we check if the list has only one node (`head.next is None`). If so, deleting the middle node (the head itself) results in an empty list, so we return `None`.
+
+2.  **Initialize Pointers**:
+    - `slow` and `fast` pointers both start at the `head`.
+    - `prev_slow` is initialized to `None`. It will always point to the node just before `slow`.
+
+3.  **Traverse the List**: We iterate through the list with a `while` loop that continues as long as `fast` and `fast.next` are not `None`. In each iteration:
+    - `fast` moves two steps forward (`fast = fast.next.next`).
+    - `slow` moves one step forward (`slow = slow.next`).
+    - `prev_slow` is updated to the old position of `slow` (`prev_slow = slow`).
+
+4.  **Identify Nodes**: When the loop terminates, the `fast` pointer will have reached the end of the list. Due to its slower speed, the `slow` pointer will be exactly at the middle node. The `prev_slow` pointer will be at the node immediately preceding the middle node.
+
+5.  **Delete the Node**: We delete the middle node by bypassing it. We update the `next` pointer of the predecessor (`prev_slow`) to point to the node *after* the middle node (`slow.next`). The operation is `prev_slow.next = slow.next`.
+
+6.  **Return Head**: Finally, we return the original `head` of the list, which remains unchanged unless the list had only one node.
+
+### Complexity Analysis:
+-   **Time Complexity**: O(N), where N is the number of nodes in the linked list. We traverse the list once with the pointers.
+-   **Space Complexity**: O(1), as we only use a constant amount of extra space for the three pointers.
+
+LLM Testcase Validation:
+```
+# Helper functions for testing
+def create_linked_list(items):
+    if not items:
+        return None
+    head = ListNode(items[0])
+    current = head
+    for item in items[1:]:
+        current.next = ListNode(item)
+        current = current.next
+    return head
+
+def linked_list_to_list(head):
+    items = []
+    current = head
+    while current:
+        items.append(current.val)
+        current = current.next
+    return items
+
+# Test cases
+test_cases = [
+    [1,3,4,7,1,2,6],
+    [1,2,3,4],
+    [2,1],
+    [1]
+]
+
+# Expected outputs
+expected_outputs = [
+    [1,3,4,1,2,6],
+    [1,2,4],
+    [2],
+    []
+]
+
+# Validation
+solver = Solution()
+for i, tc in enumerate(test_cases):
+    head = create_linked_list(tc)
+    result_head = solver.deleteMiddle(head)
+    result_list = linked_list_to_list(result_head)
+    print(f"Test Case {i+1}:")
+    print(f"Input: {tc}")
+    print(f"Output: {result_list}")
+    print(f"Expected: {expected_outputs[i]}")
+    assert result_list == expected_outputs[i]
+    print("------")
+
+```
+**Test Case 1:**
+Input: [1,3,4,7,1,2,6]
+Output: [1,3,4,1,2,6]
+Expected: [1,3,4,1,2,6]
+------
+**Test Case 2:**
+Input: [1,2,3,4]
+Output: [1,2,4]
+Expected: [1,2,4]
+------
+**Test Case 3:**
+Input: [2,1]
+Output: [2]
+Expected: [2]
+------
+**Test Case 4:**
+Input: [1]
+Output: []
+Expected: []
+------

@@ -1,0 +1,64 @@
+Date: 2026-06-07
+Title: Create Binary Tree From Descriptions
+URL: https://leetcode.com/problems/create-binary-tree-from-descriptions/
+
+LLM Explanation:
+The problem requires us to construct a binary tree from a list of parent-child relationships and return its root. The key challenges are creating the node objects, linking them correctly, and identifying the root of the tree.
+
+The approach uses a hash map and a set to efficiently build the tree and find the root in a single pass through the descriptions, followed by a quick search for the root.
+
+1.  **Data Structures:**
+    *   A hash map `nodes_map` is used to store `TreeNode` objects, with the node's unique value as the key. This provides O(1) average time access to any node and ensures that we create only one `TreeNode` object per unique value.
+    *   A set `children_set` is used to store the values of all nodes that appear as a child in any description.
+
+2.  **Algorithm:**
+    *   **Tree Construction:** We iterate through each description `[parent_val, child_val, is_left]`.
+        *   For both `parent_val` and `child_val`, we check if a corresponding `TreeNode` exists in `nodes_map`. If not, we create a new `TreeNode` and add it to the map.
+        *   We add `child_val` to the `children_set`.
+        *   Using the retrieved or newly created `TreeNode` objects from `nodes_map`, we establish the parent-child link. If `is_left` is 1, the child becomes the left child; otherwise, it becomes the right child.
+
+    *   **Root Identification:** A key property of a tree is that the root is the only node that is not a child of any other node. Therefore, the root's value will not be present in our `children_set`. Since the problem constraints guarantee a valid, non-empty tree, the root must appear as a parent in at least one description. We can find the root by iterating through the parent values in the `descriptions` list and returning the node corresponding to the first parent value not found in `children_set`.
+
+3.  **Complexity Analysis:**
+    *   **Time Complexity:** O(N), where N is the number of descriptions. The first loop iterates through all N descriptions to build the tree. The second loop to find the root also iterates through the N descriptions in the worst case. Hash map and set operations take O(1) on average.
+    *   **Space Complexity:** O(U), where U is the number of unique nodes in the tree. This space is used for `nodes_map` and `children_set`. In the worst case, U is proportional to N (U <= 2N).
+
+LLM Testcase Validation:
+```python
+# Helper function to convert tree to list for validation
+import collections
+def tree_to_list(root: Optional[TreeNode]) -> List[Optional[int]]:
+    if not root:
+        return []
+    result = []
+    queue = collections.deque([root])
+    while queue:
+        node = queue.popleft()
+        if node:
+            result.append(node.val)
+            queue.append(node.left)
+            queue.append(node.right)
+        else:
+            result.append(None)
+    while result and result[-1] is None:
+        result.pop()
+    return result
+
+# Testcase 1
+descriptions1 = [[20,15,1],[20,17,0],[50,20,1],[50,80,0],[80,19,1]]
+expected_output1 = [50,20,80,15,17,19]
+solver = Solution()
+root1 = solver.createBinaryTree(descriptions1)
+actual_output1 = tree_to_list(root1)
+assert actual_output1 == expected_output1, f"Testcase 1 Failed: Expected {expected_output1}, Got {actual_output1}"
+
+# Testcase 2
+descriptions2 = [[1,2,1],[2,3,0],[3,4,1]]
+expected_output2 = [1,2,None,None,3,4]
+solver = Solution()
+root2 = solver.createBinaryTree(descriptions2)
+actual_output2 = tree_to_list(root2)
+assert actual_output2 == expected_output2, f"Testcase 2 Failed: Expected {expected_output2}, Got {actual_output2}"
+
+print("All testcases passed!")
+```

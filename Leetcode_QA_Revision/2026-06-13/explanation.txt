@@ -1,0 +1,52 @@
+Date: 2026-06-13
+Title: Weighted Word Mapping
+URL: https://leetcode.com/problems/weighted-word-mapping/
+
+LLM Explanation:
+The solution follows a direct simulation approach as described by the problem statement.
+
+1.  **Initialization**: An empty list, `result_chars`, is created to store the mapped character for each word.
+
+2.  **Iterate Through Words**: The code iterates through each `word` in the input list `words`.
+
+3.  **Calculate Word Weight**: For each `word`, its total weight is calculated. This is done by iterating through each `char` in the word.
+    *   The 0-based alphabetical index of a character (e.g., 'a' -> 0, 'b' -> 1) is found using `ord(char) - ord('a')`.
+    *   This index is used to look up the character's weight in the `weights` array.
+    *   These weights are summed up to get the `word_weight`.
+
+4.  **Modulo Operation**: The total `word_weight` is taken modulo 26. This results in a value `mod_weight` in the range [0, 25].
+
+5.  **Character Mapping**: The `mod_weight` is then mapped to a lowercase English letter in reverse alphabetical order. The problem specifies that 0 maps to 'z', 1 to 'y', and so on, up to 25 mapping to 'a'. This transformation can be achieved with the formula `chr(ord('z') - mod_weight)`.
+
+6.  **Concatenation**: The resulting character is appended to the `result_chars` list. After processing all words, the characters in this list are joined together to form the final output string.
+
+**Complexity Analysis**:
+*   **Time Complexity**: O(N * L), where N is the number of words and L is the maximum length of a word. We need to visit every character of every word once.
+*   **Space Complexity**: O(N), for storing the `result_chars` list before joining.
+
+This approach is optimal as it processes each character exactly once, which is necessary to compute the weights.
+
+LLM Testcase Validation:
+```
+Testcase 1:
+Input: words = ["abcd","def","xyz"], weights = [5,3,12,14,1,2,3,2,10,6,6,9,7,8,7,10,8,9,6,9,9,8,3,7,7,2]
+- "abcd": weight = 5+3+12+14 = 34. 34 % 26 = 8. Mapped char: 'r'.
+- "def": weight = 14+1+2 = 17. 17 % 26 = 17. Mapped char: 'i'.
+- "xyz": weight = 7+7+2 = 16. 16 % 26 = 16. Mapped char: 'j'.
+Output: "rij"
+Correct.
+
+Testcase 2:
+Input: words = ["a","b","c"], weights = [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+- "a": weight = 1. 1 % 26 = 1. Mapped char: 'y'.
+- "b": weight = 1. 1 % 26 = 1. Mapped char: 'y'.
+- "c": weight = 1. 1 % 26 = 1. Mapped char: 'y'.
+Output: "yyy"
+Correct.
+
+Testcase 3:
+Input: words = ["abcd"], weights = [7,5,3,4,3,5,4,9,4,2,2,7,10,2,5,10,6,1,2,2,4,1,3,4,4,5]
+- "abcd": weight = 7+5+3+4 = 19. 19 % 26 = 19. Mapped char: 'g'.
+Output: "g"
+Correct.
+```
