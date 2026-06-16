@@ -31,7 +31,10 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.border
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.vignesh.leetcodechecker.prooffiling.ProofFilingUIState
+import com.vignesh.leetcodechecker.prooffiling.ProofFilingViewModel
 import com.vignesh.leetcodechecker.viewmodel.GitHubProfileViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.xmlpull.v1.XmlPullParser
@@ -43,6 +46,7 @@ import java.net.URL
  * ProfileScreen - Unified profile view with expandable sections
  * 
  * Contains:
+ * - ProofFiling summary card (this week's progress)
  * - GitHub dropdown (contribution graph, stats)
  * - Credly dropdown (badges/certifications)
  * - LinkedIn dropdown (profile preview)
@@ -50,11 +54,13 @@ import java.net.URL
  */
 @Composable
 fun ProfileScreen(
-    gitHubViewModel: GitHubProfileViewModel
+    gitHubViewModel: GitHubProfileViewModel,
+    proofFilingViewModel: ProofFilingViewModel = viewModel()
 ) {
     val context = LocalContext.current
     val scrollState = rememberScrollState()
     val gitHubState by gitHubViewModel.state.collectAsState()
+    val proofFilingState by proofFilingViewModel.state.collectAsState()
     
     // Section expansion states
     var githubExpanded by remember { mutableStateOf(true) }
@@ -146,6 +152,11 @@ fun ProfileScreen(
                 )
             }
         }
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        // ProofFiling Summary Card
+        ProofFilingSummaryCard(state = proofFilingState)
         
         Spacer(modifier = Modifier.height(16.dp))
         
@@ -1110,6 +1121,149 @@ private fun MediumArticleItem(
             contentDescription = "Open",
             tint = Color(0xFF8B949E),
             modifier = Modifier.size(16.dp)
+        )
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ProofFiling Summary Card
+// ═══════════════════════════════════════════════════════════════════════════
+
+@Composable
+private fun ProofFilingSummaryCard(state: ProofFilingUIState) {
+    val entry = state.currentEntry
+    
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFF238636)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            Icons.Filled.DateRange,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                    
+                    Spacer(modifier = Modifier.width(12.dp))
+                    
+                    Column {
+                        Text(
+                            text = "📊 This Week's Progress",
+                            color = Color(0xFFE6EDF3),
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        if (entry != null) {
+                            Text(
+                                text = "${entry.weekStartDate} → ${entry.weekEndDate}",
+                                color = Color(0xFF8B949E),
+                                fontSize = 11.sp
+                            )
+                        }
+                    }
+                }
+                
+                if (entry?.isPushedToGitHub == true) {
+                    Icon(
+                        Icons.Filled.CheckCircle,
+                        contentDescription = "Pushed",
+                        tint = Color(0xFF3FB950),
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+            
+            if (entry != null) {
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                HorizontalDivider(color = Color(0xFF30363D))
+                
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    ProofFilingStatItem(
+                        value = entry.wins.size.toString(),
+                        label = "Wins",
+                        color = Color(0xFF3FB950)
+                    )
+                    ProofFilingStatItem(
+                        value = entry.learnings.size.toString(),
+                        label = "Learnings",
+                        color = Color(0xFF58A6FF)
+                    )
+                    ProofFilingStatItem(
+                        value = entry.evidence.size.toString(),
+                        label = "Evidence",
+                        color = Color(0xFFA371F7)
+                    )
+                    
+                    // GitHub stats if available
+                    entry.githubStats?.let { stats ->
+                        ProofFilingStatItem(
+                            value = stats.totalCommits.toString(),
+                            label = "Commits",
+                            color = Color(0xFFF0883E)
+                        )
+                    }
+                }
+                
+                if (entry.wins.isEmpty() && entry.learnings.isEmpty() && entry.evidence.isEmpty()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Go to ProofFile tab to track your progress!",
+                        color = Color(0xFF8B949E),
+                        fontSize = 12.sp,
+                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                    )
+                }
+            } else {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Start tracking your weekly progress in the ProofFile tab",
+                    color = Color(0xFF8B949E),
+                    fontSize = 12.sp
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProofFilingStatItem(
+    value: String,
+    label: String,
+    color: Color
+) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+            text = value,
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Bold,
+            color = color
+        )
+        Text(
+            text = label,
+            fontSize = 10.sp,
+            color = Color(0xFF8B949E)
         )
     }
 }

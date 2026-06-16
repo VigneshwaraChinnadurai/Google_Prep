@@ -18,6 +18,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.vignesh.leetcodechecker.data.LeetCodeActivityStorage
@@ -111,6 +112,7 @@ fun FeaturesHubScreen(
         
         val features = listOf(
             FeatureItem("AI Hub", "🧠", Color(0xFFFF6B6B), FeatureDestination.AI_LEARNING_HUB),
+            FeatureItem("Chatbot", "💬", Color(0xFF00D4AA), FeatureDestination.STRATEGIC_CHATBOT),
             FeatureItem("Analytics", "📊", Color(0xFF58A6FF), FeatureDestination.ANALYTICS),
             FeatureItem("Goals", "🎯", Color(0xFF39D353), FeatureDestination.GOALS),
             FeatureItem("Achievements", "🏆", Color(0xFFFFD700), FeatureDestination.ACHIEVEMENTS),
@@ -121,8 +123,12 @@ fun FeaturesHubScreen(
             FeatureItem("Offline", "📱", Color(0xFF6E7681), FeatureDestination.OFFLINE),
             FeatureItem("AI/ML News", "🤖", Color(0xFF9C27B0), FeatureDestination.AI_NEWS),
             FeatureItem("Protection", "🔒", Color(0xFFF85149), FeatureDestination.PROTECTION),
-            FeatureItem("Python IDE", "🐍", Color(0xFF3776AB), FeatureDestination.PYTHON_PLAYGROUND)
+            FeatureItem("Python IDE", "🐍", Color(0xFF3776AB), FeatureDestination.PYTHON_PLAYGROUND),
+            FeatureItem("What's New", "✨", Color(0xFFFFB347), FeatureDestination.WHATS_NEW)
         )
+        
+        // Check for unseen updates
+        val unseenCount = remember { getUnseenUpdateCount(context) }
         
         LazyVerticalGrid(
             columns = GridCells.Fixed(4),
@@ -133,7 +139,8 @@ fun FeaturesHubScreen(
             items(features) { feature ->
                 FeatureGridItem(
                     feature = feature,
-                    onClick = { onNavigate(feature.destination) }
+                    onClick = { onNavigate(feature.destination) },
+                    badgeCount = if (feature.destination == FeatureDestination.WHATS_NEW) unseenCount else 0
                 )
             }
         }
@@ -160,31 +167,50 @@ fun FeaturesHubScreen(
 @Composable
 private fun FeatureGridItem(
     feature: FeatureItem,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    badgeCount: Int = 0
 ) {
     Card(
         onClick = onClick,
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22))
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = feature.emoji,
-                fontSize = 24.sp
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = feature.name,
-                fontSize = 11.sp,
-                color = Color(0xFF8B949E),
-                textAlign = TextAlign.Center,
-                maxLines = 1
-            )
+        Box {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = feature.emoji,
+                    fontSize = 24.sp
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = feature.name,
+                    fontSize = 11.sp,
+                    color = Color(0xFF8B949E),
+                    textAlign = TextAlign.Center,
+                    maxLines = 1
+                )
+            }
+            
+            // Badge for unseen updates
+            if (badgeCount > 0) {
+                Badge(
+                    containerColor = Color(0xFFF85149),
+                    contentColor = Color.White,
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .offset(x = 4.dp, y = (-4).dp)
+                ) {
+                    Text(
+                        text = if (badgeCount > 9) "9+" else badgeCount.toString(),
+                        fontSize = 9.sp
+                    )
+                }
+            }
         }
     }
 }
@@ -332,5 +358,7 @@ enum class FeatureDestination {
     AI_NEWS,
     AI_NEWS_SETTINGS,
     PYTHON_PLAYGROUND,
-    AI_LEARNING_HUB
+    AI_LEARNING_HUB,
+    STRATEGIC_CHATBOT,
+    WHATS_NEW
 }

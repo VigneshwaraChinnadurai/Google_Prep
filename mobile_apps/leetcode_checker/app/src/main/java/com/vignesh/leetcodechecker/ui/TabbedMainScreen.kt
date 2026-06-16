@@ -3,6 +3,7 @@ package com.vignesh.leetcodechecker.ui
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
@@ -16,6 +17,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.vignesh.leetcodechecker.prooffiling.ProofFilingScreen
+import com.vignesh.leetcodechecker.prooffiling.ProofFilingViewModel
 import com.vignesh.leetcodechecker.viewmodel.ChatbotViewModel
 import com.vignesh.leetcodechecker.viewmodel.GitHubProfileViewModel
 import com.vignesh.leetcodechecker.viewmodel.OllamaViewModel
@@ -24,8 +27,8 @@ import android.app.Application
 enum class AppTab {
     LEETCODE,
     OLLAMA_LEETCODE,
+    PROOFFILING,
     FEATURES,
-    STRATEGIC_CHATBOT,
     PROFILE
 }
 
@@ -44,7 +47,9 @@ enum class FeatureScreen {
     AI_NEWS,
     AI_NEWS_SETTINGS,
     PYTHON_PLAYGROUND,
-    AI_LEARNING_HUB
+    AI_LEARNING_HUB,
+    STRATEGIC_CHATBOT,
+    WHATS_NEW
 }
 
 /**
@@ -73,9 +78,9 @@ fun TabbedMainScreen(
     var selectedTab by rememberSaveable { mutableStateOf(AppTab.LEETCODE) }
     var featureScreen by rememberSaveable { mutableStateOf(FeatureScreen.HUB) }
     var challengeFilter by remember { mutableStateOf<ChallengeFilter?>(null) }
-    val chatbotViewModel: ChatbotViewModel = viewModel()
     val ollamaViewModel: OllamaViewModel = viewModel()
     val gitHubProfileViewModel: GitHubProfileViewModel = viewModel()
+    val proofFilingViewModel: ProofFilingViewModel = viewModel()
 
     Scaffold(
         bottomBar = {
@@ -95,6 +100,12 @@ fun TabbedMainScreen(
                     icon = { Icon(Icons.Filled.Build, contentDescription = "Ollama") }
                 )
                 NavigationBarItem(
+                    selected = selectedTab == AppTab.PROOFFILING,
+                    onClick = { selectedTab = AppTab.PROOFFILING },
+                    label = { Text("ProofFile", fontSize = 10.sp) },
+                    icon = { Icon(Icons.Filled.DateRange, contentDescription = "ProofFiling") }
+                )
+                NavigationBarItem(
                     selected = selectedTab == AppTab.FEATURES,
                     onClick = { 
                         selectedTab = AppTab.FEATURES
@@ -102,12 +113,6 @@ fun TabbedMainScreen(
                     },
                     label = { Text("Features", fontSize = 10.sp) },
                     icon = { Icon(Icons.Filled.Star, contentDescription = "Features") }
-                )
-                NavigationBarItem(
-                    selected = selectedTab == AppTab.STRATEGIC_CHATBOT,
-                    onClick = { selectedTab = AppTab.STRATEGIC_CHATBOT },
-                    label = { Text("Chatbot", fontSize = 10.sp) },
-                    icon = { Icon(Icons.Filled.Settings, contentDescription = "Strategic Chatbot") }
                 )
                 NavigationBarItem(
                     selected = selectedTab == AppTab.PROFILE,
@@ -155,6 +160,8 @@ fun TabbedMainScreen(
                                     FeatureDestination.AI_NEWS_SETTINGS -> FeatureScreen.AI_NEWS_SETTINGS
                                     FeatureDestination.PYTHON_PLAYGROUND -> FeatureScreen.PYTHON_PLAYGROUND
                                     FeatureDestination.AI_LEARNING_HUB -> FeatureScreen.AI_LEARNING_HUB
+                                    FeatureDestination.STRATEGIC_CHATBOT -> FeatureScreen.STRATEGIC_CHATBOT
+                                    FeatureDestination.WHATS_NEW -> FeatureScreen.WHATS_NEW
                                 }
                             },
                             onFilterSelected = { topic, difficulty ->
@@ -206,17 +213,24 @@ fun TabbedMainScreen(
                                 // Could navigate to problem
                             }
                         )
+                        FeatureScreen.STRATEGIC_CHATBOT -> StrategicChatbotScreen(
+                            viewModel = viewModel(),
+                            onOpenLink = onOpenLink
+                        )
+                        FeatureScreen.WHATS_NEW -> WhatsNewScreen(
+                            onBackClick = { featureScreen = FeatureScreen.HUB }
+                        )
                     }
                 }
-                AppTab.STRATEGIC_CHATBOT -> {
-                    StrategicChatbotScreen(
-                        viewModel = chatbotViewModel,
-                        onOpenLink = onOpenLink
+                AppTab.PROOFFILING -> {
+                    ProofFilingScreen(
+                        viewModel = proofFilingViewModel
                     )
                 }
                 AppTab.PROFILE -> {
                     ProfileScreen(
-                        gitHubViewModel = gitHubProfileViewModel
+                        gitHubViewModel = gitHubProfileViewModel,
+                        proofFilingViewModel = proofFilingViewModel
                     )
                 }
             }
