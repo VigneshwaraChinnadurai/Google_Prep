@@ -1,0 +1,73 @@
+Date: 2026-06-19
+Title: Find the Highest Altitude
+URL: https://leetcode.com/problems/find-the-highest-altitude/
+
+LLM Explanation:
+The problem asks for the highest altitude reached during a road trip. We are given the net changes in altitude between consecutive points. The trip starts at point 0 with an altitude of 0.
+
+This problem can be solved by simulating the trip and keeping track of the current altitude and the maximum altitude seen so far. This is conceptually equivalent to finding the maximum value in a prefix sum array of the `gain` values, with an initial altitude of 0.
+
+### Algorithm:
+1.  **Initialization:**
+    *   We initialize a variable `current_altitude` to 0, representing the altitude at the starting point.
+    *   We initialize another variable `max_altitude` to 0. Since the trip starts at an altitude of 0, this is the first altitude we encounter and thus the initial maximum.
+
+2.  **Iteration:**
+    *   We iterate through the `gain` array. Each element `g` in `gain` represents the change in altitude to the next point.
+    *   In each step, we update `current_altitude` by adding the gain: `current_altitude += g`. This gives us the altitude of the next point.
+    *   After calculating the new altitude, we compare it with our `max_altitude` so far. If the `current_altitude` is higher, we update `max_altitude`. This can be done concisely with `max_altitude = max(max_altitude, current_altitude)`.
+
+3.  **Result:**
+    *   After iterating through all the gains, `max_altitude` will hold the highest altitude reached at any point during the trip. We return this value.
+
+### Example Walkthrough (`gain = [-5,1,5,0,-7]`):
+*   Start: `current_altitude = 0`, `max_altitude = 0`.
+*   `gain[0] = -5`: `current_altitude` becomes `0 + (-5) = -5`. `max_altitude` is `max(0, -5) = 0`.
+*   `gain[1] = 1`: `current_altitude` becomes `-5 + 1 = -4`. `max_altitude` is `max(0, -4) = 0`.
+*   `gain[2] = 5`: `current_altitude` becomes `-4 + 5 = 1`. `max_altitude` is `max(0, 1) = 1`.
+*   `gain[3] = 0`: `current_altitude` becomes `1 + 0 = 1`. `max_altitude` is `max(1, 1) = 1`.
+*   `gain[4] = -7`: `current_altitude` becomes `1 + (-7) = -6`. `max_altitude` is `max(1, -6) = 1`.
+*   The loop finishes. The final result is 1.
+
+### Complexity:
+*   **Time Complexity:** O(n), where n is the length of the `gain` array, as we perform a single pass through the array.
+*   **Space Complexity:** O(1), as we only use a constant amount of extra space for our variables, regardless of the input size.
+
+LLM Testcase Validation:
+```python
+# Testcases
+s = Solution()
+
+# Testcase 1
+gain1 = [-5, 1, 5, 0, -7]
+expected1 = 1
+# Altitudes: [0, -5, -4, 1, 1, -6]. Highest is 1.
+assert s.largestAltitude(gain1) == expected1, f"Testcase 1 Failed: Expected {expected1}, Got {s.largestAltitude(gain1)}"
+
+# Testcase 2
+gain2 = [-4, -3, -2, -1, 4, 3, 2]
+expected2 = 0
+# Altitudes: [0, -4, -7, -9, -10, -6, -3, -1]. Highest is 0.
+assert s.largestAltitude(gain2) == expected2, f"Testcase 2 Failed: Expected {expected2}, Got {s.largestAltitude(gain2)}"
+
+# Additional Testcases
+# All positive gains
+gain3 = [1, 2, 3]
+expected3 = 6
+# Altitudes: [0, 1, 3, 6]. Highest is 6.
+assert s.largestAltitude(gain3) == expected3, f"Testcase 3 Failed: Expected {expected3}, Got {s.largestAltitude(gain3)}"
+
+# All negative gains
+gain4 = [-1, -2, -3]
+expected4 = 0
+# Altitudes: [0, -1, -3, -6]. Highest is 0.
+assert s.largestAltitude(gain4) == expected4, f"Testcase 4 Failed: Expected {expected4}, Got {s.largestAltitude(gain4)}"
+
+# Single element gain
+gain5 = [100]
+expected5 = 100
+# Altitudes: [0, 100]. Highest is 100.
+assert s.largestAltitude(gain5) == expected5, f"Testcase 5 Failed: Expected {expected5}, Got {s.largestAltitude(gain5)}"
+
+print("All testcases passed!")
+```
