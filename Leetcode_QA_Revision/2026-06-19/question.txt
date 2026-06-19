@@ -1,0 +1,57 @@
+Date: 2026-06-19
+Question ID: 1732
+Title: Find the Highest Altitude
+Difficulty: Easy
+Tags: Array, Prefix Sum
+URL: https://leetcode.com/problems/find-the-highest-altitude/
+
+Question:
+There is a biker going on a road trip. The road trip consists of n + 1 points at different altitudes. The biker starts his trip on point 0 with altitude equal 0 . You are given an integer array gain of length n where gain[i] is the net gain in altitude between points i ​​​​​​ and i + 1 for all ( 0 &lt;= i &lt; n) . Return the highest altitude of a point. Example 1: Input: gain = [-5,1,5,0,-7] Output: 1 Explanation: The altitudes are [0,-5,-4,1,1,-6]. The highest is 1. Example 2: Input: gain = [-4,-3,-2,-1,4,3,2] Output: 0 Explanation: The altitudes are [0,-4,-7,-9,-10,-6,-3,-1]. The highest is 0. Constraints: n == gain.length 1 &lt;= n &lt;= 100 -100 &lt;= gain[i] &lt;= 100
+
+Starter Code (Python3):
+class Solution:
+    def largestAltitude(self, gain: List[int]) -> int:
+        
+
+Testcases:
+[-5,1,5,0,-7]
+[-4,-3,-2,-1,4,3,2]
+
+Expected Output / Validation:
+```python
+# Testcases
+s = Solution()
+
+# Testcase 1
+gain1 = [-5, 1, 5, 0, -7]
+expected1 = 1
+# Altitudes: [0, -5, -4, 1, 1, -6]. Highest is 1.
+assert s.largestAltitude(gain1) == expected1, f"Testcase 1 Failed: Expected {expected1}, Got {s.largestAltitude(gain1)}"
+
+# Testcase 2
+gain2 = [-4, -3, -2, -1, 4, 3, 2]
+expected2 = 0
+# Altitudes: [0, -4, -7, -9, -10, -6, -3, -1]. Highest is 0.
+assert s.largestAltitude(gain2) == expected2, f"Testcase 2 Failed: Expected {expected2}, Got {s.largestAltitude(gain2)}"
+
+# Additional Testcases
+# All positive gains
+gain3 = [1, 2, 3]
+expected3 = 6
+# Altitudes: [0, 1, 3, 6]. Highest is 6.
+assert s.largestAltitude(gain3) == expected3, f"Testcase 3 Failed: Expected {expected3}, Got {s.largestAltitude(gain3)}"
+
+# All negative gains
+gain4 = [-1, -2, -3]
+expected4 = 0
+# Altitudes: [0, -1, -3, -6]. Highest is 0.
+assert s.largestAltitude(gain4) == expected4, f"Testcase 4 Failed: Expected {expected4}, Got {s.largestAltitude(gain4)}"
+
+# Single element gain
+gain5 = [100]
+expected5 = 100
+# Altitudes: [0, 100]. Highest is 100.
+assert s.largestAltitude(gain5) == expected5, f"Testcase 5 Failed: Expected {expected5}, Got {s.largestAltitude(gain5)}"
+
+print("All testcases passed!")
+```
