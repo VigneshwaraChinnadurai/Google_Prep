@@ -1,0 +1,38 @@
+Date: 2026-06-20
+Title: Maximum Building Height
+URL: https://leetcode.com/problems/maximum-building-height/
+
+LLM Explanation:
+The problem asks for the maximum possible height of the tallest building under several constraints. The key constraints are that the first building's height is 0, and the height difference between adjacent buildings is at most 1. This latter constraint implies that for any two buildings `i` and `j`, the height difference `|h[i] - h[j]|` cannot exceed their distance `|i - j|`.
+
+The overall strategy is to determine the tightest possible height limits at a set of key buildings and then find the maximum height achievable between these key points.
+
+1.  **Identify Key Points:** The buildings with explicit height restrictions, along with building 1 (height 0) and building `n`, are the critical points that define the overall height profile. We gather these into a list of `[id, maxHeight]` pairs. If building `n` doesn't have a restriction, we add it with a loose upper bound for its height (e.g., `n-1`), which will be corrected later.
+
+2.  **Propagate Constraints:** The height limit at any key point is affected by all other key points. We can find the tightest possible height limits for each key point by propagating constraints:
+    *   **Forward Pass (Left to Right):** We iterate through the sorted key points. For each point `i`, its height `h[i]` is limited by the height of the previous point `i-1` plus their distance: `h[i] <= h[i-1] + (id[i] - id[i-1])`. We update `h[i]` to the minimum of its current limit and this new calculated limit.
+    *   **Backward Pass (Right to Left):** Similarly, we iterate backward. The height `h[i]` is also limited by the next point `i+1`: `h[i] <= h[i+1] + (id[i+1] - id[i])`. We update `h[i]` again.
+    After these two passes, the heights for our key points are the maximum possible values that satisfy all mutual constraints.
+
+3.  **Calculate Maximum Height:** The tallest building might not be one of the key points but could be located in a segment between two of them.
+    *   Consider two adjacent key points in our final list: `(id1, h1)` and `(id2, h2)`. The height profile between them resembles a "tent" or a trapezoid. The height increases from `h1` as we move towards `id2` and also increases from `h2` as we move backward towards `id1`.
+    *   The peak of this tent represents the maximum possible height in this segment. This peak height `H` can be found with the formula: `H = (h1 + h2 + (id2 - id1)) // 2`. This formula is derived by finding the intersection of the two possible height slopes.
+    *   We calculate this peak height for every segment between consecutive key points. The overall maximum building height will be the maximum of all these calculated peaks.
+
+This approach correctly models all constraints and efficiently finds the global maximum height. The time complexity is dominated by sorting the restrictions, `O(R log R)` where `R` is the number of restrictions. The space complexity is `O(R)` to store the key points.
+
+LLM Testcase Validation:
+```
+5
+[[2,1],[4,1]]
+```
+---
+```
+6
+[]
+```
+---
+```
+10
+[[5,3],[2,5],[7,4],[10,3]]
+```
