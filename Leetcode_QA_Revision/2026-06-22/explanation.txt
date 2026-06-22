@@ -1,0 +1,37 @@
+Date: 2026-06-22
+Title: Maximum Number of Balloons
+URL: https://leetcode.com/problems/maximum-number-of-balloons/
+
+LLM Explanation:
+The problem asks for the maximum number of times the word "balloon" can be formed using the characters from a given string `text`, where each character from `text` can be used at most once.
+
+The core idea is to treat this as a resource allocation problem. The characters in `text` are our available resources, and forming the word "balloon" is the task that consumes these resources. The number of times we can perform the task is limited by the most scarce resource.
+
+1.  **Resource Requirements:** To form one instance of "balloon", we need:
+    *   1 'b'
+    *   1 'a'
+    *   2 'l's
+    *   2 'o's
+    *   1 'n'
+
+2.  **Count Available Resources:** We first count the frequency of each character in the input `text`. A hash map or `collections.Counter` in Python is ideal for this, providing an efficient way to store character counts.
+
+3.  **Identify the Bottleneck:** For each required character ('b', 'a', 'l', 'o', 'n'), we can calculate how many "balloons" could be formed if that were the *only* limiting character.
+    *   For characters needed once ('b', 'a', 'n'), the number of available characters directly corresponds to the potential number of "balloons". For example, with `k` 'b's, we can make at most `k` "balloons".
+    *   For characters needed twice ('l', 'o'), we need two for each "balloon". So, with `k` 'l's, we can make at most `k // 2` "balloons" (using integer division).
+
+4.  **Determine the Maximum Instances:** The actual maximum number of "balloons" we can form is the minimum of these potential values. The character that allows for the fewest "balloons" is our bottleneck and determines the final answer.
+
+For example, if we have enough 'b's for 5 "balloons" but only enough 'l's for 3 "balloons" (i.e., 6 or 7 'l's), we can only form 3 complete "balloons".
+
+The implementation uses `collections.Counter` to count character frequencies in `text` in O(N) time, where N is the length of `text`. Then, it calculates the potential number of "balloons" for each required character and returns the minimum of these values. This part takes constant time.
+
+*   **Time Complexity:** O(N), for iterating through the input string `text` to build the frequency map.
+*   **Space Complexity:** O(1), as the frequency map will store at most 26 unique lowercase English letters, which is a constant amount of space.
+
+LLM Testcase Validation:
+```
+"nlaebolko"
+"loonbalxballpoon"
+"leetcode"
+```
