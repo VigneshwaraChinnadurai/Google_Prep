@@ -1,0 +1,71 @@
+Date: 2026-06-23
+Title: Number of ZigZag Arrays I
+URL: https://leetcode.com/problems/number-of-zigzag-arrays-i/
+
+LLM Explanation:
+The user wants me to solve the "Number of ZigZag Arrays I" problem.
+
+### Method Explanation
+
+This problem asks for the number of arrays of length `n` with elements in `[l, r]` that satisfy a "zigzag" property: no three consecutive elements are strictly increasing or strictly decreasing. This property, combined with the rule that adjacent elements must be different, implies that for any `i > 1`, the triplet `(a_{i-1}, a_i, a_{i+1})` must form a "peak" (`a_{i-1} < a_i > a_{i+1}`) or a "valley" (`a_{i-1} > a_i < a_{i+1}`).
+
+This structure is well-suited for dynamic programming. We can build the array element by element, keeping track of the necessary information to make valid extensions.
+
+#### DP State
+Let `dp[i][j][type]` be the number of valid zigzag arrays of length `i` where the last element `a_i` is `j`, and `type` indicates the relationship between the last two elements:
+- `type = 0`: The array ends in an "up-stroke" (`a_{i-1} < a_i = j`).
+- `type = 1`: The array ends in a "down-stroke" (`a_{i-1} > a_i = j`).
+
+#### DP Transitions
+To form a valid array of length `i`, we extend a valid array of length `i-1`.
+1.  To create an array of length `i` ending in an up-stroke (`... < j`), the previous triplet `(a_{i-2}, a_{i-1}, a_i)` must be a valley (`a_{i-2} > a_{i-1} < a_i`). This means we must extend an array of length `i-1` that ended in a down-stroke (`a_{i-2} > a_{i-1} = k`), where `k < j`.
+    - `dp[i][j][0] = sum(dp[i-1][k][1] for k in [l, j-1])`
+
+2.  Similarly, to create an array ending in a down-stroke (`... > j`), the previous triplet must be a peak (`a_{i-2} < a_{i-1} > a_i`). We extend an array of length `i-1` that ended in an up-stroke (`a_{i-2} < a_{i-1} = k`), where `k > j`.
+    - `dp[i][j][1] = sum(dp[i-1][k][0] for k in [j+1, r])`
+
+#### Optimization with Prefix/Suffix Sums
+The transitions involve summing over ranges. These can be computed efficiently in `O(r)` time for all `j` by using prefix and suffix sums. For each length `i`, we can pre-calculate the prefix sums of `dp[i-1][k][1]` and suffix sums of `dp[i-1][k][0]`. A more memory-efficient way is to calculate these sums on-the-fly using a running sum variable as we iterate through `j`.
+
+#### Base Case
+For `i = 2`, an array `[a_1, a_2]` is valid if `a_1 != a_2` and both are in `[l, r]`.
+- `dp[2][j][0]` (for `a_1 < a_2 = j`): `a_1` can be any value in `[l, j-1]`. There are `j - l` such values.
+- `dp[2][j][1]` (for `a_1 > a_2 = j`): `a_1` can be any value in `[j+1, r]`. There are `r - j` such values.
+
+#### Algorithm
+1. Initialize a DP table `prev_dp` for length `i=2` based on the base case.
+2. Iterate from `i = 3` to `n`. In each iteration:
+   a. Create a new `dp` table for length `i`.
+   b. Calculate `dp[j][0]` for all `j` by iterating from `l` to `r` and maintaining a running prefix sum of `prev_dp[k][1]`.
+   c. Calculate `dp[j][1]` for all `j` by iterating from `r` down to `l` and maintaining a running suffix sum of `prev_dp[k][0]`.
+   d. Replace `prev_dp` with the new `dp` table.
+3. The final answer is the sum of all values in the `prev_dp` table after the loop finishes. All calculations are done modulo `10^9 + 7`.
+
+#### Complexity
+- **Time Complexity:** `O(n * r)`. We have a loop for `n` and an inner loop for `r`.
+- **Space Complexity:** `O(r)`. We only need to store the DP tables for the current and previous lengths.
+
+LLM Testcase Validation:
+- **Testcase 1:** `n = 3, l = 4, r = 5`
+  - **Expected Output:** `2`
+  - **My Logic:**
+    - **i=2 (Base Case):**
+      - Arrays ending in `< j`: `[4, 5]` (1 array). `prev_dp[5][0] = 1`.
+      - Arrays ending in `> j`: `[5, 4]` (1 array). `prev_dp[4][1] = 1`.
+    - **i=3:**
+      - To end in `< j`: must extend a `> k` sequence where `k < j`.
+        - `j=5`: extend `[5,4]`. `a_3 > 4`. `a_3=5`. Array `[5,4,5]`. `dp[5][0] = prev_dp[4][1] = 1`.
+      - To end in `> j`: must extend a `< k` sequence where `k > j`.
+        - `j=4`: extend `[4,5]`. `a_3 < 5`. `a_3=4`. Array `[4,5,4]`. `dp[4][1] = prev_dp[5][0] = 1`.
+    - **Total:** `1 + 1 = 2`. Correct.
+
+- **Testcase 2:** `n = 3, l = 1, r = 3`
+  - **Expected Output:** `10`
+  - **My Logic:**
+    - **i=2 (Base Case):**
+      - `prev_dp[1]=[0,2]`, `prev_dp[2]=[1,1]`, `prev_dp[3]=[2,0]`.
+    - **i=3:**
+      - `dp[1][0]=0`, `dp[1][1]=prev_dp[2][0]+prev_dp[3][0]=1+2=3`.
+      - `dp[2][0]=prev_dp[1][1]=2`, `dp[2][1]=prev_dp[3][0]=2`.
+      - `dp[3][0]=prev_dp[1][1]+prev_dp[2][1]=2+1=3`, `dp[3][1]=0`.
+    - **Total:** `(0+3) + (2+2) + (3+0) = 10`. Correct.
