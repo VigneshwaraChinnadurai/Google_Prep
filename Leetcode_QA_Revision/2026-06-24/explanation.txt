@@ -1,0 +1,81 @@
+Date: 2026-06-24
+Title: Number of ZigZag Arrays II
+URL: https://leetcode.com/problems/number-of-zigzag-arrays-ii/
+
+LLM Explanation:
+The user wants me to solve the LeetCode problem "Number of ZigZag Arrays II".
+
+### Method Explanation
+
+The problem asks for the number of "ZigZag" arrays of length `n` with elements in `[l, r]`. A ZigZag array has no adjacent equal elements and no three consecutive elements that are strictly increasing or decreasing. The large value of `n` (up to 10^9) suggests a dynamic programming approach combined with matrix exponentiation.
+
+Let's define a DP state based on the last element of the array and the direction of the last "step".
+- `dp[i][v][0]`: Number of valid ZigZag arrays of length `i` ending with value `l+v`, where the last step was "UP" (i.e., `a[i-2] < a[i-1]`).
+- `dp[i][v][1]`: Number of valid ZigZag arrays of length `i` ending with value `l+v`, where the last step was "DOWN" (i.e., `a[i-2] > a[i-1]`).
+
+Here, `v` is the 0-indexed value, `0 <= v < m`, where `m = r - l + 1`.
+
+The ZigZag condition (`a[i-2] < a[i-1] < a[i]` and `a[i-2] > a[i-1] > a[i]` are forbidden) implies that an "UP" step must be followed by a "DOWN" step, and a "DOWN" step must be followed by an "UP" step.
+
+This leads to the following DP transitions:
+1. To form an array of length `i+1` with an "UP" step (`a[i-1] < a[i]`):
+   The previous array of length `i` must have ended in a "DOWN" step.
+   `dp[i+1][v_new][0] = sum(dp[i][v_old][1])` for all `v_old < v_new`.
+
+2. To form an array of length `i+1` with a "DOWN" step (`a[i-1] > a[i]`):
+   The previous array of length `i` must have ended in an "UP" step.
+   `dp[i+1][v_new][1] = sum(dp[i][v_old][0])` for all `v_old > v_new`.
+
+These transitions are linear and independent of `i`, which is a perfect setup for matrix exponentiation. We can represent the DP state as a vector of size `2m` and the transitions as a `2m x 2m` matrix `T`.
+The state vector at step `i` is `V_i = [dp[i][0][0], ..., dp[i][m-1][0], dp[i][0][1], ..., dp[i][m-1][1]]^T`.
+The transition is `V_{i+1} = T * V_i`.
+
+The transition matrix `T` has a block structure: `T = [[0, A], [B, 0]]`, where `A` and `B` are `m x m` matrices.
+- `A` handles DOWN -> UP transitions: `A[i][j] = 1` if `j < i`, `0` otherwise.
+- `B` handles UP -> DOWN transitions: `B[i][j] = 1` if `j > i`, `0` otherwise.
+
+To find the number of arrays of length `n`, we need to compute `V_n = T^(n-2) * V_2`. The base case `V_2` is for arrays of length 2.
+- `V_2_up[v]`: Number of pairs `(a0, a1)` with `a1=l+v` and `a0 < a1`. There are `v` choices for `a0`.
+- `V_2_down[v]`: Number of pairs `(a0, a1)` with `a1=l+v` and `a0 > a1`. There are `m-1-v` choices for `a0`.
+
+The powers of the block matrix `T` have a pattern:
+- `T^2 = [[A*B, 0], [0, B*A]]`
+- `T^3 = [[0, A*(B*A)], [B*(A*B), 0]]`
+This allows us to work with smaller `m x m` matrices `C = A*B` and `D = B*A`, which is more efficient. We can find closed-form expressions for `C` and `D`:
+- `C[i][k] = min(i, k)`
+- `D[i][k] = m - 1 - max(i, k)`
+
+We can further optimize by noticing that `D = J*C*J`, where `J` is the anti-diagonal identity matrix. This means `D^p = J*C^p*J`, so we only need to compute the power of one matrix, `C`.
+
+The algorithm is as follows:
+1. Initialize `m = r - l + 1`.
+2. Construct matrices `A`, `B`, and `C`.
+3. Initialize the base case vectors `V2_up` and `V2_down`.
+4. Let `k = n - 2`. We need to apply the transition `k` times.
+5. Depending on whether `k` is even or odd, we compute powers of `C` and `D` (using the `J*C*J` property for `D`) and apply the matrix transformations to get the final state vectors `Vn_up` and `Vn_down`.
+6. The total count is the sum of all elements in `Vn_up` and `Vn_down`, modulo `10^9 + 7`.
+
+This approach has a time complexity of `O(m^3 * log(n))` and space complexity of `O(m^2)`, which is efficient enough for the given constraints.
+
+LLM Testcase Validation:
+- **Testcase 1:** `n = 3, l = 4, r = 5`
+  - `m = 5 - 4 + 1 = 2`.
+  - `k = n - 2 = 1` (odd). `p = (1-1)/2 = 0`.
+  - `V2_up = [0, 1]`, `V2_down = [1, 0]`.
+  - `Cp = I`, `Dp = I`.
+  - `V_intermediate_up = [0, 1]`, `V_intermediate_down = [1, 0]`.
+  - `A = [[0,0],[1,0]]`, `B = [[0,1],[0,0]]`.
+  - `Vn_up = A * [1,0] = [0, 1]`.
+  - `Vn_down = B * [0,1] = [1, 0]`.
+  - Total = `sum([0,1]) + sum([1,0]) = 1 + 1 = 2`. **Correct.**
+
+- **Testcase 2:** `n = 3, l = 1, r = 3`
+  - `m = 3 - 1 + 1 = 3`.
+  - `k = n - 2 = 1` (odd). `p = 0`.
+  - `V2_up = [0, 1, 2]`, `V2_down = [2, 1, 0]`.
+  - `Cp = I`, `Dp = I`.
+  - `V_intermediate_up = [0, 1, 2]`, `V_intermediate_down = [2, 1, 0]`.
+  - `A = [[0,0,0],[1,0,0],[1,1,0]]`, `B = [[0,1,1],[0,0,1],[0,0,0]]`.
+  - `Vn_up = A * [2,1,0] = [0, 2, 3]`.
+  - `Vn_down = B * [0,1,2] = [3, 2, 0]`.
+  - Total = `sum([0,2,3]) + sum([3,2,0]) = 5 + 5 = 10`. **Correct.**
