@@ -1,0 +1,38 @@
+Date: 2026-06-26
+Title: Count Subarrays With Majority Element II
+URL: https://leetcode.com/problems/count-subarrays-with-majority-element-ii/
+
+LLM Explanation:
+The problem asks for the number of subarrays where `target` is the majority element. An element is a majority element if its frequency is strictly more than half the subarray's length.
+
+Let `k` be the count of `target` in a subarray and `other` be the count of other elements. The condition is `k > (k + other) / 2`, which simplifies to `k > other`.
+
+This condition suggests a transformation of the input array `nums`. We can create a new array `arr` where `arr[i] = 1` if `nums[i] == target` and `arr[i] = -1` otherwise. For any subarray, the condition `k > other` is equivalent to the sum of the corresponding elements in `arr` being strictly positive.
+
+So, the problem is transformed into finding the number of subarrays in `arr` with a positive sum. This is a classic problem that can be solved efficiently using prefix sums. The sum of a subarray `arr[i..j]` is `prefix[j+1] - prefix[i]`, where `prefix[k]` is the sum of the first `k` elements of `arr` (and `prefix[0] = 0`). We need to find the number of pairs `(i, j)` with `i <= j` such that `prefix[j+1] > prefix[i]`.
+
+This is equivalent to counting pairs `(p, q)` with `p < q` such that `prefix_array[p] < prefix_array[q]`, where `prefix_array` contains all the prefix sums. This can be solved in `O(n log n)` time. A Fenwick Tree (or Binary Indexed Tree, BIT) is a suitable data structure for this task.
+
+The algorithm is as follows:
+1.  Transform `nums` into the `arr` of `1`s and `-1`s.
+2.  The prefix sums of `arr` will range from `-n` to `n`. To use a BIT, we need non-negative indices. We can shift all prefix sum values by an offset `n`, mapping them to the range `[0, 2n]`. The BIT will have a size of `2n + 2`.
+3.  Initialize a BIT to all zeros.
+4.  Iterate through `arr`, maintaining the `current_prefix_sum`. Before processing each element, we add the initial `prefix[0] = 0` to the BIT.
+5.  For each `current_prefix_sum`, we query the BIT to find how many previously encountered prefix sums are smaller than it. This gives the number of valid subarrays ending at the current position. We add this count to our total.
+6.  After querying, we update the BIT with the `current_prefix_sum` to include it for future queries.
+
+The BIT operations (query and update) take `O(log n)` time. Since we iterate through the array once, the total time complexity is `O(n log n)`. The space complexity is `O(n)` for the BIT.
+
+**Edge Cases:**
+- If `target` is not in `nums`, `arr` will be all `-1`s. All subarray sums will be negative, so the count will be correctly 0.
+- If `nums` contains only `target`, `arr` will be all `1`s. All subarray sums will be positive, and the algorithm will correctly count all `n * (n+1) / 2` subarrays.
+
+LLM Testcase Validation:
+```
+[1,2,2,3]
+2
+[1,1,1,1]
+1
+[1,2,3]
+4
+```
