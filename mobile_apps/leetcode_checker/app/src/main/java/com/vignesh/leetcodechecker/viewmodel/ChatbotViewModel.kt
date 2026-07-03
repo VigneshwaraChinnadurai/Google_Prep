@@ -9,6 +9,7 @@ import androidx.lifecycle.viewModelScope
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import com.vignesh.leetcodechecker.BuildConfig
+import com.vignesh.leetcodechecker.AppSettingsStore
 import com.vignesh.leetcodechecker.data.ChatHistoryStore
 import com.vignesh.leetcodechecker.data.ChatLogEntry
 import com.vignesh.leetcodechecker.data.ChatSession
@@ -59,10 +60,26 @@ If the user asks for detailed data-backed analysis with live data (news, SEC fil
     }
 
     // ── Gemini API setup ────────────────────────────────────────
-    private val apiKey = BuildConfig.CHATBOT_GEMINI_API_KEY.ifBlank {
-        BuildConfig.GEMINI_API_KEY  // fallback to LeetCode key if chatbot key missing
+    private fun initAiBackend() {
+        val apiKey = AppSettingsStore.load(appContext).globalGeminiApiKey.ifBlank {
+            BuildConfig.GEMINI_API_KEY  // fallback to LeetCode key if chatbot key missing
+        }
+        
+        if (apiKey.isBlank()) {
+            chatbotLogger.logError("No API key", "CHATBOT_GEMINI_API_KEY not configured")
+            refreshLogEntries()
+            _uiState.update {
+                it.copy(errorMessage = "No API key configured. Add CHATBOT_GEMINI_API_KEY to local.properties or set up the .env file.")
+            }
+            return
+        }
+
+        this.apiKey = apiKey
+        this.model = "gemini-2.5-flash"
     }
-    private val model = "gemini-2.5-flash"
+
+    private var apiKey: String = ""
+    private var model: String = "gemini-2.5-flash"
 
     private val moshi = Moshi.Builder()
         .add(KotlinJsonAdapterFactory())

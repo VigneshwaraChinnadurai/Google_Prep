@@ -41,7 +41,11 @@ data class AppSettings(
     val ollamaBackend: String = "ollama",  // "ollama" or "local"
     val localModelPath: String = "",       // Path to .gguf model file
     val localContextSize: Int = 2048,      // Context window size
-    val localMaxTokens: Int = 512          // Max tokens to generate
+    val localMaxTokens: Int = 512,         // Max tokens to generate
+    
+    // ── Global API Keys ─────────────────────────────────────────
+    val globalGithubToken: String = "",
+    val globalGeminiApiKey: String = ""
 )
 
 object AppSettingsStore {
@@ -78,7 +82,9 @@ object AppSettingsStore {
                 ollamaBackend = json.optString("ollamaBackend", "ollama"),
                 localModelPath = json.optString("localModelPath", ""),
                 localContextSize = json.optInt("localContextSize", 2048),
-                localMaxTokens = json.optInt("localMaxTokens", 512)
+                localMaxTokens = json.optInt("localMaxTokens", 512),
+                globalGithubToken = json.optString("globalGithubToken", ""),
+                globalGeminiApiKey = json.optString("globalGeminiApiKey", "")
             )
         }.getOrElse { AppSettings() }
     }
@@ -109,6 +115,8 @@ object AppSettingsStore {
             .put("localModelPath", settings.localModelPath)
             .put("localContextSize", settings.localContextSize)
             .put("localMaxTokens", settings.localMaxTokens)
+            .put("globalGithubToken", settings.globalGithubToken)
+            .put("globalGeminiApiKey", settings.globalGeminiApiKey)
             .toString()
 
         prefs(context).edit().putString(KEY_SETTINGS, json).apply()

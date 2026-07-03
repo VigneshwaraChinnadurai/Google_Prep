@@ -227,7 +227,13 @@ class LeetCodeRepository(
         forceRefresh: Boolean = false
     ): Result<AiGenerationResult> {
         return runCatching {
-            val settings = loadSettings()
+            val settings = AppSettingsStore.load(context)
+            val apiKey = settings.globalGeminiApiKey.ifBlank { BuildConfig.GEMINI_API_KEY }.trim()
+
+            if (apiKey.isEmpty()) {
+                error("Gemini API key is not configured.")
+            }
+
             val maxModelRetries = settings.maxModelRetries.coerceIn(1, 10)
             val maxInputTokens = settings.maxInputTokens.coerceIn(1_024, 2_000_000)
             val maxOutputTokens = settings.maxOutputTokens.coerceIn(256, 65_535)
@@ -268,11 +274,6 @@ class LeetCodeRepository(
                 val waitSeconds = ((geminiCooldownUntilMillis - now) / 1000).coerceAtLeast(1)
                 logDebug(debug, "Cooldown active: $waitSeconds seconds remaining")
                 delay(waitSeconds * 1000L)
-            }
-
-            val apiKey = BuildConfig.GEMINI_API_KEY.trim()
-            require(apiKey.isNotEmpty()) {
-                "Missing Gemini API key. Add GEMINI_API_KEY in local.properties."
             }
 
             val availableModels = runCatching {

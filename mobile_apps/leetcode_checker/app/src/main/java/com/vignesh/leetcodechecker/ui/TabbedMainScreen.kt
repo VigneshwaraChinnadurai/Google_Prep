@@ -46,10 +46,16 @@ enum class FeatureScreen {
     PROTECTION,
     AI_NEWS,
     AI_NEWS_SETTINGS,
+    GLOBAL_SETTINGS,
+    RANDOM_CHALLENGE,
     PYTHON_PLAYGROUND,
     AI_LEARNING_HUB,
     STRATEGIC_CHATBOT,
-    WHATS_NEW
+    WHATS_NEW,
+    PROFILE,
+    OLLAMA,
+    CHATBOT,
+    GITHUB_PROFILE
 }
 
 /**
@@ -79,7 +85,7 @@ fun TabbedMainScreen(
     var featureScreen by rememberSaveable { mutableStateOf(FeatureScreen.HUB) }
     var challengeFilter by remember { mutableStateOf<ChallengeFilter?>(null) }
     val ollamaViewModel: OllamaViewModel = viewModel()
-    val gitHubProfileViewModel: GitHubProfileViewModel = viewModel()
+    val gitHubProfileViewModel: GitHubProfileViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
     val proofFilingViewModel: ProofFilingViewModel = viewModel()
 
     Scaffold(
@@ -158,10 +164,16 @@ fun TabbedMainScreen(
                                     FeatureDestination.PROTECTION -> FeatureScreen.PROTECTION
                                     FeatureDestination.AI_NEWS -> FeatureScreen.AI_NEWS
                                     FeatureDestination.AI_NEWS_SETTINGS -> FeatureScreen.AI_NEWS_SETTINGS
-                                    FeatureDestination.PYTHON_PLAYGROUND -> FeatureScreen.PYTHON_PLAYGROUND
+                                    FeatureDestination.GLOBAL_SETTINGS -> FeatureScreen.GLOBAL_SETTINGS
+                                    FeatureDestination.RANDOM_CHALLENGE -> FeatureScreen.RANDOM_CHALLENGE
+                                    FeatureDestination.PROFILE -> FeatureScreen.PROFILE
+                                    FeatureDestination.OLLAMA -> FeatureScreen.OLLAMA
+                                    FeatureDestination.CHATBOT -> FeatureScreen.CHATBOT
+                                    FeatureDestination.GITHUB_PROFILE -> FeatureScreen.GITHUB_PROFILE
                                     FeatureDestination.AI_LEARNING_HUB -> FeatureScreen.AI_LEARNING_HUB
                                     FeatureDestination.STRATEGIC_CHATBOT -> FeatureScreen.STRATEGIC_CHATBOT
                                     FeatureDestination.WHATS_NEW -> FeatureScreen.WHATS_NEW
+                                    FeatureDestination.PYTHON_PLAYGROUND -> FeatureScreen.PYTHON_PLAYGROUND
                                 }
                             },
                             onFilterSelected = { topic, difficulty ->
@@ -201,10 +213,21 @@ fun TabbedMainScreen(
                             onSettingsClick = { featureScreen = FeatureScreen.AI_NEWS_SETTINGS }
                         )
                         FeatureScreen.AI_NEWS_SETTINGS -> AINewsSettingsScreen(
-                            onBackClick = { featureScreen = FeatureScreen.AI_NEWS }
+                            onBackClick = { featureScreen = FeatureScreen.HUB }
+                        )
+                        FeatureScreen.GLOBAL_SETTINGS -> GlobalSettingsScreen(
+                            onBack = { featureScreen = FeatureScreen.HUB }
+                        )
+                        FeatureScreen.RANDOM_CHALLENGE -> RandomChallengeCard(
+                            onStartChallenge = { topic, difficulty ->
+                                challengeFilter = ChallengeFilter(topic, difficulty)
+                                selectedTab = AppTab.LEETCODE
+                                featureScreen = FeatureScreen.HUB
+                            }
                         )
                         FeatureScreen.PYTHON_PLAYGROUND -> PythonPlaygroundScreen(
-                            modifier = Modifier.fillMaxSize()
+                            modifier = Modifier.fillMaxSize(),
+                            onBack = { featureScreen = FeatureScreen.HUB }
                         )
                         FeatureScreen.AI_LEARNING_HUB -> AIFeaturesHubScreen(
                             apiKey = "", // TODO: Get from config
@@ -220,6 +243,12 @@ fun TabbedMainScreen(
                         FeatureScreen.WHATS_NEW -> WhatsNewScreen(
                             onBackClick = { featureScreen = FeatureScreen.HUB }
                         )
+                        else -> {
+                            // These features are handled by root tabs or are not implemented as standalone screens
+                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                Text("Not implemented or handled elsewhere")
+                            }
+                        }
                     }
                 }
                 AppTab.PROOFFILING -> {

@@ -124,7 +124,12 @@ fun FeaturesHubScreen(
             FeatureItem("AI/ML News", "🤖", Color(0xFF9C27B0), FeatureDestination.AI_NEWS),
             FeatureItem("Protection", "🔒", Color(0xFFF85149), FeatureDestination.PROTECTION),
             FeatureItem("Python IDE", "🐍", Color(0xFF3776AB), FeatureDestination.PYTHON_PLAYGROUND),
-            FeatureItem("What's New", "✨", Color(0xFFFFB347), FeatureDestination.WHATS_NEW)
+            FeatureItem("What's New", "✨", Color(0xFFFFB347), FeatureDestination.WHATS_NEW),
+            FeatureItem("Global Settings", "⚙", Color(0xFFA3A3A3), FeatureDestination.GLOBAL_SETTINGS),
+            FeatureItem("Random Challenge", "🎲", Color(0xFFD3D3D3), FeatureDestination.RANDOM_CHALLENGE),
+            FeatureItem("Profile", "👤", Color(0xFFA3A3A3), FeatureDestination.PROFILE),
+            FeatureItem("GitHub Profile", "🐙", Color(0xFFA3A3A3), FeatureDestination.GITHUB_PROFILE),
+            FeatureItem("PROTECTION", "🛡", Color(0xFF30363D), FeatureDestination.PROTECTION)
         )
         
         // Check for unseen updates
@@ -354,9 +359,15 @@ enum class FeatureDestination {
     INTERVIEW,
     LEADERBOARD,
     OFFLINE,
-    PROTECTION,
+    OLLAMA,
+    CHATBOT,
     AI_NEWS,
     AI_NEWS_SETTINGS,
+    GLOBAL_SETTINGS,
+    RANDOM_CHALLENGE,
+    PROFILE,
+    GITHUB_PROFILE,
+    PROTECTION,
     PYTHON_PLAYGROUND,
     AI_LEARNING_HUB,
     STRATEGIC_CHATBOT,

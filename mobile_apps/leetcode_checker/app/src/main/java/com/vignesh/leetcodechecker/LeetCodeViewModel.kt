@@ -441,7 +441,7 @@ class LeetCodeViewModel(
                 val localPath = RevisionExportManager.writeLocalRevisionFiles(appContext, files)
                 RevisionExportManager.pushToGitHub(
                     files = files,
-                    token = BuildConfig.GITHUB_TOKEN,
+                    token = settings.globalGithubToken.ifBlank { BuildConfig.GITHUB_TOKEN },
                     owner = owner,
                     repo = repo,
                     branch = branch,

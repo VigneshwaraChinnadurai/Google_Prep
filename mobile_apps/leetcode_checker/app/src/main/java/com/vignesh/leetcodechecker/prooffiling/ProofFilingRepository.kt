@@ -6,7 +6,10 @@ import android.util.Log
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.Types
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
+import com.vignesh.leetcodechecker.AppSettingsStore
 import com.vignesh.leetcodechecker.BuildConfig
+import com.vignesh.leetcodechecker.R
+import com.vignesh.leetcodechecker.api.GitHubGraphQLApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
@@ -174,7 +177,8 @@ class ProofFilingRepository(private val context: Context) {
         weekEnd: LocalDate = LocalDate.now().with(TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY))
     ): Result<GitHubWeeklyStats> = withContext(Dispatchers.IO) {
         try {
-            val token = BuildConfig.GITHUB_TOKEN
+            val settings = AppSettingsStore.load(context)
+            val token = settings.globalGithubToken.ifBlank { BuildConfig.GITHUB_TOKEN }
             if (token.isBlank()) {
                 return@withContext Result.failure(Exception("GitHub token not configured"))
             }
@@ -500,9 +504,9 @@ class ProofFilingRepository(private val context: Context) {
      */
     suspend fun generateGitHubSummary(commits: List<CommitInfo>): Result<String> = withContext(Dispatchers.IO) {
         try {
-            val apiKey = BuildConfig.GEMINI_API_KEY
+            val settings = AppSettingsStore.load(context)
+            val apiKey = settings.globalGeminiApiKey.ifBlank { BuildConfig.GEMINI_API_KEY }
             if (apiKey.isBlank()) {
-                Log.e(TAG, "Gemini API key is blank/empty")
                 return@withContext Result.failure(Exception("Gemini API key not configured"))
             }
             
@@ -603,9 +607,9 @@ class ProofFilingRepository(private val context: Context) {
      */
     suspend fun generateWeeklySummary(entry: ProofFilingEntry): Result<String> = withContext(Dispatchers.IO) {
         try {
-            val apiKey = BuildConfig.GEMINI_API_KEY
+            val settings = AppSettingsStore.load(context)
+            val apiKey = settings.globalGeminiApiKey.ifBlank { BuildConfig.GEMINI_API_KEY }
             if (apiKey.isBlank()) {
-                Log.e(TAG, "Gemini API key is blank for weekly summary")
                 return@withContext Result.failure(Exception("Gemini API key not configured"))
             }
             
@@ -724,7 +728,8 @@ class ProofFilingRepository(private val context: Context) {
      */
     suspend fun pushToGitHub(entry: ProofFilingEntry): Result<ProofFilingEntry> = withContext(Dispatchers.IO) {
         try {
-            val token = BuildConfig.GITHUB_TOKEN
+            val settings = AppSettingsStore.load(context)
+            val token = settings.globalGithubToken.ifBlank { BuildConfig.GITHUB_TOKEN }
             if (token.isBlank()) {
                 return@withContext Result.failure(Exception("GitHub token not configured"))
             }

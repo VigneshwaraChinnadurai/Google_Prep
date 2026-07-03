@@ -18,19 +18,21 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.squareup.moshi.Moshi
-import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
+import com.vignesh.leetcodechecker.AppSettingsStore
 import com.vignesh.leetcodechecker.BuildConfig
 import com.vignesh.leetcodechecker.data.*
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import com.squareup.moshi.Moshi
+import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
 import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * Python Playground Screen — IDE-like interface for writing and testing Python code.
@@ -44,16 +46,29 @@ import java.util.concurrent.TimeUnit
  */
 @Composable
 fun PythonPlaygroundScreen(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onBack: () -> Unit
 ) {
     val context = LocalContext.current
+    val apiKey = AppSettingsStore.load(context).globalGeminiApiKey.ifBlank { BuildConfig.GEMINI_API_KEY }
+    
+    // UI State
+    var code by remember { mutableStateOf(DEFAULT_CODE) }
+    var output by remember { mutableStateOf("") }
+    var isRunning by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+    var showTemplates by remember { mutableStateOf(false) }
+    
     val scope = rememberCoroutineScope()
     
-    var code by rememberSaveable { mutableStateOf(DEFAULT_CODE) }
-    var output by rememberSaveable { mutableStateOf("") }
-    var isRunning by rememberSaveable { mutableStateOf(false) }
-    var errorMessage by rememberSaveable { mutableStateOf<String?>(null) }
-    var showTemplates by rememberSaveable { mutableStateOf(false) }
+    // Quick action templates
+    val quickActions = listOf(
+        "Hello World",
+        "Fibonacci",
+        "Two Sum",
+        "Binary Search",
+        "Quick Sort"
+    )
     
     Column(
         modifier = modifier
@@ -98,7 +113,7 @@ fun PythonPlaygroundScreen(
                             isRunning = true
                             errorMessage = null
                             try {
-                                output = executePythonCode(code)
+                                output = executePythonCode(code, apiKey)
                             } catch (e: Exception) {
                                 errorMessage = "Error: ${e.message}"
                             }
@@ -216,7 +231,7 @@ fun PythonPlaygroundScreen(
                             .verticalScroll(rememberScrollState())
                     ) {
                         val lines = code.lines()
-                        lines.forEachIndexed { index, _ ->
+                        for (index in lines.indices) {
                             Text(
                                 text = "${index + 1}",
                                 fontSize = 13.sp,
@@ -232,7 +247,7 @@ fun PythonPlaygroundScreen(
                     // Code editor
                     BasicTextField(
                         value = code,
-                        onValueChange = { code = it },
+                        onValueChange = { newCode: String -> code = newCode },
                         modifier = Modifier
                             .fillMaxSize()
                             .verticalScroll(rememberScrollState()),
@@ -476,8 +491,7 @@ print(f"Average: {sum(numbers) / len(numbers)}")
  * Execute Python code using Gemini AI to simulate Python runtime.
  * This is a workaround since Android can't run Python directly.
  */
-private suspend fun executePythonCode(code: String): String = withContext(Dispatchers.IO) {
-    val apiKey = BuildConfig.GEMINI_API_KEY
+private suspend fun executePythonCode(code: String, apiKey: String): String = withContext(Dispatchers.IO) {
     if (apiKey.isBlank()) {
         return@withContext "Error: No API key configured. Add GEMINI_API_KEY to local.properties."
     }

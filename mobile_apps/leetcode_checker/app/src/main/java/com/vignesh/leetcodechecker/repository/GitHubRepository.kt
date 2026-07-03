@@ -28,7 +28,7 @@ interface GitHubRawApi {
 /**
  * Repository for fetching GitHub profile and contribution data
  */
-class GitHubRepository {
+class GitHubRepository(private val context: android.content.Context) {
     
     private val moshi = Moshi.Builder()
         .add(KotlinJsonAdapterFactory())
@@ -53,7 +53,7 @@ class GitHubRepository {
      */
     suspend fun getUserProfile(username: String = BuildConfig.GITHUB_OWNER): Result<GitHubUser> {
         return try {
-            val token = BuildConfig.GITHUB_TOKEN
+            val token = com.vignesh.leetcodechecker.AppSettingsStore.load(context).globalGithubToken.ifBlank { BuildConfig.GITHUB_TOKEN }
             if (token.isBlank()) {
                 return Result.failure(Exception("GitHub token not configured"))
             }
@@ -79,7 +79,7 @@ class GitHubRepository {
      */
     suspend fun getProfileReadme(username: String): Result<String> {
         return try {
-            val token = BuildConfig.GITHUB_TOKEN
+            val token = com.vignesh.leetcodechecker.AppSettingsStore.load(context).globalGithubToken.ifBlank { BuildConfig.GITHUB_TOKEN }
             if (token.isBlank()) {
                 return Result.failure(Exception("GitHub token not configured"))
             }
