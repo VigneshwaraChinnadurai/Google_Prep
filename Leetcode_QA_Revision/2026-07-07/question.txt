@@ -1,0 +1,49 @@
+Date: 2026-07-07
+Question ID: 3754
+Title: Concatenate Non-Zero Digits and Multiply by Sum I
+Difficulty: Easy
+Tags: Math
+URL: https://leetcode.com/problems/concatenate-non-zero-digits-and-multiply-by-sum-i/
+
+Question:
+You are given an integer n . Form a new integer x by concatenating all the non-zero digits of n in their original order. If there are no non-zero digits, x = 0 . Let sum be the sum of digits in x . Return an integer representing the value of x * sum . Example 1: Input: n = 10203004 Output: 12340 Explanation: The non-zero digits are 1, 2, 3, and 4. Thus, x = 1234 . The sum of digits is sum = 1 + 2 + 3 + 4 = 10 . Therefore, the answer is x * sum = 1234 * 10 = 12340 . Example 2: Input: n = 1000 Output: 1 Explanation: The non-zero digit is 1, so x = 1 and sum = 1 . Therefore, the answer is x * sum = 1 * 1 = 1 . Constraints: 0 &lt;= n &lt;= 10 9
+
+Starter Code (Python3):
+class Solution:
+    def sumAndMultiply(self, n: int) -> int:
+        
+
+Testcases:
+10203004
+1000
+
+Expected Output / Validation:
+Testcase 1:
+Input: n = 10203004
+- Convert n to string: "10203004"
+- Iterate through digits:
+  - '1' is non-zero: x_str = "1", sum_val = 1
+  - '0' is zero, skip.
+  - '2' is non-zero: x_str = "12", sum_val = 1 + 2 = 3
+  - '0' is zero, skip.
+  - '3' is non-zero: x_str = "123", sum_val = 3 + 3 = 6
+  - '0' is zero, skip.
+  - '0' is zero, skip.
+  - '4' is non-zero: x_str = "1234", sum_val = 6 + 4 = 10
+- Form x: x = int("1234") = 1234
+- Form sum: sum = 10
+- Result: x * sum = 1234 * 10 = 12340
+Output: 12340
+
+Testcase 2:
+Input: n = 1000
+- Convert n to string: "1000"
+- Iterate through digits:
+  - '1' is non-zero: x_str = "1", sum_val = 1
+  - '0' is zero, skip.
+  - '0' is zero, skip.
+  - '0' is zero, skip.
+- Form x: x = int("1") = 1
+- Form sum: sum = 1
+- Result: x * sum = 1 * 1 = 1
+Output: 1
