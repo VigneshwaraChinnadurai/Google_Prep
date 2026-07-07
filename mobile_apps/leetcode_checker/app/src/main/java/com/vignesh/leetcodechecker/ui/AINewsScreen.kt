@@ -171,7 +171,14 @@ fun AINewsScreen(
             },
             colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF161B22))
         )
-        
+
+        Text(
+            text = "📌 Curated picks — not a live feed, updated by the app author periodically",
+            fontSize = 11.sp,
+            color = Color(0xFF6E7681),
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+        )
+
         // Category Filter Chips
         LazyRow(
             modifier = Modifier

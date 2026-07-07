@@ -111,6 +111,7 @@ fun FeaturesHubScreen(
         Spacer(modifier = Modifier.height(12.dp))
         
         val features = listOf(
+            FeatureItem("Global Settings", "⚙", Color(0xFFA3A3A3), FeatureDestination.GLOBAL_SETTINGS),
             FeatureItem("AI Hub", "🧠", Color(0xFFFF6B6B), FeatureDestination.AI_LEARNING_HUB),
             FeatureItem("Chatbot", "💬", Color(0xFF00D4AA), FeatureDestination.STRATEGIC_CHATBOT),
             FeatureItem("Analytics", "📊", Color(0xFF58A6FF), FeatureDestination.ANALYTICS),
@@ -125,11 +126,9 @@ fun FeaturesHubScreen(
             FeatureItem("Protection", "🔒", Color(0xFFF85149), FeatureDestination.PROTECTION),
             FeatureItem("Python IDE", "🐍", Color(0xFF3776AB), FeatureDestination.PYTHON_PLAYGROUND),
             FeatureItem("What's New", "✨", Color(0xFFFFB347), FeatureDestination.WHATS_NEW),
-            FeatureItem("Global Settings", "⚙", Color(0xFFA3A3A3), FeatureDestination.GLOBAL_SETTINGS),
             FeatureItem("Random Challenge", "🎲", Color(0xFFD3D3D3), FeatureDestination.RANDOM_CHALLENGE),
             FeatureItem("Profile", "👤", Color(0xFFA3A3A3), FeatureDestination.PROFILE),
-            FeatureItem("GitHub Profile", "🐙", Color(0xFFA3A3A3), FeatureDestination.GITHUB_PROFILE),
-            FeatureItem("PROTECTION", "🛡", Color(0xFF30363D), FeatureDestination.PROTECTION)
+            FeatureItem("GitHub Profile", "🐙", Color(0xFFA3A3A3), FeatureDestination.GITHUB_PROFILE)
         )
         
         // Check for unseen updates

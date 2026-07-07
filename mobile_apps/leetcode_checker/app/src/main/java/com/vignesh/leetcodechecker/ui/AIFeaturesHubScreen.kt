@@ -15,6 +15,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -187,7 +188,8 @@ fun AIFeaturesHubScreen(
                 )
                 3 -> QuickToolsTab(
                     hintsEngine = hintsEngine,
-                    complexityAnalyzer = complexityAnalyzer
+                    complexityAnalyzer = complexityAnalyzer,
+                    onNavigateToLearningPaths = { selectedTab = 1 }
                 )
             }
         }
@@ -645,7 +647,8 @@ private fun SkillCard(
 @Composable
 private fun QuickToolsTab(
     hintsEngine: ProgressiveHintsEngine,
-    complexityAnalyzer: ComplexityAnalyzer
+    complexityAnalyzer: ComplexityAnalyzer,
+    onNavigateToLearningPaths: () -> Unit = {}
 ) {
     val scope = rememberCoroutineScope()
     
@@ -782,25 +785,29 @@ private fun QuickToolsTab(
                 icon = Icons.Filled.Star,
                 title = "Progressive Hints",
                 description = "5-level hints that gradually reveal the solution",
-                onClick = { /* Navigate to problem picker */ }
+                enabled = false,
+                badge = "Coming soon",
+                onClick = {}
             )
         }
-        
+
         item {
             ToolFeatureCard(
                 icon = Icons.Filled.Person,
                 title = "Voice Walkthrough",
                 description = "Audio-guided problem explanations for commute or study",
-                onClick = { /* Navigate to voice feature */ }
+                enabled = false,
+                badge = "Coming soon",
+                onClick = {}
             )
         }
-        
+
         item {
             ToolFeatureCard(
                 icon = Icons.Filled.Share,
                 title = "Knowledge Graph",
                 description = "Visualize problem relationships and prerequisites",
-                onClick = { /* Navigate to graph view */ }
+                onClick = onNavigateToLearningPaths
             )
         }
     }
@@ -901,12 +908,15 @@ private fun ToolFeatureCard(
     icon: ImageVector,
     title: String,
     description: String,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    enabled: Boolean = true,
+    badge: String? = null
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick),
+            .alpha(if (enabled) 1f else 0.5f)
+            .clickable(enabled = enabled, onClick = onClick),
         colors = CardDefaults.cardColors(containerColor = Color(0xFF21262D)),
         shape = RoundedCornerShape(12.dp)
     ) {
@@ -928,9 +938,9 @@ private fun ToolFeatureCard(
                     modifier = Modifier.size(24.dp)
                 )
             }
-            
+
             Spacer(modifier = Modifier.width(12.dp))
-            
+
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     title,
@@ -944,12 +954,21 @@ private fun ToolFeatureCard(
                     color = Color(0xFF8B949E)
                 )
             }
-            
-            Icon(
-                Icons.Filled.KeyboardArrowRight,
-                contentDescription = null,
-                tint = Color(0xFF8B949E)
-            )
+
+            if (badge != null) {
+                Text(
+                    badge,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color(0xFF8B949E)
+                )
+            } else {
+                Icon(
+                    Icons.Filled.KeyboardArrowRight,
+                    contentDescription = null,
+                    tint = Color(0xFF8B949E)
+                )
+            }
         }
     }
 }

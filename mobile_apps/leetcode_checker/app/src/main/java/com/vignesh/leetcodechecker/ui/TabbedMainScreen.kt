@@ -2,6 +2,7 @@ package com.vignesh.leetcodechecker.ui
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Home
@@ -13,10 +14,12 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.vignesh.leetcodechecker.AppSettingsStore
 import com.vignesh.leetcodechecker.prooffiling.ProofFilingScreen
 import com.vignesh.leetcodechecker.prooffiling.ProofFilingViewModel
 import com.vignesh.leetcodechecker.viewmodel.ChatbotViewModel
@@ -75,12 +78,14 @@ data class ChallengeFilter(
  * 3. State persistence across tab switches
  * 4. Filter sharing between Features and LeetCode tabs
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TabbedMainScreen(
     application: Application,
     onOpenLink: (String) -> Unit = {},
     leetcodeScreenContent: @Composable (onOpenLink: (String) -> Unit, challengeFilter: ChallengeFilter?, onClearFilter: () -> Unit) -> Unit
 ) {
+    val context = LocalContext.current
     var selectedTab by rememberSaveable { mutableStateOf(AppTab.LEETCODE) }
     var featureScreen by rememberSaveable { mutableStateOf(FeatureScreen.HUB) }
     var challengeFilter by remember { mutableStateOf<ChallengeFilter?>(null) }
@@ -166,10 +171,13 @@ fun TabbedMainScreen(
                                     FeatureDestination.AI_NEWS_SETTINGS -> FeatureScreen.AI_NEWS_SETTINGS
                                     FeatureDestination.GLOBAL_SETTINGS -> FeatureScreen.GLOBAL_SETTINGS
                                     FeatureDestination.RANDOM_CHALLENGE -> FeatureScreen.RANDOM_CHALLENGE
-                                    FeatureDestination.PROFILE -> FeatureScreen.PROFILE
+                                    FeatureDestination.PROFILE, FeatureDestination.GITHUB_PROFILE -> {
+                                        // Both live on the bottom-nav Profile tab; jump there instead of a dead-end screen.
+                                        selectedTab = AppTab.PROFILE
+                                        FeatureScreen.HUB
+                                    }
                                     FeatureDestination.OLLAMA -> FeatureScreen.OLLAMA
                                     FeatureDestination.CHATBOT -> FeatureScreen.CHATBOT
-                                    FeatureDestination.GITHUB_PROFILE -> FeatureScreen.GITHUB_PROFILE
                                     FeatureDestination.AI_LEARNING_HUB -> FeatureScreen.AI_LEARNING_HUB
                                     FeatureDestination.STRATEGIC_CHATBOT -> FeatureScreen.STRATEGIC_CHATBOT
                                     FeatureDestination.WHATS_NEW -> FeatureScreen.WHATS_NEW
@@ -218,21 +226,36 @@ fun TabbedMainScreen(
                         FeatureScreen.GLOBAL_SETTINGS -> GlobalSettingsScreen(
                             onBack = { featureScreen = FeatureScreen.HUB }
                         )
-                        FeatureScreen.RANDOM_CHALLENGE -> RandomChallengeCard(
-                            onStartChallenge = { topic, difficulty ->
-                                challengeFilter = ChallengeFilter(topic, difficulty)
-                                selectedTab = AppTab.LEETCODE
-                                featureScreen = FeatureScreen.HUB
+                        FeatureScreen.RANDOM_CHALLENGE -> Scaffold(
+                            topBar = {
+                                TopAppBar(
+                                    title = { Text("Random Challenge") },
+                                    navigationIcon = {
+                                        IconButton(onClick = { featureScreen = FeatureScreen.HUB }) {
+                                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                                        }
+                                    }
+                                )
                             }
-                        )
+                        ) { innerPadding ->
+                            Box(modifier = Modifier.padding(innerPadding)) {
+                                RandomChallengeCard(
+                                    onStartChallenge = { topic, difficulty ->
+                                        challengeFilter = ChallengeFilter(topic, difficulty)
+                                        selectedTab = AppTab.LEETCODE
+                                        featureScreen = FeatureScreen.HUB
+                                    }
+                                )
+                            }
+                        }
                         FeatureScreen.PYTHON_PLAYGROUND -> PythonPlaygroundScreen(
                             modifier = Modifier.fillMaxSize(),
                             onBack = { featureScreen = FeatureScreen.HUB }
                         )
                         FeatureScreen.AI_LEARNING_HUB -> AIFeaturesHubScreen(
-                            apiKey = "", // TODO: Get from config
+                            apiKey = AppSettingsStore.load(context).globalGeminiApiKey,
                             onBackClick = { featureScreen = FeatureScreen.HUB },
-                            onProblemClick = { slug, title -> 
+                            onProblemClick = { slug, title ->
                                 // Could navigate to problem
                             }
                         )

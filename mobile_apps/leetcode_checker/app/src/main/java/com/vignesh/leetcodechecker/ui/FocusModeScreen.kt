@@ -257,6 +257,21 @@ fun FocusModeScreen(
                 // Stop button
                 Button(
                     onClick = {
+                        val elapsedSeconds = (selectedDuration * 60) - remainingSeconds
+                        currentSessionId?.let { id ->
+                            if (elapsedSeconds >= 60) {
+                                LeetCodeActivityStorage.saveFocusSession(
+                                    context,
+                                    LeetCodeActivityStorage.FocusSession(
+                                        id = id,
+                                        startTime = System.currentTimeMillis() - (elapsedSeconds * 1000L),
+                                        endTime = System.currentTimeMillis(),
+                                        durationMinutes = elapsedSeconds / 60,
+                                        completed = false
+                                    )
+                                )
+                            }
+                        }
                         isRunning = false
                         isPaused = false
                         remainingSeconds = selectedDuration * 60
@@ -273,13 +288,67 @@ fun FocusModeScreen(
         }
         
         Spacer(modifier = Modifier.height(32.dp))
-        
+
+        // Recent sessions (so saved history is actually visible somewhere)
+        if (!isRunning) {
+            val recentSessions = remember(isRunning) {
+                LeetCodeActivityStorage.loadFocusSessions(context)
+                    .sortedByDescending { it.startTime }
+                    .take(5)
+            }
+            if (recentSessions.isNotEmpty()) {
+                RecentSessionsCard(recentSessions)
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+        }
+
         // Focus tips
         if (!isRunning) {
             FocusTipsCard()
         }
-        
+
         Spacer(modifier = Modifier.height(80.dp))
+    }
+}
+
+@Composable
+private fun RecentSessionsCard(sessions: List<LeetCodeActivityStorage.FocusSession>) {
+    val dateFormat = remember { java.text.SimpleDateFormat("MMM d, h:mm a", java.util.Locale.US) }
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22))
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = "🕘 Recent Sessions",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Medium,
+                color = Color(0xFFE6EDF3)
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            sessions.forEach { session ->
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = dateFormat.format(java.util.Date(session.startTime)),
+                        fontSize = 13.sp,
+                        color = Color(0xFF8B949E)
+                    )
+                    Text(
+                        text = if (session.completed) {
+                            "${session.durationMinutes}m ✅"
+                        } else {
+                            "${session.durationMinutes}m (stopped early)"
+                        },
+                        fontSize = 13.sp,
+                        color = if (session.completed) Color(0xFF3FB950) else Color(0xFFF0883E)
+                    )
+                }
+            }
+        }
     }
 }
 
