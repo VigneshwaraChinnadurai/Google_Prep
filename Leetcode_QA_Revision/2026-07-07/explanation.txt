@@ -1,0 +1,55 @@
+Date: 2026-07-07
+Title: Concatenate Non-Zero Digits and Multiply by Sum I
+URL: https://leetcode.com/problems/concatenate-non-zero-digits-and-multiply-by-sum-i/
+
+LLM Explanation:
+The core idea is to process the digits of the input integer `n` to form a new number `x` and calculate a sum. `x` is formed by concatenating all non-zero digits of `n` in their original order. The `sum` is the sum of the digits that make up `x`. The final result is the product of `x` and `sum`.
+
+Our approach is as follows:
+1.  Handle the edge case where `n` is 0. According to the problem, if there are no non-zero digits, `x` is 0. This happens only when `n=0`. In this case, `sum` is also 0, and the result is 0.
+2.  Convert the integer `n` to a string. This allows for easy digit-by-digit iteration.
+3.  Initialize an empty string, `x_str`, to build the new number, and an integer `sum_val` to accumulate the sum of its digits.
+4.  Iterate through each character of the string representation of `n`. If a character is not '0', append it to `x_str` and add its integer value to `sum_val`.
+5.  After iterating through all digits, convert `x_str` back to an integer to get `x`. Since the constraints state `n >= 0`, if `n > 0`, it must contain at least one non-zero digit, so `x_str` will not be empty.
+6.  Return the product `x * sum_val`.
+
+For example, if `n = 10203004`:
+- The non-zero digits are 1, 2, 3, 4.
+- `x` becomes 1234.
+- `sum_val` becomes 1 + 2 + 3 + 4 = 10.
+- The result is `1234 * 10 = 12340`.
+
+**Complexity Analysis:**
+-   **Time Complexity:** O(log₁₀ n), as we iterate through each digit of `n`. The number of digits in `n` is proportional to log n.
+-   **Space Complexity:** O(log₁₀ n), for storing the string representation of `n` and the new string for `x`.
+
+LLM Testcase Validation:
+Testcase 1:
+Input: n = 10203004
+- Convert n to string: "10203004"
+- Iterate through digits:
+  - '1' is non-zero: x_str = "1", sum_val = 1
+  - '0' is zero, skip.
+  - '2' is non-zero: x_str = "12", sum_val = 1 + 2 = 3
+  - '0' is zero, skip.
+  - '3' is non-zero: x_str = "123", sum_val = 3 + 3 = 6
+  - '0' is zero, skip.
+  - '0' is zero, skip.
+  - '4' is non-zero: x_str = "1234", sum_val = 6 + 4 = 10
+- Form x: x = int("1234") = 1234
+- Form sum: sum = 10
+- Result: x * sum = 1234 * 10 = 12340
+Output: 12340
+
+Testcase 2:
+Input: n = 1000
+- Convert n to string: "1000"
+- Iterate through digits:
+  - '1' is non-zero: x_str = "1", sum_val = 1
+  - '0' is zero, skip.
+  - '0' is zero, skip.
+  - '0' is zero, skip.
+- Form x: x = int("1") = 1
+- Form sum: sum = 1
+- Result: x * sum = 1 * 1 = 1
+Output: 1
