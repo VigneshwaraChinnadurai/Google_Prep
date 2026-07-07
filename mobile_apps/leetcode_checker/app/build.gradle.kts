@@ -32,9 +32,6 @@ android {
     val geminiApiKey = localProperties.getProperty("GEMINI_API_KEY", "")
         .replace("\\", "\\\\")
         .replace("\"", "\\\"")
-    val githubToken = localProperties.getProperty("GITHUB_TOKEN", "")
-        .replace("\\", "\\\\")
-        .replace("\"", "\\\"")
     val githubOwner = localProperties.getProperty("GITHUB_OWNER", "VigneshwaraChinnadurai")
         .replace("\\", "\\\\")
         .replace("\"", "\\\"")
@@ -84,7 +81,6 @@ android {
         versionName = "1.0"
         buildConfigField("String", "GEMINI_API_KEY", "\"$geminiApiKey\"")
         buildConfigField("String", "CHATBOT_GEMINI_API_KEY", "\"$chatbotGeminiKey\"")
-        buildConfigField("String", "GITHUB_TOKEN", "\"$githubToken\"")
         buildConfigField("String", "GITHUB_OWNER", "\"$githubOwner\"")
         buildConfigField("String", "GITHUB_REPO", "\"$githubRepo\"")
         buildConfigField("String", "GITHUB_BRANCH", "\"$githubBranch\"")

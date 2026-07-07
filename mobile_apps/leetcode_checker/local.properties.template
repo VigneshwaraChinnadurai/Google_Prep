@@ -41,21 +41,14 @@ sdk.dir=
 GEMINI_API_KEY=
 
 ## ----------------------------------------------------------------------------
-## GITHUB PERSONAL ACCESS TOKEN (Required for GitHub Features)
+## GITHUB PERSONAL ACCESS TOKEN
 ## ----------------------------------------------------------------------------
-## Used for: GitHub Profile display, Contribution heatmap, Syncing solutions
-##
-## How to obtain:
-## 1. Go to https://github.com/settings/tokens
-## 2. Click "Generate new token (classic)"
-## 3. Give it a name (e.g., "LeetCode Checker App")
-## 4. Select scopes: 'repo', 'read:user', 'user:email'
-## 5. Click "Generate token"
-## 6. Copy the token immediately (starts with 'ghp_...')
-##
-## IMPORTANT: Token is only shown once! Save it securely.
+## NOT configured here. The GitHub token is entered and stored on-device via
+## the app's Global Settings screen (single source of truth for GitHub auth).
+## Go to https://github.com/settings/tokens to generate one (scopes: 'repo',
+## 'read:user', 'user:email' for a classic token, or Contents: Read/Write for
+## a fine-grained token scoped to the target repo).
 ## ----------------------------------------------------------------------------
-GITHUB_TOKEN=
 
 ## ----------------------------------------------------------------------------
 ## GITHUB REPOSITORY SETTINGS (Required for Solution Sync)

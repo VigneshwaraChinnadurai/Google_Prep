@@ -179,7 +179,7 @@ object RevisionExportManager {
         revisionRootFolder: String
     ) {
         require(token.isNotBlank()) {
-            "Missing GitHub token. Configure GITHUB_TOKEN in local.properties."
+            "Missing GitHub token. Set it in the app under Global Settings."
         }
 
         val api = githubApi()

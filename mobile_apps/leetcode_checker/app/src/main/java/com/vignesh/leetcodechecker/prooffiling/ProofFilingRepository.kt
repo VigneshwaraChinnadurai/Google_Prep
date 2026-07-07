@@ -178,11 +178,11 @@ class ProofFilingRepository(private val context: Context) {
     ): Result<GitHubWeeklyStats> = withContext(Dispatchers.IO) {
         try {
             val settings = AppSettingsStore.load(context)
-            val token = settings.globalGithubToken.ifBlank { BuildConfig.GITHUB_TOKEN }
+            val token = settings.globalGithubToken
             if (token.isBlank()) {
-                return@withContext Result.failure(Exception("GitHub token not configured"))
+                return@withContext Result.failure(Exception("GitHub token not configured. Set it in Global Settings."))
             }
-            
+
             // Fetch recent commits using GraphQL
             val commits = fetchRecentCommits(username, token, weekStart, weekEnd)
             
@@ -729,11 +729,11 @@ class ProofFilingRepository(private val context: Context) {
     suspend fun pushToGitHub(entry: ProofFilingEntry): Result<ProofFilingEntry> = withContext(Dispatchers.IO) {
         try {
             val settings = AppSettingsStore.load(context)
-            val token = settings.globalGithubToken.ifBlank { BuildConfig.GITHUB_TOKEN }
+            val token = settings.globalGithubToken
             if (token.isBlank()) {
-                return@withContext Result.failure(Exception("GitHub token not configured"))
+                return@withContext Result.failure(Exception("GitHub token not configured. Set it in Global Settings."))
             }
-            
+
             val config = loadConfig()
             val owner = BuildConfig.GITHUB_OWNER
             val repo = config.targetRepo

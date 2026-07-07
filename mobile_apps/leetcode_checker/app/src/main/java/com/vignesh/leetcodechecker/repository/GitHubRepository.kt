@@ -53,11 +53,11 @@ class GitHubRepository(private val context: android.content.Context) {
      */
     suspend fun getUserProfile(username: String = BuildConfig.GITHUB_OWNER): Result<GitHubUser> {
         return try {
-            val token = com.vignesh.leetcodechecker.AppSettingsStore.load(context).globalGithubToken.ifBlank { BuildConfig.GITHUB_TOKEN }
+            val token = com.vignesh.leetcodechecker.AppSettingsStore.load(context).globalGithubToken
             if (token.isBlank()) {
-                return Result.failure(Exception("GitHub token not configured"))
+                return Result.failure(Exception("GitHub token not configured. Set it in Global Settings."))
             }
-            
+
             val query = GitHubQueries.userContributions(username)
             val request = GraphQLRequest(query = query)
             val response = api.query("Bearer $token", request)
@@ -79,11 +79,11 @@ class GitHubRepository(private val context: android.content.Context) {
      */
     suspend fun getProfileReadme(username: String): Result<String> {
         return try {
-            val token = com.vignesh.leetcodechecker.AppSettingsStore.load(context).globalGithubToken.ifBlank { BuildConfig.GITHUB_TOKEN }
+            val token = com.vignesh.leetcodechecker.AppSettingsStore.load(context).globalGithubToken
             if (token.isBlank()) {
-                return Result.failure(Exception("GitHub token not configured"))
+                return Result.failure(Exception("GitHub token not configured. Set it in Global Settings."))
             }
-            
+
             // The profile README is in a repo named the same as username
             val content = rawApi.getReadmeRaw("Bearer $token", username, username)
             Result.success(content)
