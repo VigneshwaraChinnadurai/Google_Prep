@@ -37,10 +37,15 @@ import com.vignesh.leetcodechecker.viewmodel.GitHubProfileViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.json.JSONArray
+import org.json.JSONObject
 import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserFactory
 import java.io.StringReader
 import java.net.URL
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 /**
  * ProfileScreen - Unified profile view with expandable sections
@@ -529,77 +534,84 @@ data class CredlyBadge(
 )
 
 /**
- * Returns the user's actual Credly badges with real image URLs.
- * Image URLs are from the public Credly badge images.
+ * Fetches real badges from Credly's public badges.json endpoint -- the same
+ * unauthenticated JSON the credly.com profile page itself loads client-side.
  */
-@Suppress("UNUSED_PARAMETER")
 private suspend fun fetchCredlyBadges(username: String): List<CredlyBadge> = withContext(Dispatchers.IO) {
-    listOf(
-        CredlyBadge(
-            name = "Configure AI Applications to optimize search results",
-            issuer = "Google Cloud",
-            imageUrl = "https://images.credly.com/size/340x340/images/16ae03cf-d272-4f94-9e50-688b236a9df5/image.png",
-            issuerAbbrev = "GC",
-            issuerColor = 0xFF4285F4,
-            badgeUrl = "https://www.credly.com/users/vigneshwarachinnadurai/badges",
-            dateInfo = "Issued Dec 10, 2025"
-        ),
-        CredlyBadge(
-            name = "Delivery Accreditation - AI Agents",
-            issuer = "ServiceNow",
-            imageUrl = "https://images.credly.com/size/340x340/images/bd4e0db2-f867-4a75-8edf-3aac2c096654/image.png",
-            issuerAbbrev = "SN",
-            issuerColor = 0xFF62D84E,
-            badgeUrl = "https://www.credly.com/users/vigneshwarachinnadurai/badges",
-            dateInfo = "Issued Dec 16, 2025"
-        ),
-        CredlyBadge(
-            name = "AWS Certified Machine Learning – Specialty",
-            issuer = "Amazon Web Services",
-            imageUrl = "https://images.credly.com/size/340x340/images/778bde6c-ad1c-4312-ac33-2fa40d50a147/image.png",
-            issuerAbbrev = "AWS",
-            issuerColor = 0xFFFF9900,
-            badgeUrl = "https://www.credly.com/users/vigneshwarachinnadurai/badges",
-            dateInfo = "Expired Oct 31, 2024",
-            isExpired = true
-        ),
-        CredlyBadge(
-            name = "Machine Learning - Foundation",
-            issuer = "Deloitte Certified US",
-            imageUrl = "https://images.credly.com/size/340x340/images/1b29d85a-e882-4478-a136-0ee96f828ec7/image.png",
-            issuerAbbrev = "D",
-            issuerColor = 0xFF86BC25,
-            badgeUrl = "https://www.credly.com/users/vigneshwarachinnadurai/badges",
-            dateInfo = "Expires Jan 17, 2028"
-        ),
-        CredlyBadge(
-            name = "Data Engineering - Foundation",
-            issuer = "Deloitte Certified US",
-            imageUrl = "https://images.credly.com/size/340x340/images/2218e0f2-3f8e-4c03-8b42-b80501751f06/image.png",
-            issuerAbbrev = "D",
-            issuerColor = 0xFF86BC25,
-            badgeUrl = "https://www.credly.com/users/vigneshwarachinnadurai/badges",
-            dateInfo = "Expires Jan 28, 2028"
-        ),
-        CredlyBadge(
-            name = "Industry Proficiency Foundation: Technology, Media & Telecom",
-            issuer = "Deloitte Certified US",
-            imageUrl = "https://images.credly.com/size/340x340/images/77f65a24-2b84-44ea-8b11-4f0e7e954f38/image.png",
-            issuerAbbrev = "D",
-            issuerColor = 0xFF86BC25,
-            badgeUrl = "https://www.credly.com/users/vigneshwarachinnadurai/badges",
-            dateInfo = "Issued Jun 16, 2023"
-        ),
-        CredlyBadge(
-            name = "Impact Day 2025",
-            issuer = "Deloitte Certified US",
-            imageUrl = "https://images.credly.com/size/340x340/images/05e5d41e-3c70-4a8a-8c7a-d9b28e0195a8/image.png",
-            issuerAbbrev = "D",
-            issuerColor = 0xFF86BC25,
-            badgeUrl = "https://www.credly.com/users/vigneshwarachinnadurai/badges",
-            dateInfo = "Expires Nov 28, 2026"
-        )
-    )
+    try {
+        val url = "https://www.credly.com/users/$username/badges.json" +
+            "?page=1&page_size=48&sort=-state_updated_at&filter=state%3A%3Aaccepted"
+        val connection = URL(url).openConnection()
+        connection.setRequestProperty("User-Agent", "Mozilla/5.0")
+        connection.setRequestProperty("Accept", "application/json")
+        connection.connectTimeout = 10_000
+        connection.readTimeout = 10_000
+        val json = connection.getInputStream().bufferedReader().readText()
+
+        val data = JSONObject(json).optJSONArray("data") ?: JSONArray()
+        (0 until data.length()).mapNotNull { i ->
+            val badge = data.getJSONObject(i)
+            val template = badge.optJSONObject("badge_template") ?: return@mapNotNull null
+            val name = template.optString("name").ifBlank { return@mapNotNull null }
+            val issuerSummary = badge.optJSONObject("issuer")?.optString("summary").orEmpty()
+            val issuerName = issuerSummary.removePrefix("issued by ").trim().ifBlank { "Unknown issuer" }
+            val expiresDate = badge.optString("expires_at_date").takeIf { it.isNotBlank() }
+            val issuedDate = badge.optString("issued_at_date").takeIf { it.isNotBlank() }
+            val isExpired = expiresDate?.let { isPastCredlyDate(it) } ?: false
+
+            CredlyBadge(
+                name = name,
+                issuer = issuerName,
+                imageUrl = template.optString("image_url"),
+                issuerAbbrev = credlyIssuerAbbreviation(issuerName),
+                issuerColor = credlyIssuerColor(issuerName),
+                badgeUrl = template.optString("url").ifBlank { "https://www.credly.com/users/$username/badges" },
+                dateInfo = when {
+                    isExpired && expiresDate != null -> "Expired ${formatCredlyDate(expiresDate)}"
+                    expiresDate != null -> "Expires ${formatCredlyDate(expiresDate)}"
+                    issuedDate != null -> "Issued ${formatCredlyDate(issuedDate)}"
+                    else -> ""
+                },
+                isExpired = isExpired
+            )
+        }
+    } catch (e: Exception) {
+        emptyList()
+    }
+}
+
+private fun isPastCredlyDate(isoDate: String): Boolean = runCatching {
+    SimpleDateFormat("yyyy-MM-dd", Locale.US).parse(isoDate)?.before(Date()) ?: false
+}.getOrDefault(false)
+
+private fun formatCredlyDate(isoDate: String): String = runCatching {
+    val parsed = SimpleDateFormat("yyyy-MM-dd", Locale.US).parse(isoDate)
+    parsed?.let { SimpleDateFormat("MMM d, yyyy", Locale.US).format(it) } ?: isoDate
+}.getOrDefault(isoDate)
+
+private val CREDLY_ISSUER_COLORS = mapOf(
+    "google cloud" to 0xFF4285F4L,
+    "servicenow" to 0xFF62D84EL,
+    "amazon web services" to 0xFFFF9900L,
+    "aws" to 0xFFFF9900L,
+    "deloitte certified us" to 0xFF86BC25L,
+    "microsoft" to 0xFF00A4EFL,
+    "ibm" to 0xFF0F62FEL
+)
+private val CREDLY_COLOR_PALETTE = listOf(0xFF4285F4L, 0xFF62D84EL, 0xFFFF9900L, 0xFF86BC25L, 0xFFAB47BCL, 0xFF26A69AL, 0xFFEF5350L)
+
+private fun credlyIssuerColor(issuer: String): Long {
+    val key = issuer.lowercase(Locale.US)
+    return CREDLY_ISSUER_COLORS[key] ?: CREDLY_COLOR_PALETTE[(key.hashCode() and 0x7fffffff) % CREDLY_COLOR_PALETTE.size]
+}
+
+private fun credlyIssuerAbbreviation(issuer: String): String {
+    val words = issuer.split(Regex("\\s+")).filter { it.isNotBlank() }
+    return when {
+        words.size >= 2 -> (words[0].take(1) + words[1].take(1)).uppercase(Locale.US)
+        words.size == 1 -> words[0].take(2).uppercase(Locale.US)
+        else -> "?"
+    }
 }
 
 @Composable

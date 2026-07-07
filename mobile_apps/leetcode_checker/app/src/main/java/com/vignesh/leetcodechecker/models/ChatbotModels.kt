@@ -12,47 +12,9 @@ data class ChatMessage(
     val timestamp: Long = System.currentTimeMillis()
 )
 
-data class ChatRequest(
-    val message: String,
-    val mode: String = "quick"  // "quick", "deep", or "followup"
-)
-
-data class ChatResponse(
-    val response: String,
-    @Json(name = "isStreaming")
-    val isStreaming: Boolean = false,
-    @Json(name = "costUsd")
-    val costUsd: Double = 0.0,
-    @Json(name = "tokenCount")
-    val tokenCount: Int = 0
-)
-
 // ════════════════════════════════════════════════════════════════════════════
 // Analysis Models
 // ════════════════════════════════════════════════════════════════════════════
-
-data class SearchPlan(
-    val domain: String = "general",
-    @Json(name = "focus_topic")
-    val focusTopic: String = "",
-    val perspective: String = "an industry analyst",
-    @Json(name = "primary_question")
-    val primaryQuestion: String = "",
-    val companies: List<CompanyInfo> = emptyList(),
-    @Json(name = "grounding_queries")
-    val groundingQueries: List<String> = emptyList(),
-    @Json(name = "news_queries")
-    val newsQueries: List<String> = emptyList(),
-    @Json(name = "sec_fulltext_queries")
-    val secFulltextQueries: List<String> = emptyList()
-)
-
-data class CompanyInfo(
-    val name: String,
-    val ticker: String,
-    val cik: String = "",
-    val role: String = "primary"
-)
 
 data class AnalysisResult(
     @Json(name = "executive_summary")
@@ -113,10 +75,3 @@ enum class ChatMode {
     DEEP_ANALYSIS,
     FOLLOW_UP
 }
-
-data class ChatConfig(
-    val chatbotUrl: String = "http://10.0.2.2:7860",  // localhost for emulator
-    val timeout: Long = 120000L,  // 2 minutes for deep analysis
-    val maxRetries: Int = 2,
-    val defaultChatMode: ChatMode = ChatMode.QUICK_CHAT
-)

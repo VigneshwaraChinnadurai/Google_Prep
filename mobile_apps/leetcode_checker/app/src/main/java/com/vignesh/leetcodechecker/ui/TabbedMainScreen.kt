@@ -51,7 +51,6 @@ enum class FeatureScreen {
     AI_NEWS_SETTINGS,
     GLOBAL_SETTINGS,
     RANDOM_CHALLENGE,
-    PYTHON_PLAYGROUND,
     AI_LEARNING_HUB,
     STRATEGIC_CHATBOT,
     WHATS_NEW,
@@ -181,7 +180,6 @@ fun TabbedMainScreen(
                                     FeatureDestination.AI_LEARNING_HUB -> FeatureScreen.AI_LEARNING_HUB
                                     FeatureDestination.STRATEGIC_CHATBOT -> FeatureScreen.STRATEGIC_CHATBOT
                                     FeatureDestination.WHATS_NEW -> FeatureScreen.WHATS_NEW
-                                    FeatureDestination.PYTHON_PLAYGROUND -> FeatureScreen.PYTHON_PLAYGROUND
                                 }
                             },
                             onFilterSelected = { topic, difficulty ->
@@ -248,10 +246,6 @@ fun TabbedMainScreen(
                                 )
                             }
                         }
-                        FeatureScreen.PYTHON_PLAYGROUND -> PythonPlaygroundScreen(
-                            modifier = Modifier.fillMaxSize(),
-                            onBack = { featureScreen = FeatureScreen.HUB }
-                        )
                         FeatureScreen.AI_LEARNING_HUB -> AIFeaturesHubScreen(
                             apiKey = AppSettingsStore.load(context).globalGeminiApiKey,
                             onBackClick = { featureScreen = FeatureScreen.HUB },

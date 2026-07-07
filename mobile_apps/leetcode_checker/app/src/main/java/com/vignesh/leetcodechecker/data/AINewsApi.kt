@@ -1,20 +1,9 @@
 package com.vignesh.leetcodechecker.data
 
-import retrofit2.http.GET
-import retrofit2.http.Query
-
 /**
- * AI/ML News API - Uses NewsData.io or similar free news API
- * Fetches news related to AI, Machine Learning, and Quantum Computing
+ * Data models backing AI/ML News. Articles are populated from real RSS feeds
+ * by AINewsRepository (arXiv, OpenAI, Hugging Face) -- see fetchRssFeed there.
  */
-
-// Data models for news articles
-data class NewsResponse(
-    val status: String?,
-    val totalResults: Int?,
-    val results: List<NewsArticle>?,
-    val articles: List<NewsArticle>?  // For compatibility with different API formats
-)
 
 data class NewsArticle(
     val title: String?,
@@ -68,24 +57,4 @@ enum class NewsCategory(val displayName: String, val keywords: List<String>) {
     RESEARCH("📚 Research & Papers", listOf("AI research", "deep learning", "neural network", "transformer")),
     INDUSTRY("🏢 Industry News", listOf("OpenAI", "Google DeepMind", "Anthropic", "Meta AI", "Microsoft AI")),
     PEOPLE("👤 People & Announcements", listOf("announces", "launched", "revealed", "unveils"))
-}
-
-interface NewsApi {
-    // Using NewsAPI.org free tier
-    @GET("v2/everything")
-    suspend fun getAINews(
-        @Query("q") query: String = "(artificial intelligence OR machine learning OR AI OR quantum computing)",
-        @Query("language") language: String = "en",
-        @Query("sortBy") sortBy: String = "publishedAt",
-        @Query("pageSize") pageSize: Int = 20,
-        @Query("apiKey") apiKey: String
-    ): NewsResponse
-    
-    @GET("v2/top-headlines")
-    suspend fun getTechHeadlines(
-        @Query("category") category: String = "technology",
-        @Query("language") language: String = "en",
-        @Query("pageSize") pageSize: Int = 10,
-        @Query("apiKey") apiKey: String
-    ): NewsResponse
 }

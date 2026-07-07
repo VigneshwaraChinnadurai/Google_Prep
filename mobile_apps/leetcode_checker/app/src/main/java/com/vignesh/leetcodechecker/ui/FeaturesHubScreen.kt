@@ -124,7 +124,6 @@ fun FeaturesHubScreen(
             FeatureItem("Offline", "📱", Color(0xFF6E7681), FeatureDestination.OFFLINE),
             FeatureItem("AI/ML News", "🤖", Color(0xFF9C27B0), FeatureDestination.AI_NEWS),
             FeatureItem("Protection", "🔒", Color(0xFFF85149), FeatureDestination.PROTECTION),
-            FeatureItem("Python IDE", "🐍", Color(0xFF3776AB), FeatureDestination.PYTHON_PLAYGROUND),
             FeatureItem("What's New", "✨", Color(0xFFFFB347), FeatureDestination.WHATS_NEW),
             FeatureItem("Random Challenge", "🎲", Color(0xFFD3D3D3), FeatureDestination.RANDOM_CHALLENGE),
             FeatureItem("Profile", "👤", Color(0xFFA3A3A3), FeatureDestination.PROFILE),
@@ -367,7 +366,6 @@ enum class FeatureDestination {
     PROFILE,
     GITHUB_PROFILE,
     PROTECTION,
-    PYTHON_PLAYGROUND,
     AI_LEARNING_HUB,
     STRATEGIC_CHATBOT,
     WHATS_NEW

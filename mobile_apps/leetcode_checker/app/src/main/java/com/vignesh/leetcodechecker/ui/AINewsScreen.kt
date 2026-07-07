@@ -173,7 +173,7 @@ fun AINewsScreen(
         )
 
         Text(
-            text = "📌 Curated picks — not a live feed, updated by the app author periodically",
+            text = "📡 Live from arXiv (cs.AI, quant-ph), OpenAI News, and Hugging Face Blog",
             fontSize = 11.sp,
             color = Color(0xFF6E7681),
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
