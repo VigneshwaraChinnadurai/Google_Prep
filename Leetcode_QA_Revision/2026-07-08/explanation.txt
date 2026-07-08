@@ -1,0 +1,78 @@
+Date: 2026-07-08
+Title: Concatenate Non-Zero Digits and Multiply by Sum II
+URL: https://leetcode.com/problems/concatenate-non-zero-digits-and-multiply-by-sum-ii/
+
+LLM Explanation:
+### Method Explanation
+
+The problem asks us to process multiple range queries on a string of digits. For each query `[l, r]`, we need to find two values: `x`, the integer formed by concatenating non-zero digits in `s[l..r]`, and `sum`, the sum of these digits. The answer is `(x * sum) % (10^9 + 7)`.
+
+A brute-force approach, iterating through the substring for each query, would be too slow (`O(m * q)`) given the constraints (`m, q <= 10^5`). This suggests a more efficient approach using precomputation, which is common for range query problems.
+
+The solution can be broken down into two main parts: precomputation and query processing.
+
+#### 1. Precomputation (`O(m)`)
+
+First, we process the input string `s` to build several auxiliary data structures that will allow for fast query answering. We only care about non-zero digits.
+
+1.  **Filter Non-Zero Digits**: We iterate through `s` once to create `nz_digits`, a list of non-zero digit values, and `nz_indices`, a list of their corresponding original indices in `s`.
+
+2.  **Prefix Sums for `sum`**: To quickly calculate the sum of digits in any range, we build a prefix sum array, `prefix_sum_nz`, on `nz_digits`. `prefix_sum_nz[i]` will store the sum of the first `i` non-zero digits. With this, the sum of digits in any sub-array `nz_digits[s..e]` can be found in `O(1)` time as `prefix_sum_nz[e+1] - prefix_sum_nz[s]`.
+
+3.  **Prefix Values for `x`**: Calculating the concatenated number `x` is more complex. We can use an approach similar to polynomial hashing. We create a prefix value array, `prefix_val_nz`, where `prefix_val_nz[i]` stores the numerical value of concatenating the first `i` non-zero digits (modulo `10^9 + 7`). For example, if `nz_digits` is `[1, 2, 3]`, `prefix_val_nz` would be `[0, 1, 12, 123]`.
+
+4.  **Powers of 10**: To extract the value of a sub-array from our `prefix_val_nz` array, we'll need powers of 10. We precompute `powers_of_10[i] = 10^i % MOD`.
+
+#### 2. Query Processing (`O(q * log m)`)
+
+For each query `[l, r]`:
+
+1.  **Map Range**: The query is on the original string `s`. We need to find the corresponding range of indices `[start_idx, end_idx)` in our `nz_digits` array. This can be done efficiently in `O(log m)` using binary search (`bisect_left` and `bisect_right`) on the `nz_indices` array.
+
+2.  **Calculate `sum`**: Using the `prefix_sum_nz` array and the found indices `start_idx` and `end_idx`, we calculate `current_sum = prefix_sum_nz[end_idx] - prefix_sum_nz[start_idx]`.
+
+3.  **Calculate `x`**: The value of `x` for the range `nz_digits[start_idx..end_idx-1]` can be derived from `prefix_val_nz`. The formula is:
+    `x = (prefix_val_nz[end_idx] - prefix_val_nz[start_idx] * powers_of_10[k]) % MOD`, where `k = end_idx - start_idx` is the number of non-zero digits in the range. A `+ MOD` is added before the final modulo to handle potential negative results.
+
+4.  **Final Answer**: The result for the query is `(x * current_sum) % MOD`.
+
+If a query range contains no non-zero digits (`start_idx >= end_idx`), the answer is 0.
+
+### Complexity
+
+-   **Time Complexity**: `O(m + q * log m)`, where `m` is the length of `s` and `q` is the number of queries. `O(m)` is for the one-time preprocessing, and each of the `q` queries takes `O(log m)` for the binary searches.
+-   **Space Complexity**: `O(m)` to store the precomputed arrays (`nz_digits`, `nz_indices`, prefix sums, prefix values, and powers of 10), all of which can have a size up to `m`.
+
+LLM Testcase Validation:
+```
+s = "10203004"
+queries = [[0,7],[1,3],[4,6]]
+sol = Solution()
+output = sol.sumAndMultiply(s, queries)
+expected = [12340, 4, 9]
+assert output == expected, f"Test Case 1 Failed: Got {output}, expected {expected}"
+
+s = "1000"
+queries = [[0,3],[1,1]]
+output = sol.sumAndMultiply(s, queries)
+expected = [1, 0]
+assert output == expected, f"Test Case 2 Failed: Got {output}, expected {expected}"
+
+s = "9876543210"
+queries = [[0,9]]
+output = sol.sumAndMultiply(s, queries)
+expected = [444444137]
+assert output == expected, f"Test Case 3 Failed: Got {output}, expected {expected}"
+
+s = "00000"
+queries = [[0,4],[1,2]]
+output = sol.sumAndMultiply(s, queries)
+expected = [0, 0]
+assert output == expected, f"Test Case 4 (all zeros) Failed: Got {output}, expected {expected}"
+
+s = "12345"
+queries = [[0,4],[1,3],[2,2]]
+output = sol.sumAndMultiply(s, queries)
+expected = [185175, 2928, 9]
+assert output == expected, f"Test Case 5 (no zeros) Failed: Got {output}, expected {expected}"
+```

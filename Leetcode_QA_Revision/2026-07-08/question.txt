@@ -1,0 +1,56 @@
+Date: 2026-07-08
+Question ID: 3756
+Title: Concatenate Non-Zero Digits and Multiply by Sum II
+Difficulty: Medium
+Tags: Math, String, Prefix Sum
+URL: https://leetcode.com/problems/concatenate-non-zero-digits-and-multiply-by-sum-ii/
+
+Question:
+You are given a string s of length m consisting of digits. You are also given a 2D integer array queries , where queries[i] = [l i , r i ] . For each queries[i] , extract the substring s[l i ..r i ] . Then, perform the following: Form a new integer x by concatenating all the non-zero digits from the substring in their original order. If there are no non-zero digits, x = 0 . Let sum be the sum of digits in x . The answer is x * sum . Return an array of integers answer where answer[i] is the answer to the i th query. Since the answers may be very large, return them modulo 10 9 + 7 . Example 1: Input: s = &quot;10203004&quot;, queries = [[0,7],[1,3],[4,6]] Output: [12340, 4, 9] Explanation: s[0..7] = &quot;10203004&quot; x = 1234 sum = 1 + 2 + 3 + 4 = 10 Therefore, answer is 1234 * 10 = 12340 . s[1..3] = &quot;020&quot; x = 2 sum = 2 Therefore, the answer is 2 * 2 = 4 . s[4..6] = &quot;300&quot; x = 3 sum = 3 Therefore, the answer is 3 * 3 = 9 . Example 2: Input: s = &quot;1000&quot;, queries = [[0,3],[1,1]] Output: [1, 0] Explanation: s[0..3] = &quot;1000&quot; x = 1 sum = 1 Therefore, the answer is 1 * 1 = 1 . s[1..1] = &quot;0&quot; x = 0 sum = 0 Therefore, the answer is 0 * 0 = 0 . Example 3: Input: s = &quot;9876543210&quot;, queries = [[0,9]] Output: [444444137] Explanation: s[0..9] = &quot;9876543210&quot; x = 987654321 sum = 9 + 8 + 7 + 6 + 5 + 4 + 3 + 2 + 1 = 45 Therefore, the answer is 987654321 * 45 = 44444444445 . We return 44444444445 modulo (10 9 + 7) = 444444137 . Constraints: 1 &lt;= m == s.length &lt;= 10 5 s consists of digits only. 1 &lt;= queries.length &lt;= 10 5 queries[i] = [l i , r i ] 0 &lt;= l i &lt;= r i &lt; m
+
+Starter Code (Python3):
+class Solution:
+    def sumAndMultiply(self, s: str, queries: List[List[int]]) -> List[int]:
+        
+
+Testcases:
+"10203004"
+[[0,7],[1,3],[4,6]]
+"1000"
+[[0,3],[1,1]]
+"9876543210"
+[[0,9]]
+
+Expected Output / Validation:
+```
+s = "10203004"
+queries = [[0,7],[1,3],[4,6]]
+sol = Solution()
+output = sol.sumAndMultiply(s, queries)
+expected = [12340, 4, 9]
+assert output == expected, f"Test Case 1 Failed: Got {output}, expected {expected}"
+
+s = "1000"
+queries = [[0,3],[1,1]]
+output = sol.sumAndMultiply(s, queries)
+expected = [1, 0]
+assert output == expected, f"Test Case 2 Failed: Got {output}, expected {expected}"
+
+s = "9876543210"
+queries = [[0,9]]
+output = sol.sumAndMultiply(s, queries)
+expected = [444444137]
+assert output == expected, f"Test Case 3 Failed: Got {output}, expected {expected}"
+
+s = "00000"
+queries = [[0,4],[1,2]]
+output = sol.sumAndMultiply(s, queries)
+expected = [0, 0]
+assert output == expected, f"Test Case 4 (all zeros) Failed: Got {output}, expected {expected}"
+
+s = "12345"
+queries = [[0,4],[1,3],[2,2]]
+output = sol.sumAndMultiply(s, queries)
+expected = [185175, 2928, 9]
+assert output == expected, f"Test Case 5 (no zeros) Failed: Got {output}, expected {expected}"
+```
