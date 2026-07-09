@@ -94,6 +94,31 @@ android {
         }
     }
 
+    signingConfigs {
+        create("release") {
+            if (keystorePropertiesFile.exists()) {
+                val storePath = keystoreProperties.getProperty("storeFile")
+                if (!storePath.isNullOrBlank()) {
+                    storeFile = file(storePath)
+                }
+                storePassword = keystoreProperties.getProperty("storePassword")
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+            }
+        }
+        getByName("debug") {
+            if (keystorePropertiesFile.exists()) {
+                val storePath = keystoreProperties.getProperty("storeFile")
+                if (!storePath.isNullOrBlank()) {
+                    storeFile = file(storePath)
+                }
+                storePassword = keystoreProperties.getProperty("storePassword")
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
@@ -105,18 +130,17 @@ android {
                 "proguard-rules.pro"
             )
         }
-    }
-
-    signingConfigs {
-        create("release") {
+        debug {
+            // Without this, debug builds sign with the AGP-default
+            // ~/.android/debug.keystore, which is per-machine and gets silently
+            // regenerated if it's ever missing -- any prior debug install then
+            // becomes signature-incompatible and has to be *uninstalled* (wiping
+            // app data) before a new debug build can go on top of it. Using our
+            // own persisted keystore for debug too keeps every debug build
+            // installable over the last one, indefinitely, on any machine that has
+            // this keystore.
             if (keystorePropertiesFile.exists()) {
-                val storePath = keystoreProperties.getProperty("storeFile")
-                if (!storePath.isNullOrBlank()) {
-                    storeFile = file(storePath)
-                }
-                storePassword = keystoreProperties.getProperty("storePassword")
-                keyAlias = keystoreProperties.getProperty("keyAlias")
-                keyPassword = keystoreProperties.getProperty("keyPassword")
+                signingConfig = signingConfigs.getByName("debug")
             }
         }
     }

@@ -121,23 +121,28 @@ After successful build:
 
 Release APKs are optimized and signed for distribution.
 
-### Step 1: Create a Keystore
+### Step 1: Create a Keystore (already done on this machine)
+
+A keystore already exists at `app/release-keystore.jks` (alias `leetcodechecker`, valid until 2053), with its credentials in `keystore.properties` at the project root. Both are gitignored -- they only live on disk here. **Back them up somewhere durable outside this machine** (password manager, encrypted drive): losing them means you can never sign an update-compatible build again, for either a published release or a debug install over an existing one.
+
+**This same keystore now signs debug builds too** (see `signingConfigs`/`buildTypes.debug` in `app/build.gradle.kts`), not just release. Reasoning: Android's default debug signing uses `~/.android/debug.keystore`, which is per-machine and silently regenerates if it's ever missing -- any existing debug install then becomes signature-incompatible with the next build, forcing an uninstall (which wipes app data) before you can reinstall. Using one persisted keystore for both build types means every future debug build installs cleanly over the last one, on any machine, indefinitely.
+
+If you ever need a *new* keystore from scratch (e.g., a different machine that doesn't have this one):
 
 ```bash
-# Run this command (you'll be prompted for passwords and details)
-keytool -genkey -v -keystore leetcode-checker-release.jks -keyalg RSA -keysize 2048 -validity 10000 -alias leetcode-checker
+keytool -genkeypair -v -keystore release-keystore.jks -alias leetcodechecker -keyalg RSA -keysize 2048 -validity 10000
 ```
 
-Keep your keystore file and passwords **secure** - you'll need them for all future updates.
+Note: modern `keytool` defaults to a PKCS12 keystore, which requires `storePassword` and `keyPassword` to be identical -- it silently ignores a different `-keypass` value.
 
-### Step 2: Create keystore.properties
+### Step 2: keystore.properties (already created)
 
-Create a file named `keystore.properties` in the `leetcode_checker` folder:
+Already present at the project root (`mobile_apps/leetcode_checker/keystore.properties`, sibling to this file):
 
 ```properties
-storeFile=leetcode-checker-release.jks
+storeFile=release-keystore.jks
 storePassword=your_keystore_password
-keyAlias=leetcode-checker
+keyAlias=leetcodechecker
 keyPassword=your_key_password
 ```
 
