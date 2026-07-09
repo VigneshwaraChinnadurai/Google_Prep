@@ -555,8 +555,11 @@ private suspend fun fetchCredlyBadges(username: String): List<CredlyBadge> = wit
             val name = template.optString("name").ifBlank { return@mapNotNull null }
             val issuerSummary = badge.optJSONObject("issuer")?.optString("summary").orEmpty()
             val issuerName = issuerSummary.removePrefix("issued by ").trim().ifBlank { "Unknown issuer" }
-            val expiresDate = badge.optString("expires_at_date").takeIf { it.isNotBlank() }
-            val issuedDate = badge.optString("issued_at_date").takeIf { it.isNotBlank() }
+            // optString() on a JSON null value returns the literal string "null", not
+            // blank -- badges with no expiry (a common, valid case) were rendering
+            // "Expires null" instead of falling back to the issued-date line.
+            val expiresDate = badge.optString("expires_at_date").takeIf { it.isNotBlank() && it != "null" }
+            val issuedDate = badge.optString("issued_at_date").takeIf { it.isNotBlank() && it != "null" }
             val isExpired = expiresDate?.let { isPastCredlyDate(it) } ?: false
 
             CredlyBadge(
