@@ -179,6 +179,9 @@ dependencies {
     // WorkManager for notifications
     implementation("androidx.work:work-runtime-ktx:2.9.1")
 
+    // DocumentFile for writing dated backup files into a user-chosen SAF folder
+    implementation("androidx.documentfile:documentfile:1.0.1")
+
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 }

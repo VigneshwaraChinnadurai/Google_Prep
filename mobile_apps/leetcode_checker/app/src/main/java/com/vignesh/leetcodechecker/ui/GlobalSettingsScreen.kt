@@ -1,6 +1,11 @@
 package com.vignesh.leetcodechecker.ui
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
@@ -11,8 +16,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.documentfile.provider.DocumentFile
 import com.vignesh.leetcodechecker.AppSettingsStore
 import com.vignesh.leetcodechecker.BuildConfig
+import com.vignesh.leetcodechecker.backup.BackupManager
+import com.vignesh.leetcodechecker.backup.BackupWorker
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -21,6 +29,9 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -36,6 +47,33 @@ fun GlobalSettingsScreen(
     var tokenVisible by remember { mutableStateOf(false) }
     var tokenTestResult by remember { mutableStateOf<String?>(null) }
     var isTestingToken by remember { mutableStateOf(false) }
+
+    var backupInProgress by remember { mutableStateOf(false) }
+    var restoreInProgress by remember { mutableStateOf(false) }
+    var backupStatusMessage by remember { mutableStateOf<String?>(null) }
+    var pendingRestoreUri by remember { mutableStateOf<Uri?>(null) }
+
+    val folderPickerLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocumentTree()
+    ) { uri ->
+        if (uri != null) {
+            context.contentResolver.takePersistableUriPermission(
+                uri,
+                android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION or android.content.Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+            )
+            val updated = settings.copy(backupFolderUri = uri.toString())
+            AppSettingsStore.save(context, updated)
+            settings = updated
+            BackupWorker.ensureScheduled(context)
+            backupStatusMessage = "Backup folder set. Weekly backups are now scheduled."
+        }
+    }
+
+    val restoreFilePickerLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri != null) pendingRestoreUri = uri
+    }
 
     Scaffold(
         topBar = {
@@ -53,7 +91,8 @@ fun GlobalSettingsScreen(
             modifier = Modifier
                 .padding(padding)
                 .padding(16.dp)
-                .fillMaxSize(),
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Text(
@@ -127,6 +166,87 @@ fun GlobalSettingsScreen(
                 modifier = Modifier.fillMaxWidth()
             )
 
+            HorizontalDivider()
+
+            Text(
+                text = "Backup & Restore",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.primary
+            )
+
+            Text(
+                text = "Backs up progress, goals, achievements, chat history, and revision files to a folder you choose (e.g. inside Google Drive/OneDrive's synced folder). Your GitHub token and Gemini key are excluded from these backups on purpose -- re-enter them after a restore.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            val folderDisplayName = remember(settings.backupFolderUri) {
+                settings.backupFolderUri.takeIf { it.isNotBlank() }
+                    ?.let { runCatching { DocumentFile.fromTreeUri(context, Uri.parse(it))?.name }.getOrNull() }
+            }
+
+            Text(
+                text = "Folder: ${folderDisplayName ?: "Not configured"}",
+                style = MaterialTheme.typography.bodySmall
+            )
+            Text(
+                text = "Last backup: " + if (settings.lastBackupTimeMillis > 0) {
+                    SimpleDateFormat("MMM d, h:mm a", Locale.US).format(Date(settings.lastBackupTimeMillis))
+                } else {
+                    "Never"
+                },
+                style = MaterialTheme.typography.bodySmall
+            )
+
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedButton(onClick = { folderPickerLauncher.launch(null) }) {
+                    Text("Choose Folder")
+                }
+                Button(
+                    enabled = settings.backupFolderUri.isNotBlank() && !backupInProgress,
+                    onClick = {
+                        val uri = Uri.parse(settings.backupFolderUri)
+                        backupInProgress = true
+                        backupStatusMessage = null
+                        scope.launch {
+                            val result = BackupManager.createBackup(context, uri, redactSecrets = true)
+                            result.fold(
+                                onSuccess = { r ->
+                                    val updated = settings.copy(lastBackupTimeMillis = System.currentTimeMillis())
+                                    AppSettingsStore.save(context, updated)
+                                    settings = updated
+                                    backupStatusMessage = "Backup saved: ${r.fileName} (${r.sizeBytes / 1024} KB)"
+                                },
+                                onFailure = { e -> backupStatusMessage = "Backup failed: ${e.message}" }
+                            )
+                            backupInProgress = false
+                        }
+                    }
+                ) {
+                    Text(if (backupInProgress) "Backing up..." else "Backup Now")
+                }
+            }
+
+            OutlinedButton(
+                enabled = !restoreInProgress,
+                onClick = { restoreFilePickerLauncher.launch(arrayOf("application/zip")) },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(if (restoreInProgress) "Restoring..." else "Restore from Backup...")
+            }
+
+            backupStatusMessage?.let { message ->
+                Text(
+                    text = message,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (message.contains("failed", ignoreCase = true)) {
+                        MaterialTheme.colorScheme.error
+                    } else {
+                        MaterialTheme.colorScheme.primary
+                    }
+                )
+            }
+
             Spacer(modifier = Modifier.weight(1f))
 
             Button(
@@ -144,6 +264,48 @@ fun GlobalSettingsScreen(
                 Text("Save Settings")
             }
         }
+    }
+
+    pendingRestoreUri?.let { uri ->
+        AlertDialog(
+            onDismissRequest = { pendingRestoreUri = null },
+            title = { Text("Restore from backup?") },
+            text = {
+                Text(
+                    "This overwrites current progress, goals, chat history, and settings with the " +
+                        "contents of this backup file. Your GitHub token and Gemini key, if already " +
+                        "configured on this device, are kept as-is. This can't be undone."
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    val target = uri
+                    pendingRestoreUri = null
+                    restoreInProgress = true
+                    backupStatusMessage = null
+                    scope.launch {
+                        val result = BackupManager.restoreBackup(context, target)
+                        result.fold(
+                            onSuccess = {
+                                settings = AppSettingsStore.load(context)
+                                githubToken = settings.globalGithubToken
+                                geminiKey = settings.globalGeminiApiKey
+                                backupStatusMessage = "Restore complete. Restart the app to fully reload."
+                            },
+                            onFailure = { e -> backupStatusMessage = "Restore failed: ${e.message}" }
+                        )
+                        restoreInProgress = false
+                    }
+                }) {
+                    Text("Restore")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingRestoreUri = null }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 }
 

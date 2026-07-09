@@ -10,6 +10,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.ui.graphics.Color
+import com.vignesh.leetcodechecker.backup.BackupWorker
 import com.vignesh.leetcodechecker.ui.TabbedMainScreen
 import com.vignesh.leetcodechecker.ui.ChallengeFilter
 
@@ -42,6 +43,8 @@ class MainActivity : ComponentActivity() {
         ConsistencyReminderScheduler.ensureHourlyReminder(this)
         // Schedule daily auto-fetch at 6 AM IST
         ConsistencyReminderScheduler.scheduleDailyAutoFetch(this)
+        // Ensure weekly backup is scheduled (no-op until a backup folder is chosen)
+        BackupWorker.ensureScheduled(this)
         setContent {
             val darkTheme = isSystemInDarkTheme()
             MaterialTheme(colorScheme = if (darkTheme) AppDarkColors else AppLightColors) {

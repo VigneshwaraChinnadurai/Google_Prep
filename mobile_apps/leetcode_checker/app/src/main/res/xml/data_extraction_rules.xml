@@ -2,7 +2,7 @@
 <!--
   Android 12+ (API 31+) Auto Backup / device-transfer rules.
   Default behavior already includes all SharedPreferences and internal filesDir
-  content and excludes external filesDir content -- these rules only correct
+  content and excludes external filesDir content. These rules only correct
   the two things that matter: keep the large re-downloadable GGUF model files
   out of backup, and pull in the revision export folder that lives in external
   storage (excluded by default).

@@ -45,7 +45,11 @@ data class AppSettings(
     
     // ── Global API Keys ─────────────────────────────────────────
     val globalGithubToken: String = "",
-    val globalGeminiApiKey: String = ""
+    val globalGeminiApiKey: String = "",
+
+    // ── Backup ───────────────────────────────────────────────────
+    val backupFolderUri: String = "",
+    val lastBackupTimeMillis: Long = 0L
 )
 
 object AppSettingsStore {
@@ -84,7 +88,9 @@ object AppSettingsStore {
                 localContextSize = json.optInt("localContextSize", 2048),
                 localMaxTokens = json.optInt("localMaxTokens", 512),
                 globalGithubToken = json.optString("globalGithubToken", ""),
-                globalGeminiApiKey = json.optString("globalGeminiApiKey", "")
+                globalGeminiApiKey = json.optString("globalGeminiApiKey", ""),
+                backupFolderUri = json.optString("backupFolderUri", ""),
+                lastBackupTimeMillis = json.optLong("lastBackupTimeMillis", 0L)
             )
         }.getOrElse { AppSettings() }
     }
@@ -117,6 +123,8 @@ object AppSettingsStore {
             .put("localMaxTokens", settings.localMaxTokens)
             .put("globalGithubToken", settings.globalGithubToken)
             .put("globalGeminiApiKey", settings.globalGeminiApiKey)
+            .put("backupFolderUri", settings.backupFolderUri)
+            .put("lastBackupTimeMillis", settings.lastBackupTimeMillis)
             .toString()
 
         prefs(context).edit().putString(KEY_SETTINGS, json).apply()
