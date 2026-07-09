@@ -1,0 +1,50 @@
+Date: 2026-07-09
+Title: Path Existence Queries in a Graph I
+URL: https://leetcode.com/problems/path-existence-queries-in-a-graph-i/
+
+LLM Explanation:
+The problem asks whether a path exists between two nodes in a graph for several queries. The graph's edges are defined by the condition `|nums[i] - nums[j]| <= maxDiff`. A path exists if and only if the two nodes are in the same connected component.
+
+A highly efficient way to manage connected components is the Union-Find (or Disjoint Set Union - DSU) data structure. The main challenge is to build the components without checking all O(n^2) pairs of nodes, which would be too slow.
+
+The crucial observation comes from the fact that the `nums` array is sorted non-decreasingly. Let's consider an edge between two nodes `u` and `v`. Without loss of generality, assume `u < v`. The edge exists if `nums[v] - nums[u] <= maxDiff`. Since `nums` is sorted, the difference `nums[v] - nums[u]` can be expressed as the sum of differences between adjacent elements: `(nums[u+1] - nums[u]) + (nums[u+2] - nums[u+1]) + ... + (nums[v] - nums[v-1])`.
+
+Because `nums` is non-decreasing, each term `nums[k+1] - nums[k]` is non-negative. If the sum of these non-negative terms is less than or equal to `maxDiff`, then each individual term must also be less than or equal to `maxDiff`. This means if a direct edge `(u, v)` exists, then all adjacent edges `(u, u+1), (u+1, u+2), ..., (v-1, v)` must also exist. These adjacent edges form a path from `u` to `v`.
+
+This insight simplifies the problem immensely: the connected components of the graph can be determined by considering only the edges between adjacent nodes `(i, i+1)`.
+
+The algorithm is as follows:
+1.  Initialize a Union-Find data structure with `n` nodes, each in its own set.
+2.  Iterate through the `nums` array from `i = 0` to `n-2`.
+3.  For each `i`, if `nums[i+1] - nums[i] <= maxDiff`, perform a `union` operation on nodes `i` and `i+1`. This merges their components.
+4.  After this single pass, the Union-Find structure accurately represents all connected components.
+5.  For each query `[u, v]`, use the `find` operation to check if `u` and `v` belong to the same set (i.e., `find(u) == find(v)`). If they do, a path exists.
+
+This approach has a time complexity of O(n * α(n) + q * α(n)), where `q` is the number of queries and α is the very slow-growing inverse Ackermann function. This is nearly linear in the number of nodes and queries. The space complexity is O(n) for the Union-Find data structure.
+
+LLM Testcase Validation:
+```
+Passed
+```
+**Testcase 1:**
+Input: n = 2, nums = [1,3], maxDiff = 1, queries = [[0,0],[0,1]]
+- DSU initialized for 2 nodes: `{0}, {1}`.
+- Check adjacent nodes: `i=0`. `nums[1] - nums[0] = 3 - 1 = 2`. `2 > maxDiff (1)`. No union operation.
+- Components remain `{0}, {1}`.
+- Query `[0,0]`: `find(0) == find(0)` is true.
+- Query `[0,1]`: `find(0) != find(1)` is false.
+- Output: `[true, false]`. Correct.
+
+**Testcase 2:**
+Input: n = 4, nums = [2,5,6,8], maxDiff = 2, queries = [[0,1],[0,2],[1,3],[2,3]]
+- DSU initialized for 4 nodes: `{0}, {1}, {2}, {3}`.
+- Check adjacent nodes:
+  - `i=0`: `nums[1] - nums[0] = 5 - 2 = 3`. `3 > maxDiff (2)`. No union.
+  - `i=1`: `nums[2] - nums[1] = 6 - 5 = 1`. `1 <= maxDiff (2)`. `union(1, 2)`. Components: `{0}, {1,2}, {3}`.
+  - `i=2`: `nums[3] - nums[2] = 8 - 6 = 2`. `2 <= maxDiff (2)`. `union(2, 3)`. Since 2 is already with 1, this merges 3 into their component. Components: `{0}, {1,2,3}`.
+- Final components are `{0}` and `{1, 2, 3}`.
+- Query `[0,1]`: `find(0) != find(1)`. False.
+- Query `[0,2]`: `find(0) != find(2)`. False.
+- Query `[1,3]`: `find(1) == find(3)`. True.
+- Query `[2,3]`: `find(2) == find(3)`. True.
+- Output: `[false, false, true, true]`. Correct.
