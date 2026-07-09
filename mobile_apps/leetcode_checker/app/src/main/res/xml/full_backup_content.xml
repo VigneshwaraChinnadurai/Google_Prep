@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Pre-Android 12 (API 24-30) Auto Backup rules -- same intent as
+  data_extraction_rules.xml, kept in sync: exclude the large re-downloadable
+  GGUF model files, include the external revision export folder.
+-->
+<full-backup-content>
+    <exclude domain="file" path="gguf_models/" />
+    <include domain="external" path="." />
+</full-backup-content>
