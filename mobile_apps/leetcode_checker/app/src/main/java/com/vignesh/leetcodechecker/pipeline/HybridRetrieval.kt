@@ -199,8 +199,8 @@ Scoring guide:
         var cleaned = text.trim()
         if (cleaned.startsWith("```")) {
             val lines = cleaned.split("\n").toMutableList()
-            lines.removeFirst()
-            if (lines.isNotEmpty() && lines.last().trim() == "```") lines.removeLast()
+            lines.removeAt(0)
+            if (lines.isNotEmpty() && lines.last().trim() == "```") lines.removeAt(lines.size - 1)
             cleaned = lines.joinToString("\n").trim()
         }
         return cleaned

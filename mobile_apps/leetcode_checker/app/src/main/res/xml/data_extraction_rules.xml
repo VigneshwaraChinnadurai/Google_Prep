@@ -9,10 +9,12 @@
 -->
 <data-extraction-rules>
     <cloud-backup>
+        <include domain="file" path="." />
         <exclude domain="file" path="gguf_models/" />
         <include domain="external" path="." />
     </cloud-backup>
     <device-transfer>
+        <include domain="file" path="." />
         <exclude domain="file" path="gguf_models/" />
         <include domain="external" path="." />
     </device-transfer>

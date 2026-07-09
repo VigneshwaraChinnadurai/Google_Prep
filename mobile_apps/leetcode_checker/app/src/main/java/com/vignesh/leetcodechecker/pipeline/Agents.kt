@@ -184,8 +184,8 @@ Guidelines:
         var cleaned = text.trim()
         if (cleaned.startsWith("```")) {
             val lines = cleaned.split("\n").toMutableList()
-            lines.removeFirst()
-            if (lines.isNotEmpty() && lines.last().trim() == "```") lines.removeLast()
+            lines.removeAt(0)
+            if (lines.isNotEmpty() && lines.last().trim() == "```") lines.removeAt(lines.size - 1)
             cleaned = lines.joinToString("\n").trim()
         }
         // Fix floating-point precision explosions
@@ -283,8 +283,8 @@ If overall_score >= 7, verdict = PASS. Otherwise NEEDS_REFINEMENT."""
         var cleaned = text.trim()
         if (cleaned.startsWith("```")) {
             val lines = cleaned.split("\n").toMutableList()
-            lines.removeFirst()
-            if (lines.isNotEmpty() && lines.last().trim() == "```") lines.removeLast()
+            lines.removeAt(0)
+            if (lines.isNotEmpty() && lines.last().trim() == "```") lines.removeAt(lines.size - 1)
             cleaned = lines.joinToString("\n").trim()
         }
         return cleaned
@@ -804,8 +804,8 @@ Return ONLY JSON: {"queries": ["query 1", "query 2"]}"""
         var cleaned = text.trim()
         if (cleaned.startsWith("```")) {
             val lines = cleaned.split("\n").toMutableList()
-            lines.removeFirst()
-            if (lines.isNotEmpty() && lines.last().trim() == "```") lines.removeLast()
+            lines.removeAt(0)
+            if (lines.isNotEmpty() && lines.last().trim() == "```") lines.removeAt(lines.size - 1)
             cleaned = lines.joinToString("\n").trim()
         }
         cleaned = cleaned.replace(Regex("""(\d+\.\d{2})\d{10,}"""), "$1")

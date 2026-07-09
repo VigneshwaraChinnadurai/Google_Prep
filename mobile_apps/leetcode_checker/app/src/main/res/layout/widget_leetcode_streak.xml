@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/widget_container"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -23,6 +24,9 @@
             android:textSize="14sp"
             android:textStyle="bold" />
 
+        <!-- android:tint is correct here, not app:tint: RemoteViews (home-screen
+             widgets) inflate via the platform LayoutInflater only, so AppCompat's
+             app: namespace attributes are silently ignored in this context. -->
         <ImageButton
             android:id="@+id/widget_refresh_button"
             android:layout_width="32dp"
@@ -30,7 +34,8 @@
             android:background="@android:color/transparent"
             android:contentDescription="Refresh"
             android:src="@android:drawable/ic_popup_sync"
-            android:tint="#58A6FF" />
+            android:tint="#58A6FF"
+            tools:ignore="UseAppTint" />
     </LinearLayout>
 
     <!-- Streak Counter -->

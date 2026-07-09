@@ -131,6 +131,11 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+        // java.time.* (ProofFiling, heatmaps) and Instant/List#removeFirst/removeLast
+        // (BackupManager, pipeline) all require API 26+/35 natively; minSdk is 24, so
+        // without desugaring every one of those calls throws NoSuchMethodError on real
+        // API 24-25 devices. Lint's [NewApi] check just confirmed this was silently unhandled.
+        isCoreLibraryDesugaringEnabled = true
     }
 
     kotlinOptions {
@@ -181,6 +186,9 @@ dependencies {
 
     // DocumentFile for writing dated backup files into a user-chosen SAF folder
     implementation("androidx.documentfile:documentfile:1.0.1")
+
+    // Backports java.time.* and List#removeFirst/removeLast (Java 21) to minSdk 24
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")

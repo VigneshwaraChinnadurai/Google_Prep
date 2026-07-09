@@ -540,9 +540,9 @@ object LeetCodeActivityStorage {
                     question = obj.getString("question"),
                     answer = obj.getString("answer"),
                     difficulty = obj.optString("difficulty", "Medium"),
-                    topics = (0 until obj.optJSONArray("topics")?.length()!!).map {
-                        obj.getJSONArray("topics").getString(it)
-                    },
+                    topics = obj.optJSONArray("topics")?.let { topicsArray ->
+                        (0 until topicsArray.length()).map { topicsArray.getString(it) }
+                    } ?: emptyList(),
                     lastReviewed = obj.optString("lastReviewed").takeIf { it.isNotBlank() },
                     nextReviewDate = obj.optString("nextReviewDate").takeIf { it.isNotBlank() },
                     repetitions = obj.optInt("repetitions", 0),

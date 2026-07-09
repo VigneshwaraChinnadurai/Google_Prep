@@ -171,18 +171,12 @@ class ProofFilingNotificationWorker(
         }
     }
     
-    private fun loadConfig(): ProofFilingConfig {
-        val prefs = applicationContext.getSharedPreferences("prooffiling_prefs", Context.MODE_PRIVATE)
-        val dayOfWeek = prefs.getInt("reminder_day", Calendar.FRIDAY)
-        val hour = prefs.getInt("reminder_hour", 18)
-        val minute = prefs.getInt("reminder_minute", 0)
-        
-        return ProofFilingConfig(
-            reminderDayOfWeek = dayOfWeek,
-            reminderHour = hour,
-            reminderMinute = minute
-        )
-    }
+    // ProofFilingRepository.loadConfig() (a JSON file) is the actual source of truth
+    // that ProofFilingViewModel writes to -- these prefs keys are never written by
+    // anything, so reading them here silently reverted the reminder to Friday 18:00
+    // every week regardless of what the user configured.
+    private suspend fun loadConfig(): ProofFilingConfig =
+        ProofFilingRepository(applicationContext).loadConfig()
 }
 
 /**

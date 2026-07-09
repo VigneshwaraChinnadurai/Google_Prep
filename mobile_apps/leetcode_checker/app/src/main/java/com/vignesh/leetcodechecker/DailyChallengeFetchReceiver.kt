@@ -49,17 +49,23 @@ class DailyChallengeFetchReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent?) {
         Log.i(TAG, "Daily auto-fetch triggered at 6 AM")
-        
+
         // Schedule next day's fetch
         ConsistencyReminderScheduler.scheduleDailyAutoFetch(context)
-        
-        // Perform the fetch in a coroutine
+
+        // goAsync() keeps the process alive for the fetch: onReceive() otherwise
+        // returns immediately, and when this alarm cold-starts the process (app not
+        // open, device idle overnight) the OS is free to kill it before the network
+        // round-trip in fetchAndStore() finishes, silently dropping the fetch.
+        val pendingResult = goAsync()
         scope.launch {
             try {
                 fetchAndStore(context)
             } catch (e: Exception) {
                 Log.e(TAG, "Auto-fetch failed", e)
                 showErrorNotification(context, e.message ?: "Unknown error")
+            } finally {
+                pendingResult.finish()
             }
         }
     }

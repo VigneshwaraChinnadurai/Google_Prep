@@ -5,6 +5,7 @@
   GGUF model files, include the external revision export folder.
 -->
 <full-backup-content>
+    <include domain="file" path="." />
     <exclude domain="file" path="gguf_models/" />
     <include domain="external" path="." />
 </full-backup-content>

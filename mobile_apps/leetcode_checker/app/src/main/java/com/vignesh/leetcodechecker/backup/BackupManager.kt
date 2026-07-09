@@ -112,14 +112,14 @@ object BackupManager {
                             name.startsWith(FILES_PREFIX) -> {
                                 val relative = name.removePrefix(FILES_PREFIX)
                                 if (relative.isNotBlank()) {
-                                    writeExtractedFile(File(context.filesDir, relative), zip.readBytes())
+                                    writeExtractedFile(context.filesDir, relative, zip.readBytes())
                                 }
                             }
                             name.startsWith(EXTERNAL_PREFIX) -> {
                                 val relative = name.removePrefix(EXTERNAL_PREFIX)
                                 val extDir = context.getExternalFilesDir(null)
                                 if (relative.isNotBlank() && extDir != null) {
-                                    writeExtractedFile(File(extDir, relative), zip.readBytes())
+                                    writeExtractedFile(extDir, relative, zip.readBytes())
                                 }
                             }
                         }
@@ -292,7 +292,16 @@ object BackupManager {
         }
     }
 
-    private fun writeExtractedFile(target: File, bytes: ByteArray) {
+    // Restore reads a zip the user picked via the file browser, not just ones this
+    // class wrote -- resolve against the canonical root so a malicious/corrupt zip
+    // with a "../" entry name can't write outside filesDir/external files dir.
+    private fun writeExtractedFile(root: File, relativePath: String, bytes: ByteArray) {
+        val canonicalRoot = root.canonicalFile
+        val target = File(root, relativePath).canonicalFile
+        if (!target.path.startsWith(canonicalRoot.path + File.separator)) {
+            Log.e(TAG, "Refusing to restore entry outside target directory: $relativePath")
+            return
+        }
         target.parentFile?.mkdirs()
         FileOutputStream(target).use { it.write(bytes) }
     }
