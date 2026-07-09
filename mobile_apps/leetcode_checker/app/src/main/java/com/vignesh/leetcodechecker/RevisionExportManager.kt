@@ -27,6 +27,7 @@ data class LocalRevisionHistoryItem(
     val folderPath: String,
     val questionId: String,
     val title: String,
+    val url: String,
     val questionText: String,
     val answerPython: String,
     val explanationText: String,
@@ -138,6 +139,7 @@ object RevisionExportManager {
 
                     val questionId = extractMetadataValue(questionText, "Question ID")
                     val title = extractMetadataValue(questionText, "Title")
+                    val url = extractMetadataValue(questionText, "URL")
 
                     val lastModified = listOf(questionFile, answerFile, explanationFile)
                         .filter { it.exists() }
@@ -149,6 +151,7 @@ object RevisionExportManager {
                         folderPath = folder.absolutePath,
                         questionId = questionId,
                         title = title,
+                        url = url,
                         questionText = questionText,
                         answerPython = answerText,
                         explanationText = explanationText,
