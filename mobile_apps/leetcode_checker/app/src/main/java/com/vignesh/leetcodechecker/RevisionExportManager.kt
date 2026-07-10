@@ -100,9 +100,14 @@ object RevisionExportManager {
         return withContext(Dispatchers.IO) {
             val settings = AppSettingsStore.load(context)
             val rootFolder = settings.revisionFolderName.ifBlank { "Leetcode_QA_Revision" }
-            val baseDir = File(context.getExternalFilesDir(null), "$rootFolder/${files.folderDate}")
-            if (!baseDir.exists()) {
-                baseDir.mkdirs()
+            // Internal storage (filesDir), not external: getExternalFilesDir() goes through a
+            // FUSE/sdcardfs bridge that can transiently fail mkdirs()/writes with EACCES right
+            // after install or a settings change, even though the app owns the path. filesDir is
+            // a plain private directory with no such quirk, and BackupManager already zips all of
+            // it, so periodic backups keep picking these files up with no changes needed there.
+            val baseDir = File(context.filesDir, "$rootFolder/${files.folderDate}")
+            if (!baseDir.exists() && !baseDir.mkdirs() && !baseDir.exists()) {
+                throw java.io.IOException("Could not create local revision folder: ${baseDir.absolutePath}")
             }
             File(baseDir, "question.txt").writeText(files.questionText)
             File(baseDir, "answer.py").writeText(files.answerPython)
@@ -115,15 +120,25 @@ object RevisionExportManager {
         return withContext(Dispatchers.IO) {
             val settings = AppSettingsStore.load(context)
             val rootFolder = settings.revisionFolderName.ifBlank { "Leetcode_QA_Revision" }
-            val rootDir = File(context.getExternalFilesDir(null), rootFolder)
+            val rootDir = File(context.filesDir, rootFolder)
+            val legacyExternalDir = File(context.getExternalFilesDir(null), rootFolder)
 
-            if (!rootDir.exists() || !rootDir.isDirectory) {
+            if ((!rootDir.exists() || !rootDir.isDirectory) &&
+                (!legacyExternalDir.exists() || !legacyExternalDir.isDirectory)
+            ) {
                 return@withContext emptyList()
             }
 
-            rootDir.listFiles()
-                .orEmpty()
+            val foldersToScan = buildList {
+                if (rootDir.exists() && rootDir.isDirectory) addAll(rootDir.listFiles().orEmpty())
+                if (legacyExternalDir.exists() && legacyExternalDir.isDirectory) {
+                    addAll(legacyExternalDir.listFiles().orEmpty())
+                }
+            }
+
+            foldersToScan
                 .filter { it.isDirectory }
+                .distinctBy { it.name }
                 .mapNotNull { folder ->
                     val questionFile = File(folder, "question.txt")
                     val answerFile = File(folder, "answer.py")
