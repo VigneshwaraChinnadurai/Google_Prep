@@ -1,0 +1,50 @@
+Date: 2026-07-10
+Title: Path Existence Queries in a Graph II
+URL: https://leetcode.com/problems/path-existence-queries-in-a-graph-ii/
+
+LLM Explanation:
+The user wants me to solve the LeetCode problem "Path Existence Queries in a Graph II".
+
+### Method Explanation
+
+The problem asks for the shortest distance between nodes in a graph where edges are defined by a value difference condition. A brute-force approach of building the graph and running BFS for each query is too slow due to the potentially large number of nodes, edges, and queries.
+
+The solution hinges on transforming the problem by analyzing the structure of the graph's connectivity.
+
+1.  **Sorting and Cliques:**
+    First, we associate each node `i` with its value `nums[i]` and sort these pairs based on the values. Let the sorted nodes be `p_0, p_1, ..., p_{n-1}`. An edge exists between two nodes if their values differ by at most `maxDiff`. This implies that for any node `p_i`, it forms a clique with all subsequent nodes `p_j` (where `j > i`) as long as `nums[p_j] - nums[p_i] <= maxDiff`.
+
+2.  **Connected Components:**
+    The graph's connected components can be determined efficiently. A component is a set of nodes where any two are mutually reachable. In our sorted list, if two cliques (formed by the rule above) overlap, all nodes in their union belong to the same component. We can find these components in `O(n)` time by iterating through the sorted nodes and tracking the maximum reachable index from the cliques encountered so far.
+
+3.  **Shortest Path via Binary Lifting:**
+    Within a connected component, the shortest path between two nodes `p_a` and `p_b` (assuming `a < b` in the sorted list) can be found by a series of "jumps". A jump from a set of already reached nodes `{p_0, ..., p_k}` allows us to reach any node `p_m` that forms a clique with at least one node in the set. To maximize our progress towards `p_b`, we should always jump as far as possible.
+
+    Let `R[i]` be the maximum index `k` such that `p_k` is reachable in one step from any of the nodes `{p_0, ..., p_i}`. Since the reachability condition depends on the minimum value in a clique, and values are sorted, `R[i]` is the maximum of all `j_m` for `m <= i`, where `j_m` is the endpoint of the clique starting at `p_m`. `R[i]` can be computed in `O(n)` as `R[i] = max(R[i-1], j_i)`.
+
+    A path from `p_a` to `p_b` is a sequence of jumps. From `p_a`, we can reach any node up to index `R[a]` in one step. From this new set of reachable nodes `{p_0, ..., p_{R[a]}}`, the furthest we can reach in the next step is `R[R[a]]`. This structure allows us to use binary lifting (or jump pointers). We precompute `up[i][k]`, the furthest index reachable from `p_i` in `2^k` steps. `up[i][0] = R[i]` and `up[i][k] = up[up[i][k-1]][k-1]`.
+
+4.  **Query Processing:**
+    For each query `(u, v)`:
+    a. We first check if `u` and `v` are in the same connected component. If not, the distance is -1.
+    b. If they are in the same component, we find their indices `a` and `b` in the sorted list.
+    c. Using the precomputed `up` table, we use binary lifting to find the minimum number of jumps to get from `p_a` to `p_b` in `O(log n)` time.
+
+This approach has a precomputation time of `O(n log n)` and each query takes `O(log n)`, making the total time complexity `O(n log n + Q log n)`, which is efficient enough for the given constraints.
+
+LLM Testcase Validation:
+```
+Passed:
+5
+[1,8,3,4,2]
+3
+[[0,3],[2,4]]
+5
+[5,3,1,9,10]
+2
+[[0,1],[0,2],[2,3],[4,3]]
+3
+[3,6,1]
+1
+[[0,0],[0,1],[1,2]]
+```
