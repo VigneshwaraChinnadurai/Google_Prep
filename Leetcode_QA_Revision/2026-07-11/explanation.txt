@@ -1,0 +1,54 @@
+Date: 2026-07-11
+Title: Count the Number of Complete Components
+URL: https://leetcode.com/problems/count-the-number-of-complete-components/
+
+LLM Explanation:
+The problem asks us to count the number of "complete connected components" in a graph. A connected component is a part of the graph where every node is reachable from every other node. A component is "complete" if every pair of nodes within it is connected by an edge.
+
+The overall strategy is to:
+1.  Find each connected component in the graph.
+2.  For each component, check if it is complete.
+3.  Count how many components satisfy the "complete" condition.
+
+Here's a step-by-step breakdown of the algorithm:
+
+1.  **Graph Representation**: We first build an adjacency list from the input `edges`. This allows for efficient lookup of a node's neighbors.
+
+2.  **Finding Components**: We iterate through all vertices from `0` to `n-1`. We use a `visited` array to keep track of vertices that have already been assigned to a component.
+    - If we encounter a vertex `i` that has not been visited, it means we've found a new, unexplored connected component.
+    - We start a graph traversal (like Breadth-First Search or Depth-First Search) from this vertex `i`. The traversal will find all vertices belonging to this same component. We collect these vertices in a list, say `component_nodes`.
+
+3.  **Checking for Completeness**: Once we have all the nodes for a single component, we need to check if it's a complete graph.
+    - A graph (or component) with `k` vertices is complete if and only if every vertex in it has a degree of `k-1`.
+    - The problem statement guarantees that components are isolated (no edges between different components). This means the degree of a node within its component is simply its total degree in the graph, which is `len(adj[node])`.
+    - So, for a component with `num_nodes = len(component_nodes)`, we check if every `node` in `component_nodes` satisfies `len(adj[node]) == num_nodes - 1`.
+    - If all nodes in the component pass this check, the component is complete, and we increment our counter.
+
+4.  **Counting**: We repeat this process until all vertices have been visited. The final value of the counter is the answer.
+
+**Complexity Analysis**:
+-   **Time Complexity**: O(V + E), where V is the number of vertices (`n`) and E is the number of edges.
+    -   Building the adjacency list takes O(E) time.
+    -   The main loop and the graph traversal together visit each vertex and each edge exactly once, which takes O(V + E).
+    -   The completeness check for each component involves iterating through its nodes. Summed over all components, this is an O(V) operation.
+-   **Space Complexity**: O(V + E).
+    -   The adjacency list requires O(V + E) space.
+    -   The `visited` array and the queue for BFS require O(V) space.
+
+LLM Testcase Validation:
+```
+6
+[[0,1],[0,2],[1,2],[3,4]]
+```
+The code correctly returns `3`.
+- Component {0, 1, 2} is complete (3 nodes, each with degree 2).
+- Component {3, 4} is complete (2 nodes, each with degree 1).
+- Component {5} is complete (1 node, with degree 0).
+
+```
+6
+[[0,1],[0,2],[1,2],[3,4],[3,5]]
+```
+The code correctly returns `1`.
+- Component {0, 1, 2} is complete (3 nodes, each with degree 2).
+- Component {3, 4, 5} is not complete. It has 3 nodes, so for it to be complete, each node must have a degree of 2. However, node 4 and node 5 each have a degree of 1.
