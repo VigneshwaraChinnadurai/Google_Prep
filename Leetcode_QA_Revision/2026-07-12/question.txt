@@ -1,0 +1,61 @@
+Date: 2026-07-12
+Question ID: 1331
+Title: Rank Transform of an Array
+Difficulty: Easy
+Tags: Array, Hash Table, Sorting
+URL: https://leetcode.com/problems/rank-transform-of-an-array/
+
+Question:
+Given an array of integers arr , replace each element with its rank. The rank represents how large the element is. The rank has the following rules: Rank is an integer starting from 1. The larger the element, the larger the rank. If two elements are equal, their rank must be the same. Rank should be as small as possible. Example 1: Input: arr = [40,10,20,30] Output: [4,1,2,3] Explanation : 40 is the largest element. 10 is the smallest. 20 is the second smallest. 30 is the third smallest. Example 2: Input: arr = [100,100,100] Output: [1,1,1] Explanation : Same elements share the same rank. Example 3: Input: arr = [37,12,28,9,100,56,80,5,12] Output: [5,3,4,2,8,6,7,1,3] Constraints: 0 &lt;= arr.length &lt;= 10 5 -10 9 &lt;= arr[i] &lt;= 10 9
+
+Starter Code (Python3):
+class Solution:
+    def arrayRankTransform(self, arr: List[int]) -> List[int]:
+        
+
+Testcases:
+[40,10,20,30]
+[100,100,100]
+[37,12,28,9,100,56,80,5,12]
+
+Expected Output / Validation:
+```python
+# Testcase 1
+arr1 = [40, 10, 20, 30]
+expected1 = [4, 1, 2, 3]
+sol = Solution()
+output1 = sol.arrayRankTransform(arr1)
+assert output1 == expected1, f"Testcase 1 Failed: Expected {expected1}, got {output1}"
+
+# Testcase 2
+arr2 = [100, 100, 100]
+expected2 = [1, 1, 1]
+output2 = sol.arrayRankTransform(arr2)
+assert output2 == expected2, f"Testcase 2 Failed: Expected {expected2}, got {output2}"
+
+# Testcase 3
+arr3 = [37, 12, 28, 9, 100, 56, 80, 5, 12]
+expected3 = [5, 3, 4, 2, 8, 6, 7, 1, 3]
+output3 = sol.arrayRankTransform(arr3)
+assert output3 == expected3, f"Testcase 3 Failed: Expected {expected3}, got {output3}"
+
+# Edge case: Empty array
+arr4 = []
+expected4 = []
+output4 = sol.arrayRankTransform(arr4)
+assert output4 == expected4, f"Testcase 4 Failed: Expected {expected4}, got {output4}"
+
+# Edge case: Array with negative numbers
+arr5 = [-5, -10, 0, -10]
+expected5 = [2, 1, 3, 1]
+output5 = sol.arrayRankTransform(arr5)
+assert output5 == expected5, f"Testcase 5 Failed: Expected {expected5}, got {output5}"
+
+# Edge case: All elements are the same
+arr6 = [7, 7, 7, 7]
+expected6 = [1, 1, 1, 1]
+output6 = sol.arrayRankTransform(arr6)
+assert output6 == expected6, f"Testcase 6 Failed: Expected {expected6}, got {output6}"
+
+print("All test cases passed!")
+```
