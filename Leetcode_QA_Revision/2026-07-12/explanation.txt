@@ -1,0 +1,67 @@
+Date: 2026-07-12
+Title: Rank Transform of an Array
+URL: https://leetcode.com/problems/rank-transform-of-an-array/
+
+LLM Explanation:
+The problem requires us to replace each element in an array with its rank. The rank is determined by the element's relative size: the smallest element gets rank 1, the second smallest gets rank 2, and so on. Equal elements must have the same rank.
+
+The core idea is to first establish the ranking order by considering only the unique values in the array. Then, we can use this ranking to transform the original array. A hash map is an ideal data structure for storing the mapping from a value to its rank, allowing for efficient lookups.
+
+The algorithm proceeds in three main steps:
+
+1.  **Create a Sorted List of Unique Elements**: We first extract the unique elements from the input array `arr` (using a `set`) and then sort them in ascending order. This sorted list provides a clear ranking hierarchy. For example, if `arr = [40, 10, 20, 30]`, the sorted unique list would be `[10, 20, 30, 40]`.
+
+2.  **Build a Rank Map**: We create a hash map (a dictionary in Python) to store the rank of each unique element. We iterate through the sorted unique list from step 1. The rank of an element is its 1-based index in this list. For the example `[10, 20, 30, 40]`, the map would be `{10: 1, 20: 2, 30: 3, 40: 4}`.
+
+3.  **Transform the Original Array**: Finally, we iterate through the original `arr`. For each element, we look up its rank in the map created in step 2 and build the result array. This ensures the output array has the same length and order as the input, but with values replaced by their ranks. For `arr = [40, 10, 20, 30]`, the transformation yields `[4, 1, 2, 3]`.
+
+This approach correctly handles duplicates (since they map to the same rank) and ensures ranks are as small as possible and consecutive.
+
+**Complexity Analysis:**
+-   **Time Complexity**: O(N log N), where N is the number of elements in `arr`. The most time-consuming part is sorting the unique elements. Let U be the number of unique elements. Creating the set takes O(N), sorting takes O(U log U), building the map takes O(U), and the final transformation takes O(N). Since U ≤ N, the overall complexity is dominated by sorting, making it O(N log N) in the worst case (when all elements are unique).
+-   **Space Complexity**: O(U), or O(N) in the worst case. We need auxiliary space to store the set of unique elements and the rank map. The size of both is proportional to the number of unique elements, U. The output array also requires O(N) space, but auxiliary space is typically considered.
+
+**Edge Cases:**
+-   An empty input array `arr` is handled gracefully. `sorted(set([]))` results in an empty list, leading to an empty rank map and an empty output array, which is the correct behavior.
+
+LLM Testcase Validation:
+```python
+# Testcase 1
+arr1 = [40, 10, 20, 30]
+expected1 = [4, 1, 2, 3]
+sol = Solution()
+output1 = sol.arrayRankTransform(arr1)
+assert output1 == expected1, f"Testcase 1 Failed: Expected {expected1}, got {output1}"
+
+# Testcase 2
+arr2 = [100, 100, 100]
+expected2 = [1, 1, 1]
+output2 = sol.arrayRankTransform(arr2)
+assert output2 == expected2, f"Testcase 2 Failed: Expected {expected2}, got {output2}"
+
+# Testcase 3
+arr3 = [37, 12, 28, 9, 100, 56, 80, 5, 12]
+expected3 = [5, 3, 4, 2, 8, 6, 7, 1, 3]
+output3 = sol.arrayRankTransform(arr3)
+assert output3 == expected3, f"Testcase 3 Failed: Expected {expected3}, got {output3}"
+
+# Edge case: Empty array
+arr4 = []
+expected4 = []
+output4 = sol.arrayRankTransform(arr4)
+assert output4 == expected4, f"Testcase 4 Failed: Expected {expected4}, got {output4}"
+
+# Edge case: Array with negative numbers
+arr5 = [-5, -10, 0, -10]
+expected5 = [2, 1, 3, 1]
+output5 = sol.arrayRankTransform(arr5)
+assert output5 == expected5, f"Testcase 5 Failed: Expected {expected5}, got {output5}"
+
+# Edge case: All elements are the same
+arr6 = [7, 7, 7, 7]
+expected6 = [1, 1, 1, 1]
+output6 = sol.arrayRankTransform(arr6)
+assert output6 == expected6, f"Testcase 6 Failed: Expected {expected6}, got {output6}"
+
+print("All test cases passed!")
+```
