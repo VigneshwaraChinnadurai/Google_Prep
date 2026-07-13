@@ -1,0 +1,69 @@
+Date: 2026-07-13
+Question ID: 1291
+Title: Sequential Digits
+Difficulty: Medium
+Tags: Enumeration
+URL: https://leetcode.com/problems/sequential-digits/
+
+Question:
+An integer has sequential digits if and only if each digit in the number is one more than the previous digit. Return a sorted list of all the integers in the range [low, high] inclusive that have sequential digits. Example 1: Input: low = 100, high = 300 Output: [123,234] Example 2: Input: low = 1000, high = 13000 Output: [1234,2345,3456,4567,5678,6789,12345] Constraints: 10 &lt;= low &lt;= high &lt;= 10^9
+
+Starter Code (Python3):
+class Solution:
+    def sequentialDigits(self, low: int, high: int) -> List[int]:
+        
+
+Testcases:
+100
+300
+1000
+13000
+
+Expected Output / Validation:
+```python
+# Testcase 1
+# Input: low = 100, high = 300
+# Expected output: [123, 234]
+s = Solution()
+result = s.sequentialDigits(100, 300)
+print(f"Testcase 1: low=100, high=300, Output: {result}")
+assert result == [123, 234]
+
+# Testcase 2
+# Input: low = 1000, high = 13000
+# Expected output: [1234, 2345, 3456, 4567, 5678, 6789, 12345]
+result = s.sequentialDigits(1000, 13000)
+print(f"Testcase 2: low=1000, high=13000, Output: {result}")
+assert result == [1234, 2345, 3456, 4567, 5678, 6789, 12345]
+
+# Additional Testcases
+# Edge case: range contains the smallest sequential number
+result = s.sequentialDigits(10, 15)
+print(f"Testcase 3: low=10, high=15, Output: {result}")
+assert result == [12]
+
+# Edge case: range contains the largest sequential number
+result = s.sequentialDigits(123456780, 123456790)
+print(f"Testcase 4: low=123456780, high=123456790, Output: {result}")
+assert result == [123456789]
+
+# Edge case: no sequential numbers in range
+result = s.sequentialDigits(500, 600)
+print(f"Testcase 5: low=500, high=600, Output: {result}")
+assert result == [567] # Whoops, my manual check was wrong. 567 is in range.
+# Let's re-verify testcase 5
+# len_low=3, len_high=3. length=3.
+# i=0, num=123 < 500
+# i=1, num=234 < 500
+# i=2, num=345 < 500
+# i=3, num=456 < 500
+# i=4, num=567. 500 <= 567 <= 600. result=[567]
+# i=5, num=678 > 600. return result.
+# The code is correct. My manual assertion was wrong.
+# Let's pick a better "no result" case.
+result = s.sequentialDigits(500, 550)
+print(f"Testcase 6: low=500, high=550, Output: {result}")
+assert result == []
+
+print("All testcases passed.")
+```
