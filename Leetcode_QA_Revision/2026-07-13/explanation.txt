@@ -1,0 +1,74 @@
+Date: 2026-07-13
+Title: Sequential Digits
+URL: https://leetcode.com/problems/sequential-digits/
+
+LLM Explanation:
+### Method Explanation
+
+The core idea is to recognize that the set of all integers with sequential digits is very small and can be generated systematically. Every such number is a substring of the master string "123456789". For example, 234 is ` "123456789"[1:4] ` and 5678 is ` "123456789"[4:8] `.
+
+The algorithm leverages this property to efficiently find all sequential numbers within the given `[low, high]` range:
+
+1.  **Constrain Search Space by Length**: Any valid number `x` in the range `[low, high]` must have a number of digits between `len(str(low))` and `len(str(high))`. We can iterate through this range of possible lengths.
+
+2.  **Generate Candidates**: For each possible `length`, we use a sliding window approach on the `sample` string "123456789" to generate all sequential numbers of that length. For a length of 3, this would generate 123, 234, 345, and so on.
+
+3.  **Filter and Collect**: As each number is generated, we check if it falls within the `[low, high]` range.
+    - If `num >= low` (and `num <= high`), we add it to our result list.
+    - The numbers are generated in a naturally sorted order (e.g., 12, 23, ..., 89, 123, 234, ...). This allows for a crucial optimization: if a generated number `num` exceeds `high`, we know all subsequent numbers will also be larger. Thus, we can immediately stop the generation process and return the results found so far.
+
+This approach is highly efficient because it avoids checking every number in the `[low, high]` range. Instead, it directly generates the only possible candidates and filters them.
+
+### Complexity Analysis
+
+-   **Time Complexity**: `O(1)`. The total number of sequential digit integers is constant and small (36 numbers from length 2 to 9). The nested loops run a fixed number of times, regardless of the size of the `low` and `high` inputs.
+-   **Space Complexity**: `O(1)`. The space required for the result list is bounded by the constant number of sequential digits.
+
+LLM Testcase Validation:
+```python
+# Testcase 1
+# Input: low = 100, high = 300
+# Expected output: [123, 234]
+s = Solution()
+result = s.sequentialDigits(100, 300)
+print(f"Testcase 1: low=100, high=300, Output: {result}")
+assert result == [123, 234]
+
+# Testcase 2
+# Input: low = 1000, high = 13000
+# Expected output: [1234, 2345, 3456, 4567, 5678, 6789, 12345]
+result = s.sequentialDigits(1000, 13000)
+print(f"Testcase 2: low=1000, high=13000, Output: {result}")
+assert result == [1234, 2345, 3456, 4567, 5678, 6789, 12345]
+
+# Additional Testcases
+# Edge case: range contains the smallest sequential number
+result = s.sequentialDigits(10, 15)
+print(f"Testcase 3: low=10, high=15, Output: {result}")
+assert result == [12]
+
+# Edge case: range contains the largest sequential number
+result = s.sequentialDigits(123456780, 123456790)
+print(f"Testcase 4: low=123456780, high=123456790, Output: {result}")
+assert result == [123456789]
+
+# Edge case: no sequential numbers in range
+result = s.sequentialDigits(500, 600)
+print(f"Testcase 5: low=500, high=600, Output: {result}")
+assert result == [567] # Whoops, my manual check was wrong. 567 is in range.
+# Let's re-verify testcase 5
+# len_low=3, len_high=3. length=3.
+# i=0, num=123 < 500
+# i=1, num=234 < 500
+# i=2, num=345 < 500
+# i=3, num=456 < 500
+# i=4, num=567. 500 <= 567 <= 600. result=[567]
+# i=5, num=678 > 600. return result.
+# The code is correct. My manual assertion was wrong.
+# Let's pick a better "no result" case.
+result = s.sequentialDigits(500, 550)
+print(f"Testcase 6: low=500, high=550, Output: {result}")
+assert result == []
+
+print("All testcases passed.")
+```
