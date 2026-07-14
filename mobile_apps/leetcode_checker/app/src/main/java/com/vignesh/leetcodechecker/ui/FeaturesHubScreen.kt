@@ -29,7 +29,6 @@ import com.vignesh.leetcodechecker.data.LeetCodeActivityStorage
 @Composable
 fun FeaturesHubScreen(
     onNavigate: (FeatureDestination) -> Unit,
-    onOpenLeaderboard: () -> Unit = {},
     onFilterSelected: (topic: String, difficulty: String) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier
 ) {
@@ -115,19 +114,13 @@ fun FeaturesHubScreen(
             FeatureItem("AI Hub", "🧠", Color(0xFFFF6B6B), FeatureDestination.AI_LEARNING_HUB),
             FeatureItem("Chatbot", "💬", Color(0xFF00D4AA), FeatureDestination.STRATEGIC_CHATBOT),
             FeatureItem("Analytics", "📊", Color(0xFF58A6FF), FeatureDestination.ANALYTICS),
-            FeatureItem("Goals", "🎯", Color(0xFF39D353), FeatureDestination.GOALS),
             FeatureItem("Achievements", "🏆", Color(0xFFFFD700), FeatureDestination.ACHIEVEMENTS),
             FeatureItem("Flashcards", "📚", Color(0xFFA371F7), FeatureDestination.FLASHCARDS),
             FeatureItem("Focus Mode", "🎧", Color(0xFFF0883E), FeatureDestination.FOCUS),
-            FeatureItem("Interview", "🎤", Color(0xFF00B8A3), FeatureDestination.INTERVIEW),
-            FeatureItem("Leaderboard", "📈", Color(0xFFC0C0C0), FeatureDestination.LEADERBOARD),
             FeatureItem("Offline", "📱", Color(0xFF6E7681), FeatureDestination.OFFLINE),
             FeatureItem("AI/ML News", "🤖", Color(0xFF9C27B0), FeatureDestination.AI_NEWS),
             FeatureItem("Protection", "🔒", Color(0xFFF85149), FeatureDestination.PROTECTION),
-            FeatureItem("What's New", "✨", Color(0xFFFFB347), FeatureDestination.WHATS_NEW),
-            FeatureItem("Random Challenge", "🎲", Color(0xFFD3D3D3), FeatureDestination.RANDOM_CHALLENGE),
-            FeatureItem("Profile", "👤", Color(0xFFA3A3A3), FeatureDestination.PROFILE),
-            FeatureItem("GitHub Profile", "🐙", Color(0xFFA3A3A3), FeatureDestination.GITHUB_PROFILE)
+            FeatureItem("What's New", "✨", Color(0xFFFFB347), FeatureDestination.WHATS_NEW)
         )
         
         // Check for unseen updates
