@@ -15,6 +15,9 @@ object AINewsStorage {
     private const val KEY_ENABLED_CATEGORIES = "enabled_categories"
     private const val KEY_CACHED_NEWS = "cached_news"
     private const val KEY_LAST_FETCH_TIME = "last_fetch_time"
+    private const val KEY_NOTIFIED_URLS = "notified_article_urls"
+    private const val KEY_NOTIFIED_BASELINE_SEEDED = "notified_baseline_seeded"
+    private const val MAX_NOTIFIED_TRACKED = 500
     
     private val moshi = Moshi.Builder()
         .add(KotlinJsonAdapterFactory())
@@ -141,5 +144,28 @@ object AINewsStorage {
         val lastFetch = getLastFetchTime(context)
         val oneHourMs = 60 * 60 * 1000
         return System.currentTimeMillis() - lastFetch > oneHourMs
+    }
+
+    // ── Notification de-duplication for the 5 AM auto-fetch ──────────────
+    // Tracks which article URLs have already triggered a notification so the
+    // same article isn't re-notified on every subsequent daily fetch.
+
+    fun hasSeededNotifiedBaseline(context: Context): Boolean {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        return prefs.getBoolean(KEY_NOTIFIED_BASELINE_SEEDED, false)
+    }
+
+    fun getNotifiedArticleUrls(context: Context): Set<String> {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        return prefs.getStringSet(KEY_NOTIFIED_URLS, emptySet()) ?: emptySet()
+    }
+
+    fun markArticlesNotified(context: Context, urls: Collection<String>) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val updated = (getNotifiedArticleUrls(context) + urls).toList().takeLast(MAX_NOTIFIED_TRACKED).toSet()
+        prefs.edit()
+            .putStringSet(KEY_NOTIFIED_URLS, updated)
+            .putBoolean(KEY_NOTIFIED_BASELINE_SEEDED, true)
+            .apply()
     }
 }

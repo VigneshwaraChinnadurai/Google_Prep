@@ -40,6 +40,11 @@
             android:name=".DailyChallengeFetchReceiver"
             android:exported="false" />
 
+        <!-- AI/ML News Auto-Fetch at 5 AM, one notification per new article -->
+        <receiver
+            android:name=".AiNewsFetchReceiver"
+            android:exported="false" />
+
         <!-- LeetCode Streak Widget -->
         <receiver
             android:name=".widget.LeetCodeWidgetProvider"

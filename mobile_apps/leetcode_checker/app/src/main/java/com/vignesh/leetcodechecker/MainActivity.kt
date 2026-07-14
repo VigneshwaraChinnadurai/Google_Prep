@@ -43,6 +43,8 @@ class MainActivity : ComponentActivity() {
         ConsistencyReminderScheduler.ensureHourlyReminder(this)
         // Schedule daily auto-fetch at 6 AM IST
         ConsistencyReminderScheduler.scheduleDailyAutoFetch(this)
+        // Schedule daily AI/ML News auto-fetch at 5 AM IST (one notification per new article)
+        ConsistencyReminderScheduler.scheduleDailyAiNewsFetch(this)
         // Ensure weekly backup is scheduled (no-op until a backup folder is chosen)
         BackupWorker.ensureScheduled(this)
         setContent {

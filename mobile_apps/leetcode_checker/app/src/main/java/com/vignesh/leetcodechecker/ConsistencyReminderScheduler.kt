@@ -13,6 +13,7 @@ object ConsistencyReminderScheduler {
     private const val TAG = "ConsistencyScheduler"
     private const val REMINDER_REQUEST_CODE = 10_001
     private const val AUTO_FETCH_REQUEST_CODE = 10_010
+    private const val AI_NEWS_FETCH_REQUEST_CODE = 10_011
     
     fun ensureHourlyReminder(context: Context) {
         val settings = AppSettingsStore.load(context)
@@ -96,6 +97,58 @@ object ConsistencyReminderScheduler {
         Log.i(TAG, "Cancelled daily auto-fetch alarm")
     }
 
+    /**
+     * Schedule daily auto-fetch of AI/ML News at 5 AM IST, with one notification
+     * posted per new article (see AiNewsFetchReceiver).
+     */
+    fun scheduleDailyAiNewsFetch(context: Context) {
+        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        val pendingIntent = aiNewsFetchPendingIntent(context)
+
+        val ist = TimeZone.getTimeZone("Asia/Kolkata")
+        val now = Calendar.getInstance(ist)
+        val triggerTime = Calendar.getInstance(ist).apply {
+            set(Calendar.HOUR_OF_DAY, 5)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+            if (before(now)) {
+                add(Calendar.DAY_OF_MONTH, 1)
+            }
+        }
+
+        Log.i(TAG, "Scheduling daily AI/ML News fetch for ${triggerTime.time}")
+
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                alarmManager.setExactAndAllowWhileIdle(
+                    AlarmManager.RTC_WAKEUP,
+                    triggerTime.timeInMillis,
+                    pendingIntent
+                )
+            } else {
+                alarmManager.setExact(AlarmManager.RTC_WAKEUP, triggerTime.timeInMillis, pendingIntent)
+            }
+        } catch (e: SecurityException) {
+            Log.w(TAG, "Exact alarm not permitted, using inexact: ${e.message}")
+            alarmManager.setInexactRepeating(
+                AlarmManager.RTC_WAKEUP,
+                triggerTime.timeInMillis,
+                AlarmManager.INTERVAL_DAY,
+                pendingIntent
+            )
+        }
+    }
+
+    /**
+     * Cancel the daily AI/ML News auto-fetch alarm.
+     */
+    fun cancelDailyAiNewsFetch(context: Context) {
+        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        alarmManager.cancel(aiNewsFetchPendingIntent(context))
+        Log.i(TAG, "Cancelled daily AI/ML News fetch alarm")
+    }
+
     private fun reminderPendingIntent(context: Context): PendingIntent {
         val intent = Intent(context, ConsistencyReminderReceiver::class.java)
         return PendingIntent.getBroadcast(
@@ -111,6 +164,16 @@ object ConsistencyReminderScheduler {
         return PendingIntent.getBroadcast(
             context,
             AUTO_FETCH_REQUEST_CODE,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+    }
+
+    private fun aiNewsFetchPendingIntent(context: Context): PendingIntent {
+        val intent = Intent(context, AiNewsFetchReceiver::class.java)
+        return PendingIntent.getBroadcast(
+            context,
+            AI_NEWS_FETCH_REQUEST_CODE,
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
