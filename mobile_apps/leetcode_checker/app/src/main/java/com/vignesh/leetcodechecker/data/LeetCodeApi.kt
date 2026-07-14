@@ -136,6 +136,42 @@ data class UserCalendarPayload(
     val submissionCalendar: String?
 )
 
+// Combined profile-details response for the Profile tab's LeetCode section:
+// solved breakdown, topic/tag mastery, badges, and the submission calendar (for streaks).
+data class LeetCodeProfileDetailsResponse(
+    val data: LeetCodeProfileDetailsData?
+)
+
+data class LeetCodeProfileDetailsData(
+    val matchedUser: LeetCodeProfileDetails?
+)
+
+data class LeetCodeProfileDetails(
+    val submitStats: SubmitStats?,
+    val tagProblemCounts: TagProblemCounts?,
+    val badges: List<LeetCodeBadge>?,
+    val userCalendar: UserCalendarPayload?
+)
+
+data class TagProblemCounts(
+    val fundamental: List<TagProblemCount>?,
+    val intermediate: List<TagProblemCount>?,
+    val advanced: List<TagProblemCount>?
+)
+
+data class TagProblemCount(
+    val tagName: String?,
+    val tagSlug: String?,
+    val problemsSolved: Int?
+)
+
+data class LeetCodeBadge(
+    val id: String?,
+    val name: String?,
+    val displayName: String?,
+    val icon: String?
+)
+
 interface LeetCodeApi {
     @POST("graphql")
     suspend fun postQuery(@Body request: GraphQLRequest): DailyChallengeResponse
@@ -151,4 +187,7 @@ interface LeetCodeApi {
 
     @POST("graphql")
     suspend fun getUserCalendar(@Body request: GraphQLRequest): UserCalendarResponse
+
+    @POST("graphql")
+    suspend fun getLeetCodeProfileDetails(@Body request: GraphQLRequest): LeetCodeProfileDetailsResponse
 }

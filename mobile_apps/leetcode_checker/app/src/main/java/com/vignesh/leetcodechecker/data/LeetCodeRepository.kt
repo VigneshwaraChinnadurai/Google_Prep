@@ -42,6 +42,17 @@ data class DailyChallengeUiModel(
     val exampleTestcases: String
 )
 
+data class LeetCodeProfileSummary(
+    val easySolved: Int,
+    val mediumSolved: Int,
+    val hardSolved: Int,
+    val totalSolved: Int,
+    val topTags: List<TagProblemCount>,
+    val badges: List<LeetCodeBadge>,
+    val currentStreak: Int,
+    val longestStreak: Int
+)
+
 data class AiGenerationResult(
     val leetcodePythonCode: String,
     val testcaseValidation: String,
@@ -246,18 +257,118 @@ class LeetCodeRepository(
             val raw = response.data?.matchedUser?.userCalendar?.submissionCalendar
                 ?: error("No submission calendar returned for $username")
 
-            val json = org.json.JSONObject(raw)
-            val calendar = mutableMapOf<String, Int>()
-            json.keys().forEach { epochSecondsKey ->
-                val epochSeconds = epochSecondsKey.toLongOrNull() ?: return@forEach
-                val date = java.time.Instant.ofEpochSecond(epochSeconds)
-                    .atZone(java.time.ZoneOffset.UTC)
-                    .toLocalDate()
-                    .format(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE)
-                calendar[date] = (calendar[date] ?: 0) + json.getInt(epochSecondsKey)
-            }
-            calendar
+            parseSubmissionCalendarJson(raw)
         }
+    }
+
+    /**
+     * Fetch solved-count breakdown, topic/tag mastery, badges, and streaks for the
+     * Profile tab's LeetCode section. One combined query -- LeetCode's schema nests
+     * all of these under matchedUser, so it costs the same as fetching just one.
+     * Streaks are computed client-side from the submission calendar (LeetCode's API
+     * only exposes a "current streak" field, no "longest streak"), so both numbers
+     * come from one consistent source instead of mixing an API field with our own math.
+     */
+    suspend fun fetchLeetCodeProfileSummary(username: String = "rockingstarvic"): Result<LeetCodeProfileSummary> {
+        return runCatching {
+            val query = """
+                query leetcodeProfileDetails(${'$'}username: String!) {
+                  matchedUser(username: ${'$'}username) {
+                    submitStats {
+                      acSubmissionNum {
+                        difficulty
+                        count
+                      }
+                    }
+                    tagProblemCounts {
+                      fundamental { tagName tagSlug problemsSolved }
+                      intermediate { tagName tagSlug problemsSolved }
+                      advanced { tagName tagSlug problemsSolved }
+                    }
+                    badges {
+                      id
+                      name
+                      displayName
+                      icon
+                    }
+                    userCalendar {
+                      submissionCalendar
+                    }
+                  }
+                }
+            """.trimIndent()
+
+            val response = api.getLeetCodeProfileDetails(
+                GraphQLRequest(query = query, variables = mapOf("username" to username))
+            )
+            val matchedUser = response.data?.matchedUser ?: error("No profile data returned for $username")
+
+            val submissions = matchedUser.submitStats?.acSubmissionNum.orEmpty()
+            val easy = submissions.firstOrNull { it.difficulty == "Easy" }?.count ?: 0
+            val medium = submissions.firstOrNull { it.difficulty == "Medium" }?.count ?: 0
+            val hard = submissions.firstOrNull { it.difficulty == "Hard" }?.count ?: 0
+            val total = submissions.firstOrNull { it.difficulty == "All" }?.count ?: (easy + medium + hard)
+
+            val tagCounts = matchedUser.tagProblemCounts
+            val topTags = (tagCounts?.fundamental.orEmpty() + tagCounts?.intermediate.orEmpty() + tagCounts?.advanced.orEmpty())
+                .filter { (it.problemsSolved ?: 0) > 0 }
+                .sortedByDescending { it.problemsSolved }
+                .take(8)
+
+            val calendarRaw = matchedUser.userCalendar?.submissionCalendar
+            val (currentStreak, longestStreak) = calendarRaw
+                ?.let { computeStreaks(parseSubmissionCalendarJson(it)) }
+                ?: (0 to 0)
+
+            LeetCodeProfileSummary(
+                easySolved = easy,
+                mediumSolved = medium,
+                hardSolved = hard,
+                totalSolved = total,
+                topTags = topTags,
+                badges = matchedUser.badges.orEmpty(),
+                currentStreak = currentStreak,
+                longestStreak = longestStreak
+            )
+        }
+    }
+
+    private fun parseSubmissionCalendarJson(raw: String): Map<String, Int> {
+        val json = org.json.JSONObject(raw)
+        val calendar = mutableMapOf<String, Int>()
+        json.keys().forEach { epochSecondsKey ->
+            val epochSeconds = epochSecondsKey.toLongOrNull() ?: return@forEach
+            val date = java.time.Instant.ofEpochSecond(epochSeconds)
+                .atZone(java.time.ZoneOffset.UTC)
+                .toLocalDate()
+                .format(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE)
+            calendar[date] = (calendar[date] ?: 0) + json.getInt(epochSecondsKey)
+        }
+        return calendar
+    }
+
+    private fun computeStreaks(calendar: Map<String, Int>): Pair<Int, Int> {
+        val activeDates = calendar.filterValues { it > 0 }.keys
+            .mapNotNull { runCatching { java.time.LocalDate.parse(it) }.getOrNull() }
+            .toSortedSet()
+        if (activeDates.isEmpty()) return 0 to 0
+
+        var longest = 1
+        var run = 1
+        val sorted = activeDates.toList()
+        for (i in 1 until sorted.size) {
+            run = if (sorted[i] == sorted[i - 1].plusDays(1)) run + 1 else 1
+            if (run > longest) longest = run
+        }
+
+        val today = java.time.LocalDate.now(java.time.ZoneOffset.UTC)
+        var current = 0
+        var cursor = if (activeDates.contains(today)) today else today.minusDays(1)
+        while (activeDates.contains(cursor)) {
+            current++
+            cursor = cursor.minusDays(1)
+        }
+        return current to longest
     }
 
     suspend fun generateDetailedAnswer(

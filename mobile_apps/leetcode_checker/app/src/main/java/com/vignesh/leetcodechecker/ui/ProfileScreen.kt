@@ -25,12 +25,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.border
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.vignesh.leetcodechecker.data.LeetCodeBadge
+import com.vignesh.leetcodechecker.data.LeetCodeProfileSummary
+import com.vignesh.leetcodechecker.data.LeetCodeRepository
+import com.vignesh.leetcodechecker.data.TagProblemCount
 import com.vignesh.leetcodechecker.prooffiling.ProofFilingUIState
 import com.vignesh.leetcodechecker.prooffiling.ProofFilingViewModel
 import com.vignesh.leetcodechecker.viewmodel.GitHubProfileViewModel
@@ -53,6 +58,7 @@ import java.util.Locale
  * Contains:
  * - ProofFiling summary card (this week's progress)
  * - GitHub dropdown (contribution graph, stats)
+ * - LeetCode dropdown (solved breakdown, streaks, heatmap, topic mastery, badges)
  * - Credly dropdown (badges/certifications)
  * - LinkedIn dropdown (profile preview)
  * - Medium dropdown (blog articles)
@@ -69,22 +75,28 @@ fun ProfileScreen(
     
     // Section expansion states
     var githubExpanded by remember { mutableStateOf(true) }
+    var leetcodeExpanded by remember { mutableStateOf(true) }
     var credlyExpanded by remember { mutableStateOf(false) }
     var linkedinExpanded by remember { mutableStateOf(false) }
     var mediumExpanded by remember { mutableStateOf(false) }
-    
+
     // Refresh trigger to force reload
     var refreshTrigger by remember { mutableStateOf(0) }
-    
+
     // Medium articles state
     var mediumArticles by remember { mutableStateOf<List<MediumArticle>>(emptyList()) }
     var mediumLoading by remember { mutableStateOf(false) }
     var mediumError by remember { mutableStateOf<String?>(null) }
-    
+
     // Credly badges state
     var credlyBadges by remember { mutableStateOf<List<CredlyBadge>>(emptyList()) }
     var credlyLoading by remember { mutableStateOf(false) }
     var credlyError by remember { mutableStateOf<String?>(null) }
+
+    // LeetCode profile summary state
+    var leetcodeSummary by remember { mutableStateOf<LeetCodeProfileSummary?>(null) }
+    var leetcodeLoading by remember { mutableStateOf(false) }
+    var leetcodeError by remember { mutableStateOf<String?>(null) }
     
     // Load GitHub profile on first composition
     LaunchedEffect(Unit) {
@@ -120,6 +132,20 @@ fun ProfileScreen(
                 credlyError = e.message ?: "Failed to load badges"
             }
             credlyLoading = false
+        }
+    }
+
+    // Load LeetCode profile summary when expanded or on refresh
+    LaunchedEffect(leetcodeExpanded, refreshTrigger) {
+        if (leetcodeExpanded && !leetcodeLoading) {
+            leetcodeLoading = true
+            leetcodeError = null
+            try {
+                leetcodeSummary = LeetCodeRepository(context).fetchLeetCodeProfileSummary().getOrThrow()
+            } catch (e: Exception) {
+                leetcodeError = e.message ?: "Failed to load LeetCode profile"
+            }
+            leetcodeLoading = false
         }
     }
     
@@ -184,7 +210,31 @@ fun ProfileScreen(
         }
         
         Spacer(modifier = Modifier.height(12.dp))
-        
+
+        // LeetCode Section
+        ProfileDropdownSection(
+            title = "LeetCode",
+            subtitle = "Solved Problems, Streaks & Badges",
+            icon = {
+                Icon(Icons.Filled.CheckCircle, contentDescription = null, tint = Color.White)
+            },
+            iconBackground = Color(0xFFFFA116),
+            expanded = leetcodeExpanded,
+            onToggle = { leetcodeExpanded = !leetcodeExpanded }
+        ) {
+            LeetCodeProfileContent(
+                summary = leetcodeSummary,
+                isLoading = leetcodeLoading,
+                error = leetcodeError,
+                onOpenProfile = {
+                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://leetcode.com/u/rockingstarvic/"))
+                    context.startActivity(intent)
+                }
+            )
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
         // Credly Section
         ProfileDropdownSection(
             title = "Credly",
@@ -516,6 +566,224 @@ private fun ContributionChip(value: Int, label: String, color: Color) {
             text = label,
             color = color.copy(alpha = 0.8f),
             fontSize = 10.sp
+        )
+    }
+}
+
+// ============== LeetCode Section ==============
+
+private val LeetCodeOrange = Color(0xFFFFA116)
+
+@Composable
+private fun LeetCodeProfileContent(
+    summary: LeetCodeProfileSummary?,
+    isLoading: Boolean,
+    error: String?,
+    onOpenProfile: () -> Unit
+) {
+    when {
+        isLoading && summary == null -> {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(100.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(color = LeetCodeOrange, modifier = Modifier.size(24.dp))
+            }
+        }
+
+        error != null && summary == null -> {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "Unable to load LeetCode stats",
+                    color = Color(0xFF8B949E),
+                    fontSize = 14.sp
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedButton(
+                    onClick = onOpenProfile,
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = LeetCodeOrange)
+                ) {
+                    Text("View on LeetCode")
+                }
+            }
+        }
+
+        summary != null -> {
+            Column {
+                // Solved breakdown
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    LeetCodeStatItem(summary.easySolved, "Easy", Color(0xFF00B8A3))
+                    LeetCodeStatItem(summary.mediumSolved, "Medium", Color(0xFFFFC01E))
+                    LeetCodeStatItem(summary.hardSolved, "Hard", Color(0xFFFF375F))
+                    LeetCodeStatItem(summary.totalSolved, "Total", Color(0xFFE6EDF3))
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Streaks
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    ContributionChip(value = summary.currentStreak, label = "Current Streak", color = Color(0xFFF0883E))
+                    ContributionChip(value = summary.longestStreak, label = "Longest Streak", color = LeetCodeOrange)
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Real per-day submission heatmap -- same data source as the Features tab
+                LeetCodeHeatmap()
+
+                // Topic mastery
+                if (summary.topTags.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        text = "Topic Mastery",
+                        color = Color(0xFFE6EDF3),
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    val maxSolved = summary.topTags.first().problemsSolved ?: 1
+                    summary.topTags.forEach { tag ->
+                        TagMasteryRow(tag = tag, maxSolved = maxSolved)
+                        Spacer(modifier = Modifier.height(6.dp))
+                    }
+                }
+
+                // Badges
+                if (summary.badges.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        text = "Badges (${summary.badges.size})",
+                        color = Color(0xFFE6EDF3),
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        summary.badges.forEach { badge -> LeetCodeBadgeItem(badge) }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+                OutlinedButton(
+                    onClick = onOpenProfile,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = LeetCodeOrange)
+                ) {
+                    Text("View Full Profile on LeetCode")
+                }
+            }
+        }
+
+        else -> {
+            Text(
+                text = "No LeetCode data available",
+                color = Color(0xFF8B949E),
+                fontSize = 14.sp
+            )
+        }
+    }
+}
+
+@Composable
+private fun LeetCodeStatItem(value: Int, label: String, color: Color) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+            text = value.toString(),
+            color = color,
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Bold
+        )
+        Text(
+            text = label,
+            color = Color(0xFF8B949E),
+            fontSize = 10.sp
+        )
+    }
+}
+
+@Composable
+private fun TagMasteryRow(tag: TagProblemCount, maxSolved: Int) {
+    val solved = tag.problemsSolved ?: 0
+    val fraction = if (maxSolved > 0) solved.toFloat() / maxSolved else 0f
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(text = tag.tagName ?: "Unknown", color = Color(0xFFE6EDF3), fontSize = 12.sp)
+            Text(text = "$solved", color = Color(0xFF8B949E), fontSize = 12.sp)
+        }
+        Spacer(modifier = Modifier.height(4.dp))
+        LinearProgressIndicator(
+            progress = { fraction },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(4.dp)
+                .clip(RoundedCornerShape(2.dp)),
+            color = LeetCodeOrange,
+            trackColor = Color(0xFF30363D)
+        )
+    }
+}
+
+@Composable
+private fun LeetCodeBadgeItem(badge: LeetCodeBadge) {
+    val context = LocalContext.current
+    var imageLoadFailed by remember { mutableStateOf(false) }
+    val iconUrl = badge.icon?.let { if (it.startsWith("http")) it else "https://leetcode.com$it" }
+
+    Column(
+        modifier = Modifier.width(72.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Box(
+            modifier = Modifier
+                .size(56.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(if (imageLoadFailed || iconUrl == null) LeetCodeOrange.copy(alpha = 0.2f) else Color.Transparent),
+            contentAlignment = Alignment.Center
+        ) {
+            if (iconUrl != null && !imageLoadFailed) {
+                AsyncImage(
+                    model = ImageRequest.Builder(context)
+                        .data(iconUrl)
+                        .crossfade(true)
+                        .build(),
+                    contentDescription = badge.displayName ?: badge.name,
+                    modifier = Modifier
+                        .size(56.dp)
+                        .clip(RoundedCornerShape(8.dp)),
+                    contentScale = ContentScale.Fit,
+                    onError = { imageLoadFailed = true }
+                )
+            } else {
+                Icon(Icons.Filled.Star, contentDescription = null, tint = LeetCodeOrange)
+            }
+        }
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            text = badge.displayName ?: badge.name ?: "Badge",
+            color = Color(0xFF8B949E),
+            fontSize = 10.sp,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.Center
         )
     }
 }
