@@ -100,6 +100,36 @@ object LeetCodeActivityStorage {
     fun getContributionCountByDate(context: Context): Map<String, Int> {
         return loadCompletionHistory(context).groupBy { it.date }.mapValues { it.value.size }
     }
+
+    // ═══════════════════════════════════════════════════════════════
+    // REAL SUBMISSION CALENDAR CACHE (from LeetCode profile, for Heatmap)
+    // ═══════════════════════════════════════════════════════════════
+
+    private const val KEY_SUBMISSION_CALENDAR = "leetcode_submission_calendar_json"
+    private const val KEY_SUBMISSION_CALENDAR_FETCHED_AT = "leetcode_submission_calendar_fetched_at"
+
+    fun cacheSubmissionCalendar(context: Context, calendar: Map<String, Int>) {
+        val json = JSONObject()
+        calendar.forEach { (date, count) -> json.put(date, count) }
+        prefs(context).edit()
+            .putString(KEY_SUBMISSION_CALENDAR, json.toString())
+            .putLong(KEY_SUBMISSION_CALENDAR_FETCHED_AT, System.currentTimeMillis())
+            .apply()
+    }
+
+    fun getCachedSubmissionCalendar(context: Context): Map<String, Int> {
+        val raw = prefs(context).getString(KEY_SUBMISSION_CALENDAR, null) ?: return emptyMap()
+        return runCatching {
+            val json = JSONObject(raw)
+            json.keys().asSequence().associateWith { json.getInt(it) }
+        }.getOrElse { emptyMap() }
+    }
+
+    fun isSubmissionCalendarStale(context: Context): Boolean {
+        val lastFetch = prefs(context).getLong(KEY_SUBMISSION_CALENDAR_FETCHED_AT, 0L)
+        val oneHourMs = 60 * 60 * 1000
+        return System.currentTimeMillis() - lastFetch > oneHourMs
+    }
     
     // ═══════════════════════════════════════════════════════════════
     // PROBLEM STATS (for Analytics)

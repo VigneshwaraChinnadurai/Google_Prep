@@ -118,16 +118,37 @@ data class AcSubmission(
     val count: Int?
 )
 
+// User Submission Calendar Response (real per-day contribution heatmap data)
+data class UserCalendarResponse(
+    val data: UserCalendarData?
+)
+
+data class UserCalendarData(
+    val matchedUser: MatchedUserCalendar?
+)
+
+data class MatchedUserCalendar(
+    val userCalendar: UserCalendarPayload?
+)
+
+data class UserCalendarPayload(
+    // JSON-encoded string: {"<unix epoch seconds, UTC day start>": <submission count>, ...}
+    val submissionCalendar: String?
+)
+
 interface LeetCodeApi {
     @POST("graphql")
     suspend fun postQuery(@Body request: GraphQLRequest): DailyChallengeResponse
 
     @POST("graphql")
     suspend fun postQuestionDetails(@Body request: GraphQLRequest): QuestionDetailsResponse
-    
+
     @POST("graphql")
     suspend fun getGlobalRanking(@Body request: GraphQLRequest): GlobalRankingResponse
-    
+
     @POST("graphql")
     suspend fun getUserProfile(@Body request: GraphQLRequest): UserProfileResponse
+
+    @POST("graphql")
+    suspend fun getUserCalendar(@Body request: GraphQLRequest): UserCalendarResponse
 }

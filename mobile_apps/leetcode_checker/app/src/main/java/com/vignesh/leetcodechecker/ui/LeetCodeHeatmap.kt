@@ -20,6 +20,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.vignesh.leetcodechecker.data.LeetCodeActivityStorage
+import com.vignesh.leetcodechecker.data.LeetCodeRepository
 import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -33,16 +34,35 @@ import java.util.*
  */
 @Composable
 fun LeetCodeHeatmap(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    username: String = "rockingstarvic"
 ) {
     val context = LocalContext.current
     val scrollState = rememberScrollState()
-    
-    // Get completion data
-    val contributionMap = remember {
-        LeetCodeActivityStorage.getContributionCountByDate(context)
+
+    // Render immediately from cache (or, failing that, local completion history)
+    // so the heatmap is never blank, then refresh from LeetCode's real per-day
+    // submission calendar in the background -- local history only ever has one
+    // entry per day and undercounts days with multiple submissions.
+    var contributionMap by remember {
+        mutableStateOf(
+            LeetCodeActivityStorage.getCachedSubmissionCalendar(context)
+                .ifEmpty { LeetCodeActivityStorage.getContributionCountByDate(context) }
+        )
     }
-    
+
+    LaunchedEffect(username) {
+        if (LeetCodeActivityStorage.isSubmissionCalendarStale(context)) {
+            LeetCodeRepository(context).fetchSubmissionCalendar(username)
+                .onSuccess { calendar ->
+                    if (calendar.isNotEmpty()) {
+                        LeetCodeActivityStorage.cacheSubmissionCalendar(context, calendar)
+                        contributionMap = calendar
+                    }
+                }
+        }
+    }
+
     val totalContributions = contributionMap.values.sum()
     
     // LeetCode-style colors (orange/green theme)

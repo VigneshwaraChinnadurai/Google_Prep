@@ -222,6 +222,44 @@ class LeetCodeRepository(
         }
     }
 
+    /**
+     * Fetch the real per-day submission calendar from the user's LeetCode profile
+     * page (the same data leetcode.com/u/<username> renders its own heatmap from),
+     * rather than deriving contribution counts from local completion history --
+     * which only ever has one entry per day and undercounts actual activity.
+     */
+    suspend fun fetchSubmissionCalendar(username: String = "rockingstarvic"): Result<Map<String, Int>> {
+        return runCatching {
+            val query = """
+                query userProfileCalendar(${'$'}username: String!) {
+                  matchedUser(username: ${'$'}username) {
+                    userCalendar {
+                      submissionCalendar
+                    }
+                  }
+                }
+            """.trimIndent()
+
+            val response = api.getUserCalendar(
+                GraphQLRequest(query = query, variables = mapOf("username" to username))
+            )
+            val raw = response.data?.matchedUser?.userCalendar?.submissionCalendar
+                ?: error("No submission calendar returned for $username")
+
+            val json = org.json.JSONObject(raw)
+            val calendar = mutableMapOf<String, Int>()
+            json.keys().forEach { epochSecondsKey ->
+                val epochSeconds = epochSecondsKey.toLongOrNull() ?: return@forEach
+                val date = java.time.Instant.ofEpochSecond(epochSeconds)
+                    .atZone(java.time.ZoneOffset.UTC)
+                    .toLocalDate()
+                    .format(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE)
+                calendar[date] = (calendar[date] ?: 0) + json.getInt(epochSecondsKey)
+            }
+            calendar
+        }
+    }
+
     suspend fun generateDetailedAnswer(
         challenge: DailyChallengeUiModel,
         forceRefresh: Boolean = false
