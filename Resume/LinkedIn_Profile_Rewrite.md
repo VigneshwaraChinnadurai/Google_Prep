@@ -24,13 +24,18 @@ public downside — Settings → visible to → "Recruiters only."
 ## Headline (220 char limit)
 
 ```
-Senior AI Architect & ML Engineer | Agentic AI, GenAI & LLMs on AWS Bedrock/AgentCore | 8+ yrs building production RAG & multi-agent systems
+AI/ML Architect @ Accenture | Agentic AI, GenAI & LLMs on AWS Bedrock/AgentCore | 8+ yrs building production RAG & multi-agent systems
 ```
 
-Why this shape: keeps your real title (credibility, matches what a background
-check will show) while adding "ML Engineer" so you surface in both
-"AI Architect" and "Machine Learning Engineer" recruiter searches — those are
-genuinely different search terms people use.
+Why this shape: keeps a functional "Architect" framing (credible, matches
+your actual work) while naming Accenture as current employer — matches what
+a background check will show — and "AI/ML" surfaces you in both
+"AI Architect" and "Machine Learning Engineer" recruiter searches.
+
+**Updated 2026-07-14:** you moved from Deloitte to Accenture Solutions
+(AI/ML Computational Science Associate Manager, June 2026) — project
+assignment just came through today. Headline/Experience updated below;
+About section didn't need changes since it never named an employer directly.
 
 ---
 
@@ -75,7 +80,17 @@ LinkedIn allows more breathing room than a resume; these are slightly more
 narrative than the resume's terse XYZ bullets, but every number matches it
 exactly.
 
-### Deloitte Consulting USI — Senior AI Architect (Jan 2022 – Present)
+### Accenture Solutions — AI/ML Computational Science Associate Manager (Jun 2026 – Present)
+
+```
+Recently joined, onboarding to a new AI/ML engagement — project assignment
+came through 2026-07-14. More to come here as the work develops.
+```
+
+No fabricated accomplishments — this section grows as real work happens, not
+before.
+
+### Deloitte Consulting USI — Senior AI Architect (Jan 2022 – May 2026)
 
 ```
 Architecting agentic AI and GenAI systems on AWS Bedrock for Fortune 500
