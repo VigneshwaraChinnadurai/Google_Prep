@@ -1,9 +1,21 @@
 # GitHub Profile README — Rewrite
 
-Drafted 2026-07-14. This replaces the current `VigneshwaraChinnadurai/VigneshwaraChinnadurai`
-repo's README (the generic "AI Enthusiast" / gif-badges / buy-me-a-coffee
-template). **Not pushed yet** — this is staged content; see "To actually
-publish this" at the bottom before it goes live on your real profile.
+Drafted 2026-07-14, **pushed live the same day.** Replaced the generic
+"AI Enthusiast" / gif-badges / buy-me-a-coffee template. Old version backed
+up at `Resume/GitHub_Profile_README_OLD_BACKUP.md`.
+
+**Status as of 2026-07-14, end of day: fully live, no remaining gaps.**
+All three flagship projects now exist as real, standalone, documented public
+repos and are linked from the profile README:
+- [multi-agent-strategic-analysis](https://github.com/VigneshwaraChinnadurai/multi-agent-strategic-analysis)
+- [Quantum_Computing](https://github.com/VigneshwaraChinnadurai/Quantum_Computing) (pushed into the existing repo name, replacing a one-line placeholder)
+- [leetcode-companion](https://github.com/VigneshwaraChinnadurai/leetcode-companion)
+
+One manual step still on you (can't be done via API without credential
+access I'm not going to extract): **pin these repos** — GitHub Settings →
+your profile → Customize pins. Recommended six: the three above,
+`Google_Prep`, `resume`, and one more existing strong repo
+(`DiT-Document-Image-Transformers-` is a reasonable pick).
 
 ---
 
@@ -35,16 +47,17 @@ GenAI work.
 
 #### What I've actually built
 
-- **[Autonomous Multi-Agent Strategic Analysis Engine](#)** — self-directed
-  research system: LLM-planned task decomposition, hybrid BM25 + dense
-  retrieval with reciprocal rank fusion, self-critique refinement loop,
-  runtime code synthesis. *(repo link pending — see note below)*
-- **[Quantum Portfolio Optimization Engine](#)** — QUBO formulation from
-  first principles, benchmarked against classical mean-variance
-  optimization, run on D-Wave Leap's QPU. *(repo link pending)*
-- **[LeetCode AI Companion](#)** — Android app (Kotlin/Jetpack Compose):
-  Gemini-generated solutions, one-tap GitHub export, calendar-integrated
-  streak tracking. *(repo link pending)*
+- **[Multi-Agent Strategic Analysis Engine](https://github.com/VigneshwaraChinnadurai/multi-agent-strategic-analysis)** —
+  self-directed research system: LLM-planned task decomposition, hybrid BM25 +
+  dense retrieval with reciprocal rank fusion, self-critique refinement loop,
+  runtime code synthesis.
+- **[Quantum Portfolio Optimization](https://github.com/VigneshwaraChinnadurai/Quantum_Computing)** —
+  QUBO formulation from first principles, benchmarked head-to-head against
+  classical max-Sharpe on the same data, with optional execution on D-Wave
+  Leap's QPU.
+- **[LeetCode AI Companion](https://github.com/VigneshwaraChinnadurai/leetcode-companion)** —
+  Android app (Kotlin/Jetpack Compose): Gemini-generated solutions, one-tap
+  GitHub export, calendar-integrated streak tracking.
 - **[Google_Prep](https://github.com/VigneshwaraChinnadurai/Google_Prep)** —
   the actual day-by-day interview prep grind, public, updated daily.
 
