@@ -1,0 +1,66 @@
+Date: 2026-07-14
+Title: Find the Number of Subsequences With Equal GCD
+URL: https://leetcode.com/problems/find-the-number-of-subsequences-with-equal-gcd/
+
+LLM Explanation:
+The user wants me to solve the LeetCode problem "Find the Number of Subsequences With Equal GCD".
+
+### Method Explanation
+
+The problem asks for the number of pairs of non-empty, disjoint subsequences `(seq1, seq2)` from an array `nums` such that `gcd(seq1) == gcd(seq2)`.
+
+A direct dynamic programming approach over the elements of `nums` with states `(gcd1, gcd2)` is plausible but likely too slow given the constraints (`N <= 200`, `nums[i] <= 200`), as the number of states can be up to `201*201`.
+
+A more efficient method uses number theory, specifically the principle of inclusion-exclusion (or Mobius inversion) on the GCD values. The overall strategy is to calculate the number of valid pairs for each possible GCD value `g` and sum them up.
+
+Let `ans(g1, g2)` be the number of pairs of non-empty, disjoint subsequences `(s1, s2)` where `gcd(s1) = g1` and `gcd(s2) = g2`. We are interested in `sum_{g=1 to max_val} ans(g, g)`.
+
+Calculating `ans(g1, g2)` directly is difficult. Instead, we first calculate a related quantity, `F(g1, g2)`, which is the number of pairs `(s1, s2)` where `g1` divides `gcd(s1)` and `g2` divides `gcd(s2)`.
+
+`F(g1, g2)` can be computed combinatorially. For a pair to satisfy these conditions, `s1` must be formed from elements in `nums` that are multiples of `g1`, and `s2` from multiples of `g2`.
+Let's categorize the numbers in `nums` based on divisibility by `g1` and `g2`:
+1.  Multiples of `lcm(g1, g2)`: `c12` count. These can be in `s1`, `s2`, or neither (3 choices).
+2.  Multiples of `g1` but not `g2`: `c1` count. These can be in `s1` or neither (2 choices).
+3.  Multiples of `g2` but not `g1`: `c2` count. These can be in `s2` or neither (2 choices).
+4.  Others: cannot be in `s1` or `s2`.
+
+The total number of ways to form `s1` and `s2` (possibly empty) is `2^c1 * 2^c2 * 3^c12`. We need both to be non-empty. Using inclusion-exclusion on the emptiness condition, we get:
+`F(g1, g2) = (2^c1 * 2^c2 * 3^c12) - (2^c1 * 2^c12) - (2^c2 * 2^c12) + 1`.
+
+The relationship between `F` and `ans` is given by:
+`F(g1, g2) = sum_{k1>=1, k2>=1} ans(g1*k1, g2*k2)`.
+
+This is a 2D sum-over-multiples relationship. We can recover `ans` using a 2D Mobius inversion formula:
+`ans(g1, g2) = sum_{k1>=1, k2>=1} mu(k1) * mu(k2) * F(g1*k1, g2*k2)`, where `mu` is the Mobius function.
+
+The final answer is the sum of `ans(g, g)` over all possible `g`:
+`Total = sum_{g=1 to max_val} ans(g, g) = sum_{g=1 to max_val} sum_{k1,k2>=1} mu(k1) * mu(k2) * F(g*k1, g*k2)`.
+
+The algorithm is as follows:
+1.  Precompute frequencies of numbers in `nums`.
+2.  Precompute `count_mult[g]`, the count of numbers in `nums` that are multiples of `g`.
+3.  Precompute the Mobius function `mu` up to `max_val` using a sieve.
+4.  Precompute powers of 2 and 3 modulo `10^9 + 7`.
+5.  Iterate `g` from 1 to `max_val`, and for each `g`, compute `ans(g, g)` using the inversion formula. Sum these values to get the total.
+
+This approach has a time complexity of roughly `O(max_val^2)`, which is efficient enough for the given constraints.
+
+LLM Testcase Validation:
+- **Testcase 1: `[1,2,3,4]`**
+  - Expected output: 10
+  - My code's output: 10
+  - Validation: Correct. The pairs with GCD 1 are numerous. For example, `([1], [2,3])` has GCDs `(1,1)`.
+
+- **Testcase 2: `[10,20,30]`**
+  - Expected output: 2
+  - My code's output: 2
+  - Validation: Correct. The pairs are `([10], [20,30])` and `([20,30], [10])`, both with GCDs `(10,10)`.
+
+- **Testcase 3: `[1,1,1,1]`**
+  - Expected output: 50
+  - My code's output: 50
+  - Validation: Correct. All non-empty subsequences have a GCD of 1. The problem reduces to counting ordered partitions of subsets of the four `1`s into two non-empty sets.
+    - Subsets of size 2: `C(4,2)=6`. Each can be partitioned in `2^2-2=2` ways. `6*2=12`.
+    - Subsets of size 3: `C(4,3)=4`. Each in `2^3-2=6` ways. `4*6=24`.
+    - Subsets of size 4: `C(4,4)=1`. Each in `2^4-2=14` ways. `1*14=14`.
+    - Total: `12 + 24 + 14 = 50`.
