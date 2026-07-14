@@ -440,6 +440,35 @@ private fun getWhatsNewHistory(): List<WhatsNewEntry> {
         // LATEST VERSION - Add new versions here at the top
         // ═══════════════════════════════════════════════════════════════════
         WhatsNewEntry(
+            version = "2.6.0",
+            versionCode = 26,
+            releaseDate = "July 14, 2026",
+            title = "Real Heatmap, Daily News Alerts & a Cleaner Features Hub",
+            features = listOf(
+                FeatureHighlight(
+                    emoji = "🔥",
+                    title = "Real LeetCode Contribution Heatmap",
+                    description = "The heatmap now pulls your actual per-day submission calendar straight from your LeetCode profile page, instead of approximating one entry per day from local history.",
+                    isNew = true
+                ),
+                FeatureHighlight(
+                    emoji = "📰",
+                    title = "Daily AI/ML News Notifications",
+                    description = "News is auto-fetched every morning at 5 AM, with one notification per new article. Notifications stay in the shade -- even after you open one -- until you swipe them away.",
+                    isNew = true
+                )
+            ),
+            improvements = listOf(
+                "Practice Tools grid no longer scrolls -- it now sizes to its content",
+                "Removed Goals, Interview, Leaderboard, Random Challenge, Profile, and GitHub Profile tiles from Practice Tools (Profile/GitHub Profile were already just shortcuts to the bottom-nav Profile tab)",
+                "Removed the Random Challenge card and the Achievements preview bar from the Features Hub for a shorter, more focused screen"
+            ),
+            bugFixes = listOf(
+                "Fixed local revision file saving failing with a permission error (EACCES) on some devices -- files now save to internal app storage instead of external storage"
+            )
+        ),
+
+        WhatsNewEntry(
             version = "2.5.0",
             versionCode = 25,
             releaseDate = "June 16, 2026",

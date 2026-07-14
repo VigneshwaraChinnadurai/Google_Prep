@@ -16,9 +16,10 @@
 | 🎯 **LeetCode Tracking** | Fetch, analyze, and solve LeetCode problems with AI assistance |
 | 🤖 **AI Interview Prep** | Practice coding interviews with Google Gemini AI |
 | 💬 **Strategic Chatbot** | Deep analysis of companies, markets, and career strategies |
-| 📰 **AI/ML News** | Live feed from arXiv (cs.AI, quant-ph), OpenAI News, and Hugging Face Blog |
+| 📰 **AI/ML News, with Daily Alerts** | Live feed from arXiv (cs.AI, quant-ph), OpenAI News, and Hugging Face Blog — auto-fetched every morning at 5 AM, with one notification per new article that stays in the notification shade until you swipe it away |
 | 📊 **GitHub Integration** | View contributions, sync solutions to your repository, all pushes on one configurable token |
 | 🏆 **Profile Dashboard** | Unified view of GitHub, live Credly badges, LinkedIn, and Medium |
+| 🔥 **Real Contribution Heatmap** | The Features Hub heatmap is fetched directly from your LeetCode profile's submission calendar — the same per-day data leetcode.com itself renders — not approximated from local app history |
 | 🔄 **Local AI (Ollama)** | Run AI models locally for privacy and offline use |
 | 📈 **Analytics & Goals** | Track progress, set goals, earn achievements |
 | 🗂️ **Proof Filing** | Weekly GitHub/LeetCode activity summaries, auto-pushed as markdown |
@@ -30,7 +31,8 @@
 | Document | Description |
 |----------|-------------|
 | 📖 **[USER_MANUAL.md](USER_MANUAL.md)** | Complete user guide with all features explained |
-| 🔧 **[BUILD_GUIDE.md](BUILD_GUIDE.md)** | How to build APK from source |
+| 🔧 **[BUILD_GUIDE.md](BUILD_GUIDE.md)** | How to build APK from source, signing setup |
+| 🤖 **[CLAUDE.md](CLAUDE.md)** | Architecture conventions and operational notes for AI-assisted development on this codebase |
 | 📋 **[local.properties.template](local.properties.template)** | Configuration template with instructions |
 
 ---
@@ -78,7 +80,7 @@ APK location: `app/build/outputs/apk/debug/app-debug.apk`
 
 The GitHub token isn't a build-time secret — it's entered once inside the app and stored only on your device, so you can rotate it without rebuilding:
 
-1. Open the app → **Features** tab → **Global Settings** (first tile)
+1. Open the app → **Features** tab → **Global Settings** tile
 2. Generate a token at [github.com/settings/tokens](https://github.com/settings/tokens)
    - Fine-grained token: grant **Contents: Read and write** on the target repo
    - Classic token: `repo`, `read:user`, `user:email` scopes
@@ -94,6 +96,8 @@ This one token is used for every GitHub-touching feature: profile lookups, daily
 |-----|--------------|-----------------|-------------|
 | `GEMINI_API_KEY` | AI features (Interview Prep, Chatbot, Analysis) | `local.properties` (compile-time), overridable in Global Settings | [Google AI Studio](https://aistudio.google.com/app/apikey) |
 | GitHub token | GitHub Profile, Solution Sync, Proof Filing | **In-app only** — Global Settings screen | [GitHub Settings](https://github.com/settings/tokens) |
+
+No key is required for AI/ML News (public RSS feeds) or the LeetCode contribution heatmap (public GraphQL endpoint) — both work out of the box.
 
 ---
 
@@ -115,7 +119,28 @@ This one token is used for every GitHub-touching feature: profile lookups, daily
 └─────────────────────────────────────────┘
 ```
 
-The Features tab is a hub screen — Strategic Chatbot, AI Hub, Analytics, Goals, and Global Settings all live one tap in from there rather than as their own bottom-nav tabs.
+The Features tab is a hub screen. Its **Practice Tools** grid is intentionally short and non-scrolling — Global Settings, AI Hub, Chatbot, Analytics, Achievements, Flashcards, Focus Mode, Offline, AI/ML News, Protection, and What's New. Below it: your solved/streak/hard stats, then the real LeetCode contribution heatmap. Profile, GitHub Profile, and a quick "Random Challenge" picker used to live here too — they were removed as redundant (Profile already has its own bottom-nav tab) or as clutter, per deliberate cleanup.
+
+Goals, Interview Prep, and Leaderboard screens still exist in the codebase but currently have no navigation entry point into them from the UI — they were pulled from the Features grid as part of the same cleanup and are candidates for either a new entry point or removal in a future pass.
+
+---
+
+## 📸 Screenshots
+
+| Leetcode | Features Hub |
+|:---:|:---:|
+| ![LeetCode tab](docs/screenshots/leetcode_tab.png) | ![Features Hub](docs/screenshots/features_hub.png) |
+| Daily challenge, fetched from LeetCode's own GraphQL API, solved end-to-end with AI assistance | Practice Tools grid (no scroll), streak badge, solved/streak/hard stats, and the real per-day contribution heatmap |
+
+| Ollama | ProofFiling |
+|:---:|:---:|
+| ![Ollama tab](docs/screenshots/ollama_tab.png) | ![ProofFiling tab](docs/screenshots/prooffile_tab.png) |
+| Same daily-challenge flow, solved with a locally-hosted Ollama model instead of Gemini | Weekly wins/learnings/evidence log, auto-fetched from GitHub and LeetCode activity |
+
+| Profile |
+|:---:|
+| ![Profile tab](docs/screenshots/profile_tab.png) |
+| GitHub stats and contribution graph, Credly badges, and weekly ProofFiling summary, all in one place |
 
 ---
 
@@ -124,11 +149,25 @@ The Features tab is a hub screen — Strategic Chatbot, AI Hub, Analytics, Goals
 - **Language**: Kotlin 1.9
 - **UI Framework**: Jetpack Compose (Material 3)
 - **Architecture**: MVVM with StateFlow
-- **Networking**: Retrofit + Moshi
+- **Networking**: Retrofit + Moshi/org.json — every integration (GitHub, LeetCode, Gemini, AI news RSS) is raw REST via Retrofit/OkHttp, deliberately no official cloud SDKs, for one consistent pattern across the app
 - **AI Backend**: Google Gemini API / Ollama
 - **Image Loading**: Coil
+- **Background work**: `AlarmManager` (exact, wake-idle alarms) for the two daily auto-fetches; `WorkManager` for periodic backups
 - **Min SDK**: 24 (Android 7.0)
 - **Target SDK**: 35 (Android 14)
+
+---
+
+## 🔔 Daily Background Jobs
+
+Two independent daily alarms run whether or not the app is open:
+
+| Time (IST) | Job | Behavior |
+|---|---|---|
+| 5:00 AM | AI/ML News fetch | Pulls fresh articles from all configured feeds. One notification per **new** article (not seen before), each with its own notification ID. Notifications do **not** auto-dismiss when tapped or when the app is opened — they stay in the shade until manually swiped away. First-ever run seeds a baseline silently (no notification burst for pre-existing articles); every run after that only notifies for genuinely new content, capped at 15 notifications per run. |
+| 6:00 AM | Daily LeetCode challenge fetch | Pre-fetches the day's challenge so it's ready without opening the app; posts a single summary notification. |
+
+Both use `AlarmManager.setExactAndAllowWhileIdle`, falling back to an inexact repeating alarm if exact-alarm permission is ever revoked.
 
 ---
 
@@ -150,9 +189,14 @@ leetcode_checker/
 │       │   ├── security/      # Uninstall protection (device admin)
 │       │   ├── ui/            # Compose screens
 │       │   ├── viewmodel/     # ViewModels
-│       │   └── widget/        # Home-screen widget
+│       │   ├── widget/        # Home-screen widget
+│       │   ├── DailyChallengeFetchReceiver.kt   # 6 AM daily challenge auto-fetch
+│       │   ├── AiNewsFetchReceiver.kt           # 5 AM AI/ML News auto-fetch + notifications
+│       │   └── ConsistencyReminderScheduler.kt  # Schedules/cancels all AlarmManager jobs
 │       └── AndroidManifest.xml
-├── BUILD_GUIDE.md             # Build instructions
+├── docs/screenshots/          # Screenshots used in this README
+├── BUILD_GUIDE.md             # Build instructions, signing setup
+├── CLAUDE.md                  # AI-assistant operating notes for this codebase
 ├── USER_MANUAL.md             # User documentation
 ├── local.properties.template  # Config template
 └── README.md                  # This file
@@ -162,11 +206,12 @@ leetcode_checker/
 
 ## 🔒 Security Notes
 
-- ⚠️ **Never commit `local.properties`** - contains your Gemini key
-- ⚠️ **Never commit `keystore.properties`** - contains signing keys
+- ⚠️ **Never commit `local.properties`** — contains your Gemini key
+- ⚠️ **Never commit `keystore.properties`** or `*.jks` — contains signing keys
 - ✅ `.gitignore` is configured to exclude sensitive files
 - ✅ Use the template files for sharing
 - ✅ The GitHub token is never baked into the compiled APK — it lives only in the app's on-device storage, entered via Global Settings
+- ✅ Debug and release builds share one persisted signing keystore (kept out of git, backed up separately) so a rebuilt debug APK always installs cleanly over the last one instead of forcing a data-wiping uninstall
 
 ---
 
@@ -218,4 +263,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-*Built with ❤️ for the developer community*
+*Last updated: July 2026*
