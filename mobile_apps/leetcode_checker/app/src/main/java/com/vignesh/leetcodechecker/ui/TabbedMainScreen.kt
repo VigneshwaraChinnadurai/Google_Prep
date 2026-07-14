@@ -50,7 +50,6 @@ enum class FeatureScreen {
     AI_NEWS,
     AI_NEWS_SETTINGS,
     GLOBAL_SETTINGS,
-    RANDOM_CHALLENGE,
     AI_LEARNING_HUB,
     STRATEGIC_CHATBOT,
     WHATS_NEW,
@@ -169,7 +168,6 @@ fun TabbedMainScreen(
                                     FeatureDestination.AI_NEWS -> FeatureScreen.AI_NEWS
                                     FeatureDestination.AI_NEWS_SETTINGS -> FeatureScreen.AI_NEWS_SETTINGS
                                     FeatureDestination.GLOBAL_SETTINGS -> FeatureScreen.GLOBAL_SETTINGS
-                                    FeatureDestination.RANDOM_CHALLENGE -> FeatureScreen.RANDOM_CHALLENGE
                                     FeatureDestination.PROFILE, FeatureDestination.GITHUB_PROFILE -> {
                                         // Both live on the bottom-nav Profile tab; jump there instead of a dead-end screen.
                                         selectedTab = AppTab.PROFILE
@@ -181,10 +179,6 @@ fun TabbedMainScreen(
                                     FeatureDestination.STRATEGIC_CHATBOT -> FeatureScreen.STRATEGIC_CHATBOT
                                     FeatureDestination.WHATS_NEW -> FeatureScreen.WHATS_NEW
                                 }
-                            },
-                            onFilterSelected = { topic, difficulty ->
-                                challengeFilter = ChallengeFilter(topic, difficulty)
-                                selectedTab = AppTab.LEETCODE
                             }
                         )
                         FeatureScreen.ANALYTICS -> AnalyticsDashboard(
@@ -224,28 +218,6 @@ fun TabbedMainScreen(
                         FeatureScreen.GLOBAL_SETTINGS -> GlobalSettingsScreen(
                             onBack = { featureScreen = FeatureScreen.HUB }
                         )
-                        FeatureScreen.RANDOM_CHALLENGE -> Scaffold(
-                            topBar = {
-                                TopAppBar(
-                                    title = { Text("Random Challenge") },
-                                    navigationIcon = {
-                                        IconButton(onClick = { featureScreen = FeatureScreen.HUB }) {
-                                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                                        }
-                                    }
-                                )
-                            }
-                        ) { innerPadding ->
-                            Box(modifier = Modifier.padding(innerPadding)) {
-                                RandomChallengeCard(
-                                    onStartChallenge = { topic, difficulty ->
-                                        challengeFilter = ChallengeFilter(topic, difficulty)
-                                        selectedTab = AppTab.LEETCODE
-                                        featureScreen = FeatureScreen.HUB
-                                    }
-                                )
-                            }
-                        }
                         FeatureScreen.AI_LEARNING_HUB -> AIFeaturesHubScreen(
                             apiKey = AppSettingsStore.load(context).globalGeminiApiKey,
                             onBackClick = { featureScreen = FeatureScreen.HUB },
