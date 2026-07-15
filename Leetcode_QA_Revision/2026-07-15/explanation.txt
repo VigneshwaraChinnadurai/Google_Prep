@@ -1,0 +1,44 @@
+Date: 2026-07-15
+Title: GCD of Odd and Even Sums
+URL: https://leetcode.com/problems/gcd-of-odd-and-even-sums/
+
+LLM Explanation:
+The problem asks for the greatest common divisor (GCD) of two sums: the sum of the first `n` positive odd numbers (`sumOdd`) and the sum of the first `n` positive even numbers (`sumEven`).
+
+A highly efficient solution can be found by deriving mathematical formulas for these sums and simplifying the GCD expression.
+
+1.  **Formula for `sumOdd`**: The first `n` positive odd numbers are 1, 3, 5, ..., (2n-1). The sum of this arithmetic series is a well-known result: `sumOdd = n^2`.
+    For example, if `n=4`, `sumOdd = 1+3+5+7 = 16`, which is `4^2`.
+
+2.  **Formula for `sumEven`**: The first `n` positive even numbers are 2, 4, 6, ..., 2n. This sum can be expressed as `2 * (1 + 2 + 3 + ... + n)`. The sum of the first `n` integers is `n*(n+1)/2`. Therefore, `sumEven = 2 * (n*(n+1)/2) = n*(n+1)`.
+    For example, if `n=4`, `sumEven = 2+4+6+8 = 20`, which is `4*(4+1)`.
+
+3.  **Calculating the GCD**: We need to compute `GCD(sumOdd, sumEven)`, which translates to `GCD(n^2, n*(n+1))`.
+
+4.  **Simplifying the GCD**: We can use the distributive property of GCD, `GCD(a*b, a*c) = a * GCD(b, c)`. Factoring out `n` from our expression gives:
+    `GCD(n*n, n*(n+1)) = n * GCD(n, n+1)`
+
+5.  **Final Insight**: The numbers `n` and `n+1` are consecutive integers. The greatest common divisor of any two consecutive integers is always 1. This is because any number that divides both `n` and `n+1` must also divide their difference, `(n+1) - n = 1`. The only positive integer that divides 1 is 1 itself.
+
+Therefore, `GCD(n, n+1) = 1`. Substituting this back into our simplified expression, we get `n * 1 = n`.
+
+The final result is simply `n`. This provides an O(1) time complexity solution, as it avoids any loops or complex calculations.
+
+**Complexity Analysis:**
+-   **Time Complexity:** O(1), as the solution is a direct mathematical result and involves a single return operation.
+-   **Space Complexity:** O(1), as no additional space proportional to the input size is used.
+
+LLM Testcase Validation:
+- Testcase 1:
+  Input: n = 4
+  - sumOdd = 1 + 3 + 5 + 7 = 16
+  - sumEven = 2 + 4 + 6 + 8 = 20
+  - Expected output: GCD(16, 20) = 4
+  - My code returns `n`, which is 4. The output matches.
+
+- Testcase 2:
+  Input: n = 5
+  - sumOdd = 1 + 3 + 5 + 7 + 9 = 25
+  - sumEven = 2 + 4 + 6 + 8 + 10 = 30
+  - Expected output: GCD(25, 30) = 5
+  - My code returns `n`, which is 5. The output matches.
