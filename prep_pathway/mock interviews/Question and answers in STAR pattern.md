@@ -65,6 +65,23 @@ STAR breakdown, and a status flag.
 
 ---
 
+## 4. Tell me about a time you questioned a process everyone assumed was necessary and changed it despite that being the default way things were done.
+
+**Resume anchor:** Disney ESPN Game Summary Platform — same project as #3, different angle (initiative/ownership rather than automation mechanics)
+**Status:** Refined (drafted 2026-07-16, Day 4)
+
+**Situation:** Game-highlight extraction at Disney/ESPN was done by a team physically on the ground during live play — a process nobody was questioning, despite depending on manual human presence and offering no path to scale.
+
+**Task:** I chose to question why this wasn't running on cloud infrastructure, which could scale elastically instead of depending on a manual team's availability, and took it on myself to build the alternative.
+
+**Action:** I designed and built a 7-stage serverless pipeline (MediaLive → Kinesis → Nova Premier → DynamoDB) that runs automatically and scales with load, replacing the manual on-site extraction process.
+
+**Result:** Validated a ~90% event capture rate on the NFL MVP, contributing to a $231.76M AWS business expansion. The pipeline's design also targets cutting per-game human effort from ~30 hours (fully manual) to ~3 hours (validation-only) once running at full scale — a projected efficiency gain, not yet measured, since the pipeline is still in production testing rather than running at full scale. Proposed expansion to Cricket, Rugby, and Soccer is pending client validation of the NFL results.
+
+**Notes:** Two live corrections needed this time, both numbers, not structure. (1) First stated the AWS business-expansion figure as $450M — this conflicts with the already-verified $231.76M from entry #3 (Day 3); confirmed $231.76M is correct, $450M was a misremember. He flagged himself as "bad with numbers" and plans dedicated memorization drilling in Phase 5. (2) First stated the 30hr→3hr labor reduction as an already-achieved result; on questioning, clarified it's a *design target* for full-scale operation that hasn't been measured yet, since the pipeline isn't running at full scale — reframed as projected, not achieved, matching the same validated-vs-proposed honesty pattern already established for this project's league expansion. Also surfaced for the first time: a Deloitte Innovation Award tied to this project — not yet on the resume or LinkedIn draft; worth confirming the exact award name/date and adding, same treatment as the Day 2 Toyota PC/PDC gap. The projected 30hr→3hr figure should stay out of the resume for now (resume claims should be achieved facts, not design targets) but is fair to mention in an interview room *as* a projection if asked what's next.
+
+---
+
 <!-- Next entry template:
 
 ## N. <Interview-style question>

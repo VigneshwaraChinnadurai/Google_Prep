@@ -1,9 +1,9 @@
 {
   "roadmap_version": "v2",
   "start_date": "2026-07-09",
-  "current_day": 4,
+  "current_day": 5,
   "current_phase": "Phase 0 - Foundations",
-  "last_session_date": "2026-07-11",
+  "last_session_date": "2026-07-16",
   "days_completed": [
     {
       "day": 1,
@@ -25,6 +25,13 @@
       "start_time": "2026-07-11T20:50:58+05:30",
       "end_time": "2026-07-11T23:29:01+05:30",
       "duration": "2h 38m"
+    },
+    {
+      "day": 4,
+      "date": "2026-07-16",
+      "start_time": "2026-07-16T22:18:53+05:30",
+      "end_time": "2026-07-16T23:50:11+05:30",
+      "duration": "1h 32m"
     }
   ],
   "milestones_passed": [],
@@ -66,8 +73,5 @@
       "resurface_at_day": 33
     }
   ],
-  "active_session": {
-    "day": 4,
-    "start_time": "2026-07-16T22:18:53+05:30"
-  }
+  "active_session": null
 }
