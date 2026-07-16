@@ -40,7 +40,34 @@
       "deferred_on_date": "2026-07-10",
       "reason": "Requires segment tree + heap for distinct-subarray selection; not covered until Days 100-105",
       "resurface_at_day": 100
+    },
+    {
+      "question_id": "2685",
+      "title": "Count the Number of Complete Components",
+      "url": "https://leetcode.com/problems/count-the-number-of-complete-components/",
+      "difficulty": "Medium",
+      "tags": "Depth-First Search, Breadth-First Search, Union-Find, Graph Theory",
+      "original_folder_date": "2026-07-11",
+      "deferred_on_day": 4,
+      "deferred_on_date": "2026-07-16",
+      "reason": "Requires DFS/BFS/Union-Find over graphs; not systematically taught until Days 60-71 (Graphs block). Concept (component is complete iff edges == V*(V-1)/2) was taught Day 4 but code not yet written — resurface as a fresh attempt once graph traversal is covered.",
+      "resurface_at_day": 60
+    },
+    {
+      "question_id": "2130",
+      "title": "Maximum Twin Sum of a Linked List",
+      "url": "https://leetcode.com/problems/maximum-twin-sum-of-a-linked-list/",
+      "difficulty": "Medium",
+      "tags": "Linked List, Two Pointers, Stack",
+      "original_folder_date": "2026-06-14",
+      "deferred_on_day": 4,
+      "deferred_on_date": "2026-07-16",
+      "reason": "Requires linked-list pointer manipulation (find-middle, reverse-half); not systematically taught until Days 33-37 (Linked Lists block)",
+      "resurface_at_day": 33
     }
   ],
-  "active_session": null
+  "active_session": {
+    "day": 4,
+    "start_time": "2026-07-16T22:18:53+05:30"
+  }
 }
