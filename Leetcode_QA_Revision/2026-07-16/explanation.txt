@@ -1,0 +1,60 @@
+Date: 2026-07-16
+Title: Sum of GCD of Formed Pairs
+URL: https://leetcode.com/problems/sum-of-gcd-of-formed-pairs/
+
+LLM Explanation:
+The solution directly simulates the process described in the problem statement, which can be broken down into three main steps.
+
+1.  **Construct the `prefixGcd` array**:
+    We iterate through the input array `nums`. For each element `nums[i]`, we need to find the maximum value in the prefix `nums[0...i]`. This can be done efficiently by maintaining a running maximum (`current_max`) as we iterate. For each `nums[i]`, we update `current_max = max(current_max, nums[i])` and then compute `gcd(nums[i], current_max)`, appending the result to our `prefixGcd` array.
+
+2.  **Sort the `prefixGcd` array**:
+    After constructing the `prefixGcd` array, we sort it in non-decreasing order as required. This prepares the array for the pairing step.
+
+3.  **Form pairs and sum their GCDs**:
+    The problem states that pairs are formed by taking the smallest and largest unpaired elements. On a sorted array, this corresponds to pairing the first element with the last, the second with the second-to-last, and so on. A two-pointer approach is ideal for this. We initialize a `left` pointer at the start of the sorted `prefixGcd` array and a `right` pointer at the end.
+    - We loop as long as `left < right`.
+    - In each iteration, we form a pair `(prefixGcd[left], prefixGcd[right])`, compute their GCD, and add it to a running total.
+    - We then move the pointers inwards (`left++`, `right--`) to consider the next pair.
+    - This process naturally handles both even and odd length arrays. If the length `n` is odd, the loop terminates when `left` and `right` meet at the middle element, which is correctly ignored.
+
+The final result is the accumulated sum of the GCDs of all formed pairs.
+
+**Complexity Analysis**:
+- **Time Complexity**: `O(N log N)`.
+  - Constructing `prefixGcd` takes `O(N * log(max_val))`, where `max_val` is the maximum value in `nums`. The `log(max_val)` factor comes from the `gcd` computation.
+  - Sorting `prefixGcd` takes `O(N log N)`.
+  - The two-pointer summation takes `O(N * log(max_val))`.
+  - The dominant step is sorting, making the overall time complexity `O(N log N)`.
+
+- **Space Complexity**: `O(N)`.
+  - We need to store the `prefixGcd` array, which has a size of `N`.
+
+LLM Testcase Validation:
+- **Testcase 1: `nums = [2,6,4]`**
+  1.  **Construct `prefixGcd`**:
+      - `i=0`: `num=2`, `max=2`, `gcd(2,2)=2`. `prefixGcd` is `[2]`.
+      - `i=1`: `num=6`, `max=6`, `gcd(6,6)=6`. `prefixGcd` is `[2, 6]`.
+      - `i=2`: `num=4`, `max=6`, `gcd(4,6)=2`. `prefixGcd` is `[2, 6, 2]`.
+  2.  **Sort `prefixGcd`**: `[2, 2, 6]`.
+  3.  **Form pairs and sum GCDs**:
+      - `n=3` (odd), so one pair is formed.
+      - Pair the smallest (`2`) and largest (`6`).
+      - `gcd(2, 6) = 2`.
+      - The middle element `2` is ignored.
+      - Total sum is `2`.
+  - **Output**: `2`. Correct.
+
+- **Testcase 2: `nums = [3,6,2,8]`**
+  1.  **Construct `prefixGcd`**:
+      - `i=0`: `num=3`, `max=3`, `gcd(3,3)=3`. `prefixGcd` is `[3]`.
+      - `i=1`: `num=6`, `max=6`, `gcd(6,6)=6`. `prefixGcd` is `[3, 6]`.
+      - `i=2`: `num=2`, `max=6`, `gcd(2,6)=2`. `prefixGcd` is `[3, 6, 2]`.
+      - `i=3`: `num=8`, `max=8`, `gcd(8,8)=8`. `prefixGcd` is `[3, 6, 2, 8]`.
+  2.  **Sort `prefixGcd`**: `[2, 3, 6, 8]`.
+  3.  **Form pairs and sum GCDs**:
+      - `n=4` (even), so two pairs are formed.
+      - Pair 1: smallest (`2`) and largest (`8`). `gcd(2, 8) = 2`.
+      - Pair 2: next smallest (`3`) and next largest (`6`). `gcd(3, 6) = 3`.
+      - Total sum is `2 + 3 = 5`.
+  - **Output**: `5`. Correct.
