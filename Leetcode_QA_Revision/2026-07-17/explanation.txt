@@ -1,0 +1,35 @@
+Date: 2026-07-17
+Title: Sorted GCD Pair Queries
+URL: https://leetcode.com/problems/sorted-gcd-pair-queries/
+
+LLM Explanation:
+The problem asks for elements at specific indices of a sorted array of GCDs of all pairs from `nums`. A brute-force approach of generating all `O(n^2)` pairs is too slow given the constraints.
+
+A more efficient method is to determine the frequency of each possible GCD value. With these frequencies, we can construct a cumulative frequency distribution and use binary search to answer the queries.
+
+The overall strategy is as follows:
+
+1.  **Count Frequencies of Multiples**: First, we determine the maximum value `M` in `nums`. We then compute an array `counts` where `counts[i]` stores how many numbers in `nums` are multiples of `i`. This can be done in `O(M log M)` time by iterating through each number `i` from 1 to `M` and its multiples.
+
+2.  **Count Pairs with GCD as a Multiple**: Let `C[d]` be the number of pairs `(nums[i], nums[j])` whose GCD is a multiple of `d`. This is true if and only if both `nums[i]` and `nums[j]` are multiples of `d`. If there are `k = counts[d]` such numbers, they can form `k * (k - 1) / 2` pairs. Thus, we can compute `C[d]` for all `d`.
+
+3.  **Count Pairs with Exact GCD**: Let `N[d]` be the number of pairs with a GCD of exactly `d`. The number of pairs with a GCD that is a multiple of `d` (`C[d]`) is the sum of pairs with a GCD of exactly `d`, `2d`, `3d`, etc. This gives the relation: `C[d] = N[d] + N[2d] + N[3d] + ...`.
+    We can solve for `N[d]` using an inclusion-exclusion principle by iterating `d` from `M` down to 1:
+    `N[d] = C[d] - (N[2d] + N[3d] + ...)`. This calculation also takes `O(M log M)`.
+
+4.  **Answer Queries with Binary Search**: After computing `N[d]` for all `d`, we have the frequency distribution of all GCD values. To find the `q`-th element in the sorted list of GCDs, we can use a prefix sum array. Let `prefix_N[g]` be the total number of pairs with GCD less than or equal to `g`.
+    For each 0-indexed query `q`, we need to find the smallest GCD value `g` such that the number of pairs with GCD `<= g` is strictly greater than `q` (i.e., `prefix_N[g] > q`). Since `prefix_N` is monotonically increasing, we can efficiently find `g` for each query using binary search (specifically, `bisect.bisect_right` in Python).
+
+**Complexity Analysis**:
+-   **Time Complexity**: `O(n + M log M + Q log M)`, where `n` is the length of `nums`, `M` is the maximum value in `nums`, and `Q` is the number of queries. The `O(M log M)` terms dominate the precomputation.
+-   **Space Complexity**: `O(M)` to store the frequency, counts, and prefix sum arrays.
+
+LLM Testcase Validation:
+```
+[2,3,4]
+[0,2,2]
+[4,4,2,1]
+[5,3,1,0]
+[2,2]
+[0,0]
+```
