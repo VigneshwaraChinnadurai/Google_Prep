@@ -1,0 +1,46 @@
+Date: 2026-07-18
+Title: Find Greatest Common Divisor of Array
+URL: https://leetcode.com/problems/find-greatest-common-divisor-of-array/
+
+LLM Explanation:
+The problem requires us to find the greatest common divisor (GCD) of the smallest and largest numbers present in the input array `nums`.
+
+The solution can be broken down into two main steps:
+1.  **Identify the smallest and largest numbers:** We first need to traverse the array to find its minimum and maximum elements. Python's built-in `min(nums)` and `max(nums)` functions are ideal for this task. They efficiently find the required values in a single pass over the array.
+
+2.  **Calculate the GCD:** Once we have the smallest and largest numbers, we compute their GCD. The most common and efficient method for this is the Euclidean algorithm. Python's standard `math` library provides a `math.gcd()` function that implements this algorithm. We simply pass the smallest and largest numbers to this function to get the result.
+
+The overall approach is to combine these two steps: find the min and max from the array, and then compute their GCD.
+
+**Complexity Analysis:**
+-   **Time Complexity:** O(N), where N is the length of the `nums` array. This is because finding the minimum and maximum elements requires iterating through the entire array. The GCD calculation using the Euclidean algorithm is very fast, typically O(log(min(a, b))), which is negligible compared to the O(N) time for finding the min/max values.
+-   **Space Complexity:** O(1), as we only use a constant amount of extra space to store the smallest and largest numbers, regardless of the input array size.
+
+**Edge Cases:**
+-   The problem constraints state `2 <= nums.length <= 1000`, so the array is never empty and always contains at least two elements.
+-   The values `1 <= nums[i] <= 1000` ensure all numbers are positive.
+-   If all numbers in the array are the same (e.g., `[3, 3]`), the smallest and largest numbers will be identical. The GCD of a number with itself is the number itself (`gcd(3, 3) = 3`), which the code handles correctly.
+
+LLM Testcase Validation:
+```
+Tested against custom test cases:
+Input: [2,5,6,9,10]
+Output: 2
+Correct.
+
+Input: [7,5,6,8,3]
+Output: 1
+Correct.
+
+Input: [3,3]
+Output: 3
+Correct.
+
+Input: [1000, 1]
+Output: 1
+Correct.
+
+Input: [6, 9]
+Output: 3
+Correct.
+```
