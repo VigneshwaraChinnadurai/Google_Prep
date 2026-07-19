@@ -1,0 +1,42 @@
+Date: 2026-07-19
+Title: Smallest Subsequence of Distinct Characters
+URL: https://leetcode.com/problems/smallest-subsequence-of-distinct-characters/
+
+LLM Explanation:
+The problem asks for the lexicographically smallest subsequence containing all unique characters of the input string `s`. This can be solved using a greedy approach with a monotonic stack. The goal is to build the result string from left to right, always making the locally optimal choice to keep the result as small as possible.
+
+### Algorithm
+1.  **Pre-computation**: First, we find the last occurrence index for every character in `s`. This is crucial because it tells us if we can afford to discard a character from our current result, knowing we can pick it up again later.
+
+2.  **Greedy Iteration with a Stack**: We iterate through the input string `s` and use a stack to build our result subsequence. A `seen` set is used to keep track of characters already in the stack to ensure uniqueness.
+
+3.  **Processing Each Character**: For each character `char` at index `i`:
+    *   If `char` is already in our `seen` set, we skip it. The instance of `char` already in the stack is at an earlier position, which is better for a lexicographically smaller result.
+    *   If `char` is not in `seen`, we must add it. Before doing so, we try to optimize our current result. We check if `char` is smaller than the character at the top of the stack.
+        *   If `char` is smaller than `stack.top()` AND `stack.top()` appears again later in the string (i.e., `i < last_occurrence[stack.top()]`), we can pop the top character. This is a greedy move to make the current prefix of our result smaller. We repeat this process until the condition is no longer met.
+    *   After the potential popping phase, we push the current `char` onto the stack and add it to the `seen` set.
+
+4.  **Final Result**: After iterating through the entire string, the characters in the stack, when joined, form the lexicographically smallest subsequence with all distinct characters.
+
+### Example Walkthrough (`s = "cbacdcbc"`)
+-   `last_occurrence` = `{'c': 7, 'b': 6, 'a': 2, 'd': 4}`
+-   `stack` = `[]`, `seen` = `{}`
+
+1.  `i=0, char='c'`: Push 'c'. `stack`=['c'], `seen`={'c'}
+2.  `i=1, char='b'`: 'b' < 'c' and `last_occurrence['c']` (7) > 1. Pop 'c'. Push 'b'. `stack`=['b'], `seen`={'b'}
+3.  `i=2, char='a'`: 'a' < 'b' and `last_occurrence['b']` (6) > 2. Pop 'b'. Push 'a'. `stack`=['a'], `seen`={'a'}
+4.  `i=3, char='c'`: 'c' > 'a'. Push 'c'. `stack`=['a', 'c'], `seen`={'a', 'c'}
+5.  `i=4, char='d'`: 'd' > 'c'. Push 'd'. `stack`=['a', 'c', 'd'], `seen`={'a', 'c', 'd'}
+6.  `i=5, char='c'`: 'c' is in `seen`. Skip.
+7.  `i=6, char='b'`: 'b' < 'd', but `last_occurrence['d']` (4) is not > 6. Cannot pop 'd'. Push 'b'. `stack`=['a', 'c', 'd', 'b'], `seen`={'a', 'c', 'd', 'b'}
+8.  `i=7, char='c'`: 'c' is in `seen`. Skip.
+
+Final result: `"".join(stack)` -> `"acdb"`
+
+### Complexity Analysis
+-   **Time Complexity**: O(N), where N is the length of `s`. We iterate through `s` once. Although there is a nested `while` loop, each character is pushed and popped from the stack at most once.
+-   **Space Complexity**: O(K), where K is the number of unique characters in `s` (at most 26). This space is used for the `last_occurrence` map, the `stack`, and the `seen` set. This is effectively O(1) as the alphabet size is constant.
+
+LLM Testcase Validation:
+"bcabc"
+"cbacdcbc"
