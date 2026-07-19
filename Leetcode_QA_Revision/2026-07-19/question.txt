@@ -1,0 +1,22 @@
+Date: 2026-07-19
+Question ID: 1081
+Title: Smallest Subsequence of Distinct Characters
+Difficulty: Medium
+Tags: String, Stack, Greedy, Monotonic Stack
+URL: https://leetcode.com/problems/smallest-subsequence-of-distinct-characters/
+
+Question:
+Given a string s , return the lexicographically smallest subsequence of s that contains all the distinct characters of s exactly once . Example 1: Input: s = &quot;bcabc&quot; Output: &quot;abc&quot; Example 2: Input: s = &quot;cbacdcbc&quot; Output: &quot;acdb&quot; Constraints: 1 &lt;= s.length &lt;= 1000 s consists of lowercase English letters. Note: This question is the same as 316: https://leetcode.com/problems/remove-duplicate-letters/
+
+Starter Code (Python3):
+class Solution:
+    def smallestSubsequence(self, s: str) -> str:
+        
+
+Testcases:
+"bcabc"
+"cbacdcbc"
+
+Expected Output / Validation:
+"bcabc"
+"cbacdcbc"
