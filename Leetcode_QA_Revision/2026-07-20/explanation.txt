@@ -1,0 +1,43 @@
+Date: 2026-07-20
+Title: Shift 2D Grid
+URL: https://leetcode.com/problems/shift-2d-grid/
+
+LLM Explanation:
+The problem requires performing a circular shift on a 2D grid `k` times. The key insight is that this 2D shift operation is equivalent to a 1D circular shift if we flatten the grid into a single list by reading its elements row by row.
+
+The algorithm proceeds in three main steps:
+
+1.  **Flatten the Grid**: The `m x n` grid is converted into a 1D list of size `m * n`. This is done efficiently using a list comprehension that iterates through the grid row by row.
+
+2.  **Perform 1D Circular Shift**: A single shift operation moves the last element of this 1D list to the front. Shifting `k` times is equivalent to moving the last `k` elements to the front. Since the grid state repeats every `m * n` shifts, we only need to consider `k % (m * n)` shifts. Let this be `effective_k`. The new shifted 1D list is formed by taking the last `effective_k` elements and prepending them to the first `(m * n) - effective_k` elements. This is achieved concisely in Python using list slicing and concatenation.
+
+3.  **Reconstruct the Grid**: The shifted 1D list is then converted back into an `m x n` grid. This is done by partitioning the 1D list into `m` chunks, each of size `n`, where each chunk corresponds to a row in the new grid. A list comprehension is used for a compact implementation.
+
+This approach simplifies the potentially complex 2D index manipulation into a straightforward and easy-to-understand 1D list rotation.
+
+### Complexity Analysis:
+-   **Time Complexity**: `O(m * n)`. We traverse the grid to flatten it, perform a list slicing/concatenation operation which takes linear time in the size of the list, and then reconstruct the grid. All these steps are proportional to the total number of elements, `m * n`.
+-   **Space Complexity**: `O(m * n)`. We use extra space to store the flattened 1D list and the final result grid. As a new grid must be returned, this space complexity is optimal.
+
+### Edge Cases:
+-   If `k` is a multiple of the total number of elements (`m * n`), `effective_k` will be 0. The list slicing `list[-0:] + list[:-0]` correctly results in the original list, so the grid remains unchanged as expected.
+-   The logic holds for any valid grid dimensions as per the constraints, including those with a single row or a single column.
+
+LLM Testcase Validation:
+- Testcase 1: `grid = [[1,2,3],[4,5,6],[7,8,9]], k = 1`
+  - `m=3, n=3, total=9, effective_k=1`
+  - `flat_list = [1, 2, 3, 4, 5, 6, 7, 8, 9]`
+  - `shifted_flat_list = [9] + [1, 2, 3, 4, 5, 6, 7, 8] = [9, 1, 2, 3, 4, 5, 6, 7, 8]`
+  - `result_grid` becomes `[[9,1,2],[3,4,5],[6,7,8]]`. Correct.
+
+- Testcase 2: `grid = [[3,8,1,9],[19,7,2,5],[4,6,11,10],[12,0,21,13]], k = 4`
+  - `m=4, n=4, total=16, effective_k=4`
+  - `flat_list = [3, 8, 1, 9, 19, 7, 2, 5, 4, 6, 11, 10, 12, 0, 21, 13]`
+  - `shifted_flat_list = [12, 0, 21, 13] + [3, 8, 1, 9, 19, 7, 2, 5, 4, 6, 11, 10]`
+  - `result_grid` becomes `[[12,0,21,13],[3,8,1,9],[19,7,2,5],[4,6,11,10]]`. Correct.
+
+- Testcase 3: `grid = [[1,2,3],[4,5,6],[7,8,9]], k = 9`
+  - `m=3, n=3, total=9, effective_k=0`
+  - `flat_list = [1, 2, 3, 4, 5, 6, 7, 8, 9]`
+  - `shifted_flat_list = [] + [1, 2, 3, 4, 5, 6, 7, 8, 9]` (no change)
+  - `result_grid` becomes `[[1,2,3],[4,5,6],[7,8,9]]`. Correct.
