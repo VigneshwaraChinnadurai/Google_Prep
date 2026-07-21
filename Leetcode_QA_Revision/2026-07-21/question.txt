@@ -1,0 +1,26 @@
+Date: 2026-07-21
+Question ID: 3499
+Title: Maximize Active Section with Trade I
+Difficulty: Medium
+Tags: String, Enumeration
+URL: https://leetcode.com/problems/maximize-active-section-with-trade-i/
+
+Question:
+You are given a binary string s of length n , where: &#39;1&#39; represents an active section. &#39;0&#39; represents an inactive section. You can perform at most one trade to maximize the number of active sections in s . In a trade, you: Convert a contiguous block of &#39;1&#39; s that is surrounded by &#39;0&#39; s to all &#39;0&#39; s. Afterward, convert a contiguous block of &#39;0&#39; s that is surrounded by &#39;1&#39; s to all &#39;1&#39; s. Return the maximum number of active sections in s after making the optimal trade. Note: Treat s as if it is augmented with a &#39;1&#39; at both ends, forming t = &#39;1&#39; + s + &#39;1&#39; . The augmented &#39;1&#39; s do not contribute to the final count. Example 1: Input: s = &quot;01&quot; Output: 1 Explanation: Because there is no block of &#39;1&#39; s surrounded by &#39;0&#39; s, no valid trade is possible. The maximum number of active sections is 1. Example 2: Input: s = &quot;0100&quot; Output: 4 Explanation: String &quot;0100&quot; &rarr; Augmented to &quot;101001&quot; . Choose &quot;0100&quot; , convert &quot;10 1 001&quot; &rarr; &quot;1 0000 1&quot; &rarr; &quot;1 1111 1&quot; . The final string without augmentation is &quot;1111&quot; . The maximum number of active sections is 4. Example 3: Input: s = &quot;1000100&quot; Output: 7 Explanation: String &quot;1000100&quot; &rarr; Augmented to &quot;110001001&quot; . Choose &quot;000100&quot; , convert &quot;11000 1 001&quot; &rarr; &quot;11 000000 1&quot; &rarr; &quot;11 111111 1&quot; . The final string without augmentation is &quot;1111111&quot; . The maximum number of active sections is 7. Example 4: Input: s = &quot;01010&quot; Output: 4 Explanation: String &quot;01010&quot; &rarr; Augmented to &quot;1010101&quot; . Choose &quot;010&quot; , convert &quot;10 1 0101&quot; &rarr; &quot;1 000 101&quot; &rarr; &quot;1 111 101&quot; . The final string without augmentation is &quot;11110&quot; . The maximum number of active sections is 4. Constraints: 1 &lt;= n == s.length &lt;= 10 5 s[i] is either &#39;0&#39; or &#39;1&#39;
+
+Starter Code (Python3):
+class Solution:
+    def maxActiveSectionsAfterTrade(self, s: str) -> int:
+        
+
+Testcases:
+"01"
+"0100"
+"1000100"
+"01010"
+
+Expected Output / Validation:
+"01"
+"0100"
+"1000100"
+"01010"
