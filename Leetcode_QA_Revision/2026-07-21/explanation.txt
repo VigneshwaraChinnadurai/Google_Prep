@@ -1,0 +1,38 @@
+Date: 2026-07-21
+Title: Maximize Active Section with Trade I
+URL: https://leetcode.com/problems/maximize-active-section-with-trade-i/
+
+LLM Explanation:
+The problem asks us to find the maximum number of active sections ('1's) after performing at most one trade. A trade consists of two steps: first, converting a '1'-block surrounded by '0's into '0's, and second, converting a '0'-block surrounded by '1's into '1's. The "surrounded" condition is determined by considering the string `s` as being augmented with a '1' at both ends (`t = '1' + s + '1'`).
+
+The goal is to maximize the final count of '1's. The change in the number of '1's is `L0 - L1`, where `L1` is the length of the '1'-block we convert to '0's, and `L0` is the length of the '0'-block we convert to '1's. To maximize the final count, we need to maximize this net gain, `L0 - L1`.
+
+The strategy is to iterate through all possible valid trades and find the one with the highest gain.
+
+1.  **Parsing and Pre-computation:**
+    - We first form the augmented string `t = '1' + s + '1'`. This simplifies handling edge cases, as any '0'-block in `s` will now be surrounded by '1's in `t`, and `t` will always start and end with a '1'.
+    - We parse `t` into a sequence of alternating blocks of '1's and '0's, storing their lengths. For example, `s = "0100"` becomes `t = "101001"`, which parses into `1`-blocks of lengths `[1, 1, 1]` and `0`-blocks of lengths `[1, 2]`.
+    - A '1'-block from `s` can be chosen for the first step of the trade only if it's an "internal" block in `t` (i.e., not the first or the last '1'-block), as only these are surrounded by '0's.
+
+2.  **Iterating Through Trades:**
+    - We iterate through each of these internal '1'-blocks, considering it as the block to be removed (let its length be `L1`).
+    - For each choice of `L1`, we must determine the best corresponding `L0` to maximize the gain. The second step of the trade happens *after* the first. This means the set of available '0'-blocks depends on which '1'-block was removed.
+    - There are two main possibilities for the '0'-block to fill:
+        a. **The Merged Block:** When the '1'-block is converted to '0's, it merges with its neighboring '0'-blocks. This creates a new, larger '0'-block. We can choose to fill this. The length of this block would be `len(left_zeros) + L1 + len(right_zeros)`. The net gain from this choice is `(len(left_zeros) + L1 + len(right_zeros)) - L1 = len(left_zeros) + len(right_zeros)`.
+        b. **A Separate Block:** Alternatively, we can fill any of the other, unmodified '0'-blocks. To maximize gain, we should pick the largest one available in the original string. Let its length be `max_l0`. The net gain would be `max_l0 - L1`.
+
+3.  **Calculating Maximum Gain:**
+    - For each internal '1'-block we consider removing, the best possible gain is `max(gain_from_merging, gain_from_separate_block)`.
+    - We calculate this for all possible '1'-blocks and take the overall maximum gain.
+    - Since we can perform *at most* one trade, if all possible trades result in a net loss, we do nothing. This is handled by initializing `max_gain` to 0.
+
+4.  **Final Result:**
+    - The final answer is the `initial_count_of_ones + max_gain`.
+
+This approach has a time complexity of O(N) because parsing the string and iterating through the blocks takes linear time. The space complexity is O(K), where K is the number of blocks (at most N), to store the block lengths.
+
+LLM Testcase Validation:
+"01"
+"0100"
+"1000100"
+"01010"
