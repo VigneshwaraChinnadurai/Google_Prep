@@ -1,0 +1,32 @@
+Date: 2026-07-23
+Question ID: 3513
+Title: Number of Unique XOR Triplets I
+Difficulty: Medium
+Tags: Array, Math, Bit Manipulation
+URL: https://leetcode.com/problems/number-of-unique-xor-triplets-i/
+
+Question:
+You are given an integer array nums of length n , where nums is a permutation of the numbers in the range [1, n] . A XOR triplet is defined as the XOR of three elements nums[i] XOR nums[j] XOR nums[k] where i &lt;= j &lt;= k . Return the number of unique XOR triplet values from all possible triplets (i, j, k) . Example 1: Input: nums = [1,2] Output: 2 Explanation: The possible XOR triplet values are: (0, 0, 0) &rarr; 1 XOR 1 XOR 1 = 1 (0, 0, 1) &rarr; 1 XOR 1 XOR 2 = 2 (0, 1, 1) &rarr; 1 XOR 2 XOR 2 = 1 (1, 1, 1) &rarr; 2 XOR 2 XOR 2 = 2 The unique XOR values are {1, 2} , so the output is 2. Example 2: Input: nums = [3,1,2] Output: 4 Explanation: The possible XOR triplet values include: (0, 0, 0) &rarr; 3 XOR 3 XOR 3 = 3 (0, 0, 1) &rarr; 3 XOR 3 XOR 1 = 1 (0, 0, 2) &rarr; 3 XOR 3 XOR 2 = 2 (0, 1, 2) &rarr; 3 XOR 1 XOR 2 = 0 The unique XOR values are {0, 1, 2, 3} , so the output is 4. Constraints: 1 &lt;= n == nums.length &lt;= 10 5 1 &lt;= nums[i] &lt;= n nums is a permutation of integers from 1 to n .
+
+Starter Code (Python3):
+class Solution:
+    def uniqueXorTriplets(self, nums: List[int]) -> int:
+        
+
+Testcases:
+[1,2]
+[3,1,2]
+
+Expected Output / Validation:
+- Testcase `[1,2]`:
+  - `n = 2`.
+  - The code enters the `if n == 2:` block.
+  - It returns `2`.
+  - The expected output is `2`. The validation passes.
+
+- Testcase `[3,1,2]`:
+  - `n = 3`.
+  - The code proceeds to the `n >= 3` case.
+  - `n.bit_length()` for `n=3` is `2` (since 3 is `11` in binary).
+  - It returns `1 << 2`, which is `4`.
+  - The expected output is `4`. The validation passes.
