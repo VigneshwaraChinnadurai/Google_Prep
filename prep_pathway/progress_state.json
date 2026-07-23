@@ -1,9 +1,9 @@
 {
   "roadmap_version": "v2",
   "start_date": "2026-07-09",
-  "current_day": 5,
-  "current_phase": "Phase 0 - Foundations",
-  "last_session_date": "2026-07-16",
+  "current_day": 6,
+  "current_phase": "Phase 1 - Python Mastery",
+  "last_session_date": "2026-07-23",
   "days_completed": [
     {
       "day": 1,
@@ -32,9 +32,16 @@
       "start_time": "2026-07-16T22:18:53+05:30",
       "end_time": "2026-07-16T23:50:11+05:30",
       "duration": "1h 32m"
+    },
+    {
+      "day": 5,
+      "date": "2026-07-23",
+      "start_time": "2026-07-23T22:07:16+05:30",
+      "end_time": "2026-07-23T23:34:31+05:30",
+      "duration": "1h 27m"
     }
   ],
-  "milestones_passed": [],
+  "milestones_passed": ["Phase 0 - Foundations complete (Days 1-5)"],
   "deferred_items": [
     {
       "question_id": "3691",
