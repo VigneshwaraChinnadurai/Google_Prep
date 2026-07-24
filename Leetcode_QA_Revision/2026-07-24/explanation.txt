@@ -1,0 +1,77 @@
+Date: 2026-07-24
+Title: Number of Unique XOR Triplets II
+URL: https://leetcode.com/problems/number-of-unique-xor-triplets-ii/
+
+LLM Explanation:
+The problem asks for the number of unique values that can be formed by `nums[i] XOR nums[j] XOR nums[k]` for all valid triplets of indices `(i, j, k)` where `i <= j <= k`. The condition on the indices implies that we are choosing three numbers from the `nums` array with replacement. Therefore, the problem is equivalent to finding the size of the set `{a ^ b ^ c}`, where `a`, `b`, and `c` can be any of the unique values present in `nums`.
+
+A naive brute-force approach would be to iterate through all combinations of three numbers from `nums`, calculate their XOR sum, and store the unique results in a set. If there are `m` unique numbers in `nums`, this would take `O(m^3)` time. Given that `nums.length` (and thus `m`) can be up to 1500, an `O(m^3)` solution is too slow.
+
+The constraints on the values of `nums[i]` (up to 1500) suggest a more efficient approach that leverages this property. This leads to the use of the Fast Walsh-Hadamard Transform (FWHT), an algorithm that can compute the XOR convolution of two arrays efficiently.
+
+The problem can be solved in steps:
+1.  Let `S1` be the set of unique numbers in `nums`.
+2.  We first find `S2`, the set of all possible XOR sums of two elements from `S1`. This is `S2 = {a ^ b | a, b in S1}`.
+3.  Then, we find `S3`, the set of all possible XOR sums of an element from `S2` and an element from `S1`. This is `S3 = {s2 ^ c | s2 in S2, c in S1}`. This set `S3` is precisely `{a ^ b ^ c | a, b, c in S1}`, which contains all the unique XOR triplet values we are looking for.
+
+Each of these steps can be modeled as an XOR convolution. We can represent the sets `S1` and `S2` as boolean arrays (or frequency vectors), where the index corresponds to a number and the value indicates its presence in the set. The XOR convolution of two such arrays gives a new array representing the set of XOR sums of pairs of elements from the original sets.
+
+The FWHT algorithm allows us to compute XOR convolution in `O(M log M)` time, where `M` is the size of the arrays (which must be a power of two covering the range of values). Since `max(nums[i]) <= 1500`, the maximum possible XOR sum is less than 2048 (`2^11`). Thus, we can choose `M = 2048`.
+
+The overall algorithm is as follows:
+1.  Create a boolean vector `v1` of size `M`, where `v1[x] = 1` for each unique number `x` in `nums`.
+2.  Compute the FWHT of `v1` to get `t1`.
+3.  The transform of the XOR convolution `v1 (x) v1` is the element-wise product `t1 * t1`. Let this be `t2`.
+4.  Compute the inverse FWHT of `t2` to get `v2`. The non-zero elements in `v2` correspond to the numbers in `S2`.
+5.  Create a new boolean vector `v2_bool` from `v2`, marking all possible values in `S2`.
+6.  Compute the FWHT of `v2_bool` to get `t2_bool`.
+7.  The transform of the final convolution `v2_bool (x) v1` is `t2_bool * t1`. Let this be `t3`.
+8.  Compute the inverse FWHT of `t3` to get `v3`.
+9.  The number of non-zero elements in `v3` is the size of `S3`, which is the final answer.
+
+This approach has a time complexity of `O(N + M log M)`, where `N` is the length of `nums` and `M` is the size of the transform array. This is highly efficient and well within the time limits.
+
+LLM Testcase Validation:
+```python
+# Testcase 1
+nums1 = [1, 3]
+sol = Solution()
+output1 = sol.uniqueXorTriplets(nums1)
+expected1 = 2
+assert output1 == expected1, f"Testcase 1 Failed: Expected {expected1}, Got {output1}"
+
+# Testcase 2
+nums2 = [6, 7, 8, 9]
+output2 = sol.uniqueXorTriplets(nums2)
+expected2 = 4
+assert output2 == expected2, f"Testcase 2 Failed: Expected {expected2}, Got {output2}"
+
+# Custom Testcase: Single element
+nums3 = [5]
+output3 = sol.uniqueXorTriplets(nums3)
+expected3 = 1
+assert output3 == expected3, f"Custom Testcase 1 Failed: Expected {expected3}, Got {output3}"
+
+# Custom Testcase: All same elements
+nums4 = [7, 7, 7, 7]
+output4 = sol.uniqueXorTriplets(nums4)
+expected4 = 1
+assert output4 == expected4, f"Custom Testcase 2 Failed: Expected {expected4}, Got {output4}"
+
+# Custom Testcase: Larger numbers
+nums5 = [100, 200, 300]
+# S1 = {100, 200, 300}
+# S2 = {0, 100^200, 100^300, 200^300} = {0, 172, 204, 372}
+# S3 = {s2^s1 | s2 in S2, s1 in S1}
+# 0^100=100, 0^200=200, 0^300=300
+# 172^100=236, 172^200=372, 172^300=476
+# 204^100=172, 204^200=4, 204^300=500
+# 372^100=472, 372^200=172, 372^300=68
+# Unique values: {100, 200, 300, 236, 372, 476, 172, 4, 500, 472, 68}
+# Count = 11
+output5 = sol.uniqueXorTriplets(nums5)
+expected5 = 11
+assert output5 == expected5, f"Custom Testcase 3 Failed: Expected {expected5}, Got {output5}"
+
+print("All test cases passed.")
+```
