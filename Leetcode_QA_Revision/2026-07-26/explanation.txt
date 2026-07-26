@@ -1,0 +1,62 @@
+Date: 2026-07-26
+Title: Maximum Product of Three Numbers
+URL: https://leetcode.com/problems/maximum-product-of-three-numbers/
+
+LLM Explanation:
+The problem asks for the maximum product of any three numbers in a given array. The key insight is to realize that the numbers forming this maximum product will either be the three largest numbers or the two smallest (most negative) numbers and the single largest number.
+
+Let's analyze the possibilities based on the signs of the numbers:
+1.  If all numbers are positive, the maximum product is clearly the product of the three largest numbers.
+2.  If the array contains both positive and negative numbers, the maximum product will be positive. A positive product can be formed in two ways:
+    a.  Product of three positive numbers. To maximize this, we should pick the three largest numbers.
+    b.  Product of one positive and two negative numbers. To maximize this, we should pick the largest positive number and the two most negative numbers (which are the two smallest numbers in the array).
+3.  If all numbers are negative, the product of three numbers will be negative. To get the maximum product (i.e., the value closest to zero), we should multiply the three numbers with the smallest absolute values. These are the three largest numbers in the sorted array (e.g., for `[-4, -3, -2, -1]`, the three largest are `-1, -2, -3`).
+
+From this analysis, we can conclude that there are only two candidates for the maximum product:
+-   **Candidate 1:** The product of the three largest numbers in the array.
+-   **Candidate 2:** The product of the two smallest numbers and the largest number in the array.
+
+The final answer will be the maximum of these two candidates.
+
+The most straightforward way to implement this is to sort the array first. After sorting `nums` in ascending order:
+-   The three largest numbers are at the end: `nums[n-1]`, `nums[n-2]`, `nums[n-3]`.
+-   The two smallest numbers are at the beginning: `nums[0]`, `nums[1]`.
+
+The algorithm is as follows:
+1.  Sort the input array `nums`.
+2.  Calculate `candidate1 = nums[n-1] * nums[n-2] * nums[n-3]`.
+3.  Calculate `candidate2 = nums[0] * nums[1] * nums[n-1]`.
+4.  Return `max(candidate1, candidate2)`.
+
+**Complexity:**
+-   **Time Complexity:** O(N log N), dominated by the sorting step.
+-   **Space Complexity:** O(log N) or O(N), depending on the space complexity of the sorting algorithm used.
+
+An alternative, more optimal solution exists with O(N) time and O(1) space by iterating through the array once to find the three largest and two smallest elements without fully sorting. However, the sorting approach is simpler to write and is efficient enough for the given constraints.
+
+LLM Testcase Validation:
+```python
+# Testcase 1:
+# Input: nums = [1,2,3]
+# Expected output: 6
+# Sorted nums: [1, 2, 3]
+# Candidate 1 (product of 3 largest): 3 * 2 * 1 = 6
+# Candidate 2 (product of 2 smallest, 1 largest): 1 * 2 * 3 = 6
+# max(6, 6) = 6. Correct.
+
+# Testcase 2:
+# Input: nums = [1,2,3,4]
+# Expected output: 24
+# Sorted nums: [1, 2, 3, 4]
+# Candidate 1 (product of 3 largest): 4 * 3 * 2 = 24
+# Candidate 2 (product of 2 smallest, 1 largest): 1 * 2 * 4 = 8
+# max(24, 8) = 24. Correct.
+
+# Testcase 3:
+# Input: nums = [-1,-2,-3]
+# Expected output: -6
+# Sorted nums: [-3, -2, -1]
+# Candidate 1 (product of 3 largest): -1 * -2 * -3 = -6
+# Candidate 2 (product of 2 smallest, 1 largest): -3 * -2 * -1 = -6
+# max(-6, -6) = -6. Correct.
+```
