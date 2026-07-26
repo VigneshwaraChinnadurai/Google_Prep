@@ -1,0 +1,46 @@
+Date: 2026-07-26
+Question ID: 628
+Title: Maximum Product of Three Numbers
+Difficulty: Easy
+Tags: Array, Math, Sorting
+URL: https://leetcode.com/problems/maximum-product-of-three-numbers/
+
+Question:
+Given an integer array nums , find three numbers whose product is maximum and return the maximum product . Example 1: Input: nums = [1,2,3] Output: 6 Example 2: Input: nums = [1,2,3,4] Output: 24 Example 3: Input: nums = [-1,-2,-3] Output: -6 Constraints: 3 &lt;= nums.length &lt;= 10 4 -1000 &lt;= nums[i] &lt;= 1000
+
+Starter Code (Python3):
+class Solution:
+    def maximumProduct(self, nums: List[int]) -> int:
+        
+
+Testcases:
+[1,2,3]
+[1,2,3,4]
+[-1,-2,-3]
+
+Expected Output / Validation:
+```python
+# Testcase 1:
+# Input: nums = [1,2,3]
+# Expected output: 6
+# Sorted nums: [1, 2, 3]
+# Candidate 1 (product of 3 largest): 3 * 2 * 1 = 6
+# Candidate 2 (product of 2 smallest, 1 largest): 1 * 2 * 3 = 6
+# max(6, 6) = 6. Correct.
+
+# Testcase 2:
+# Input: nums = [1,2,3,4]
+# Expected output: 24
+# Sorted nums: [1, 2, 3, 4]
+# Candidate 1 (product of 3 largest): 4 * 3 * 2 = 24
+# Candidate 2 (product of 2 smallest, 1 largest): 1 * 2 * 4 = 8
+# max(24, 8) = 24. Correct.
+
+# Testcase 3:
+# Input: nums = [-1,-2,-3]
+# Expected output: -6
+# Sorted nums: [-3, -2, -1]
+# Candidate 1 (product of 3 largest): -1 * -2 * -3 = -6
+# Candidate 2 (product of 2 smallest, 1 largest): -3 * -2 * -1 = -6
+# max(-6, -6) = -6. Correct.
+```
