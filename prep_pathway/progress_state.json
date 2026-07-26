@@ -78,7 +78,22 @@
       "deferred_on_date": "2026-07-16",
       "reason": "Requires linked-list pointer manipulation (find-middle, reverse-half); not systematically taught until Days 33-37 (Linked Lists block)",
       "resurface_at_day": 33
+    },
+    {
+      "question_id": "3739",
+      "title": "Count Subarrays With Majority Element II",
+      "url": "https://leetcode.com/problems/count-subarrays-with-majority-element-ii/",
+      "difficulty": "Hard",
+      "tags": "Array, Hash Table, Divide and Conquer, Segment Tree, Merge Sort, Prefix Sum",
+      "original_folder_date": "2026-06-26",
+      "deferred_on_day": 6,
+      "deferred_on_date": "2026-07-26",
+      "reason": "Requires Segment Tree / Divide-and-Conquer merge-sort technique for majority-element counting; same class as #3691, not covered until Days 100-105",
+      "resurface_at_day": 100
     }
   ],
-  "active_session": null
+  "active_session": {
+    "day": 6,
+    "start_time": "2026-07-26T21:38:29+05:30"
+  }
 }
