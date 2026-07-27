@@ -91,6 +91,22 @@ fun TabbedMainScreen(
     val gitHubProfileViewModel: GitHubProfileViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
     val proofFilingViewModel: ProofFilingViewModel = viewModel()
 
+    // Navigation here is plain state (selectedTab/featureScreen), not a NavController,
+    // so the system back button/gesture has no built-in awareness of it -- without this,
+    // back on any non-root screen closes the whole app instead of stepping back one
+    // level. Mirrors exactly what each screen's own in-UI back button already does:
+    // a Features sub-screen returns to the Hub; any other non-Leetcode tab returns to
+    // the Leetcode tab (the app's home). Only falls through to the OS default (exit)
+    // once already at that true root, matching standard bottom-nav back behavior.
+    androidx.activity.compose.BackHandler(
+        enabled = featureScreen != FeatureScreen.HUB || selectedTab != AppTab.LEETCODE
+    ) {
+        when {
+            featureScreen != FeatureScreen.HUB -> featureScreen = FeatureScreen.HUB
+            selectedTab != AppTab.LEETCODE -> selectedTab = AppTab.LEETCODE
+        }
+    }
+
     Scaffold(
         bottomBar = {
             NavigationBar(
@@ -227,7 +243,8 @@ fun TabbedMainScreen(
                         )
                         FeatureScreen.STRATEGIC_CHATBOT -> StrategicChatbotScreen(
                             viewModel = viewModel(),
-                            onOpenLink = onOpenLink
+                            onOpenLink = onOpenLink,
+                            onBackClick = { featureScreen = FeatureScreen.HUB }
                         )
                         FeatureScreen.WHATS_NEW -> WhatsNewScreen(
                             onBackClick = { featureScreen = FeatureScreen.HUB }

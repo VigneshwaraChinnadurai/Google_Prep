@@ -18,6 +18,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
@@ -68,6 +69,7 @@ import java.util.*
 fun StrategicChatbotScreen(
     viewModel: ChatbotViewModel,
     onOpenLink: (String) -> Unit = {},
+    onBackClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -115,6 +117,7 @@ fun StrategicChatbotScreen(
             // Header with Mode Selection and Cost Info
             // ════════════════════════════════════════════════════════════
             ChatbotHeader(
+                onBackClick = onBackClick,
                 selectedMode = selectedMode,
                 onModeChanged = { selectedMode = it },
                 costInfo = costInfo,
@@ -317,6 +320,7 @@ fun StrategicChatbotScreen(
 
 @Composable
 private fun ChatbotHeader(
+    onBackClick: () -> Unit,
     selectedMode: ChatMode,
     onModeChanged: (ChatMode) -> Unit,
     costInfo: CostInfo,
@@ -335,6 +339,9 @@ private fun ChatbotHeader(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
+            IconButton(onClick = onBackClick) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+            }
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = "Strategic Analysis Chatbot",
