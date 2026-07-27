@@ -105,10 +105,9 @@ fun LeetCodeScreen(
     var settingsReminderStart by rememberSaveable { mutableStateOf(state.settings.reminderStartHourIst.toString()) }
     var settingsReminderEnd by rememberSaveable { mutableStateOf(state.settings.reminderEndHourIst.toString()) }
     var settingsReminderInterval by rememberSaveable { mutableStateOf(state.settings.reminderIntervalHours.toString()) }
-    var settingsGithubOwner by rememberSaveable { mutableStateOf(state.settings.githubOwnerOverride) }
-    var settingsGithubRepo by rememberSaveable { mutableStateOf(state.settings.githubRepoOverride) }
-    var settingsGithubBranch by rememberSaveable { mutableStateOf(state.settings.githubBranchOverride) }
-    var settingsLeetcodeUsername by rememberSaveable { mutableStateOf(state.settings.leetcodeUsername) }
+    // GitHub Owner/Repo/Branch and LeetCode Username are configured in Global
+    // Settings now (Features tab -> Global Settings), the single place every
+    // account-linked feature reads them from -- not duplicated in this panel.
 
     // Code editing state
     var isEditingCode by rememberSaveable { mutableStateOf(false) }
@@ -150,10 +149,6 @@ fun LeetCodeScreen(
         settingsReminderStart = state.settings.reminderStartHourIst.toString()
         settingsReminderEnd = state.settings.reminderEndHourIst.toString()
         settingsReminderInterval = state.settings.reminderIntervalHours.toString()
-        settingsGithubOwner = state.settings.githubOwnerOverride
-        settingsGithubRepo = state.settings.githubRepoOverride
-        settingsGithubBranch = state.settings.githubBranchOverride
-        settingsLeetcodeUsername = state.settings.leetcodeUsername
     }
     // Notification permission is requested once at app startup (MainActivity), not here --
     // it shouldn't be coupled to whichever tab happens to compose first.
@@ -739,14 +734,6 @@ fun LeetCodeScreen(
                         onReminderEndChange = { settingsReminderEnd = it },
                         settingsReminderInterval = settingsReminderInterval,
                         onReminderIntervalChange = { settingsReminderInterval = it },
-                        settingsGithubOwner = settingsGithubOwner,
-                        onGithubOwnerChange = { settingsGithubOwner = it },
-                        settingsGithubRepo = settingsGithubRepo,
-                        onGithubRepoChange = { settingsGithubRepo = it },
-                        settingsGithubBranch = settingsGithubBranch,
-                        onGithubBranchChange = { settingsGithubBranch = it },
-                        settingsLeetcodeUsername = settingsLeetcodeUsername,
-                        onLeetcodeUsernameChange = { settingsLeetcodeUsername = it },
                         onSave = { showSettingsPasswordDialog = true }
                     )
                 }
@@ -880,11 +867,7 @@ fun LeetCodeScreen(
                                 networkTimeoutMinutes = settingsTimeoutMinutes.toIntOrNull() ?: state.settings.networkTimeoutMinutes,
                                 reminderStartHourIst = settingsReminderStart.toIntOrNull() ?: state.settings.reminderStartHourIst,
                                 reminderEndHourIst = settingsReminderEnd.toIntOrNull() ?: state.settings.reminderEndHourIst,
-                                reminderIntervalHours = settingsReminderInterval.toIntOrNull() ?: state.settings.reminderIntervalHours,
-                                githubOwnerOverride = settingsGithubOwner,
-                                githubRepoOverride = settingsGithubRepo,
-                                githubBranchOverride = settingsGithubBranch,
-                                leetcodeUsername = settingsLeetcodeUsername.ifBlank { state.settings.leetcodeUsername }
+                                reminderIntervalHours = settingsReminderInterval.toIntOrNull() ?: state.settings.reminderIntervalHours
                             )
                         )
                     } else {
@@ -1089,14 +1072,6 @@ private fun LeetCodeSettingsPanel(
     onReminderEndChange: (String) -> Unit,
     settingsReminderInterval: String,
     onReminderIntervalChange: (String) -> Unit,
-    settingsGithubOwner: String,
-    onGithubOwnerChange: (String) -> Unit,
-    settingsGithubRepo: String,
-    onGithubRepoChange: (String) -> Unit,
-    settingsGithubBranch: String,
-    onGithubBranchChange: (String) -> Unit,
-    settingsLeetcodeUsername: String,
-    onLeetcodeUsernameChange: (String) -> Unit,
     onSave: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -1183,38 +1158,9 @@ private fun LeetCodeSettingsPanel(
 
             HorizontalDivider()
 
-            Text("GitHub Settings", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
-
-            OutlinedTextField(
-                value = settingsGithubOwner, onValueChange = onGithubOwnerChange,
-                label = { Text("GitHub Owner") },
-                modifier = Modifier.fillMaxWidth(), singleLine = true,
-                textStyle = LocalTextStyle.current.copy(fontSize = 12.sp)
-            )
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(
-                    value = settingsGithubRepo, onValueChange = onGithubRepoChange,
-                    label = { Text("Repo") },
-                    modifier = Modifier.weight(1f), singleLine = true,
-                    textStyle = LocalTextStyle.current.copy(fontSize = 12.sp)
-                )
-                OutlinedTextField(
-                    value = settingsGithubBranch, onValueChange = onGithubBranchChange,
-                    label = { Text("Branch") },
-                    modifier = Modifier.weight(1f), singleLine = true,
-                    textStyle = LocalTextStyle.current.copy(fontSize = 12.sp)
-                )
-            }
-
-            HorizontalDivider()
-
-            Text("LeetCode Settings", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
-
-            OutlinedTextField(
-                value = settingsLeetcodeUsername, onValueChange = onLeetcodeUsernameChange,
-                label = { Text("LeetCode Username") },
-                modifier = Modifier.fillMaxWidth(), singleLine = true,
-                textStyle = LocalTextStyle.current.copy(fontSize = 12.sp)
+            Text(
+                text = "GitHub owner/repo/branch and LeetCode username are configured in Global Settings now.",
+                style = MaterialTheme.typography.bodySmall
             )
 
             Button(onClick = onSave, modifier = Modifier.fillMaxWidth()) {

@@ -111,7 +111,7 @@ fun ProfileScreen(
             mediumLoading = true
             mediumError = null
             try {
-                val articles = fetchMediumArticles("rockingstarvic")
+                val articles = fetchMediumArticles(com.vignesh.leetcodechecker.AppSettingsStore.load(context).mediumUsername)
                 mediumArticles = articles
             } catch (e: Exception) {
                 mediumError = e.message ?: "Failed to load articles"
@@ -126,7 +126,7 @@ fun ProfileScreen(
             credlyLoading = true
             credlyError = null
             try {
-                val badges = fetchCredlyBadges("vigneshwarachinnadurai")
+                val badges = fetchCredlyBadges(com.vignesh.leetcodechecker.AppSettingsStore.load(context).credlyUsername)
                 credlyBadges = badges
             } catch (e: Exception) {
                 credlyError = e.message ?: "Failed to load badges"
@@ -252,14 +252,15 @@ fun ProfileScreen(
                 isLoading = credlyLoading,
                 error = credlyError,
                 onOpenProfile = {
-                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.credly.com/users/vigneshwarachinnadurai/badges"))
+                    val credlyUsername = com.vignesh.leetcodechecker.AppSettingsStore.load(context).credlyUsername
+                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.credly.com/users/$credlyUsername/badges"))
                     context.startActivity(intent)
                 }
             )
         }
-        
+
         Spacer(modifier = Modifier.height(12.dp))
-        
+
         // LinkedIn Section
         ProfileDropdownSection(
             title = "LinkedIn",
@@ -273,7 +274,8 @@ fun ProfileScreen(
         ) {
             LinkedInContent(
                 onOpenProfile = {
-                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.linkedin.com/in/vigneshwarac/"))
+                    val linkedinUsername = com.vignesh.leetcodechecker.AppSettingsStore.load(context).linkedinUsername
+                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.linkedin.com/in/$linkedinUsername/"))
                     context.startActivity(intent)
                 }
             )
@@ -301,7 +303,8 @@ fun ProfileScreen(
                     context.startActivity(intent)
                 },
                 onOpenProfile = {
-                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://medium.com/@rockingstarvic"))
+                    val mediumUsername = com.vignesh.leetcodechecker.AppSettingsStore.load(context).mediumUsername
+                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://medium.com/@$mediumUsername"))
                     context.startActivity(intent)
                 }
             )

@@ -34,6 +34,9 @@ data class AppSettings(
     val githubRepoOverride: String = "",
     val githubBranchOverride: String = "",
     val leetcodeUsername: String = "rockingstarvic",
+    val credlyUsername: String = "vigneshwarachinnadurai",
+    val mediumUsername: String = "rockingstarvic",
+    val linkedinUsername: String = "vigneshwarac",
     val chatbotBackendUrl: String = "",  // empty = auto-detect (emulator vs device)
     // ── Ollama Settings ─────────────────────────────────────────
     val ollamaBaseUrl: String = "http://127.0.0.1:11434",
@@ -78,10 +81,16 @@ object AppSettingsStore {
                 reminderEndHourIst = json.optInt("reminderEndHourIst", 22),
                 reminderIntervalHours = json.optInt("reminderIntervalHours", 1),
                 revisionFolderName = json.optString("revisionFolderName", "Leetcode_QA_Revision"),
-                githubOwnerOverride = json.optString("githubOwnerOverride", ""),
-                githubRepoOverride = json.optString("githubRepoOverride", ""),
-                githubBranchOverride = json.optString("githubBranchOverride", ""),
-                leetcodeUsername = json.optString("leetcodeUsername", "rockingstarvic"),
+                // .trim(): a stray leading/trailing space typed into one of these fields once
+                // silently broke GitHub user resolution (a config value, not a compile-time
+                // bug) -- trimming on every load self-heals that instead of requiring a re-save.
+                githubOwnerOverride = json.optString("githubOwnerOverride", "").trim(),
+                githubRepoOverride = json.optString("githubRepoOverride", "").trim(),
+                githubBranchOverride = json.optString("githubBranchOverride", "").trim(),
+                leetcodeUsername = json.optString("leetcodeUsername", "rockingstarvic").trim(),
+                credlyUsername = json.optString("credlyUsername", "vigneshwarachinnadurai").trim(),
+                mediumUsername = json.optString("mediumUsername", "rockingstarvic").trim(),
+                linkedinUsername = json.optString("linkedinUsername", "vigneshwarac").trim(),
                 chatbotBackendUrl = json.optString("chatbotBackendUrl", ""),
                 ollamaBaseUrl = json.optString("ollamaBaseUrl", "http://127.0.0.1:11434"),
                 ollamaPreferredModels = json.optString("ollamaPreferredModels", "qwen2.5:3b"),
@@ -117,6 +126,9 @@ object AppSettingsStore {
             .put("githubRepoOverride", settings.githubRepoOverride)
             .put("githubBranchOverride", settings.githubBranchOverride)
             .put("leetcodeUsername", settings.leetcodeUsername)
+            .put("credlyUsername", settings.credlyUsername)
+            .put("mediumUsername", settings.mediumUsername)
+            .put("linkedinUsername", settings.linkedinUsername)
             .put("chatbotBackendUrl", settings.chatbotBackendUrl)
             .put("ollamaBaseUrl", settings.ollamaBaseUrl)
             .put("ollamaPreferredModels", settings.ollamaPreferredModels)

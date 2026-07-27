@@ -48,6 +48,17 @@ fun GlobalSettingsScreen(
     var tokenTestResult by remember { mutableStateOf<String?>(null) }
     var isTestingToken by remember { mutableStateOf(false) }
 
+    // Account usernames -- the single place every account-linked feature (LeetCode
+    // sync, GitHub push/profile, ProofFiling, Credly badges, Medium articles,
+    // LinkedIn link) reads its username/owner from.
+    var githubOwner by remember { mutableStateOf(settings.githubOwnerOverride) }
+    var githubRepo by remember { mutableStateOf(settings.githubRepoOverride) }
+    var githubBranch by remember { mutableStateOf(settings.githubBranchOverride) }
+    var leetcodeUsername by remember { mutableStateOf(settings.leetcodeUsername) }
+    var credlyUsername by remember { mutableStateOf(settings.credlyUsername) }
+    var mediumUsername by remember { mutableStateOf(settings.mediumUsername) }
+    var linkedinUsername by remember { mutableStateOf(settings.linkedinUsername) }
+
     var backupInProgress by remember { mutableStateOf(false) }
     var restoreInProgress by remember { mutableStateOf(false) }
     var backupStatusMessage by remember { mutableStateOf<String?>(null) }
@@ -132,9 +143,9 @@ fun GlobalSettingsScreen(
                     enabled = githubToken.isNotBlank() && !isTestingToken,
                     onClick = {
                         val tokenToTest = githubToken.trim()
-                        val owner = settings.githubOwnerOverride.ifBlank { BuildConfig.GITHUB_OWNER }
-                        val repo = settings.githubRepoOverride.ifBlank { BuildConfig.GITHUB_REPO }
-                        val branch = settings.githubBranchOverride.ifBlank { BuildConfig.GITHUB_BRANCH }
+                        val owner = githubOwner.trim().ifBlank { BuildConfig.GITHUB_OWNER }
+                        val repo = githubRepo.trim().ifBlank { BuildConfig.GITHUB_REPO }
+                        val branch = githubBranch.trim().ifBlank { BuildConfig.GITHUB_BRANCH }
                         isTestingToken = true
                         tokenTestResult = null
                         scope.launch {
@@ -163,6 +174,72 @@ fun GlobalSettingsScreen(
                 value = geminiKey,
                 onValueChange = { geminiKey = it },
                 label = { Text("Global Gemini API Key") },
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            HorizontalDivider()
+
+            Text(
+                text = "Account Usernames",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.primary
+            )
+
+            Text(
+                text = "The single place every account-linked feature reads its username from -- GitHub sync/push, LeetCode profile & heatmap, ProofFiling, and the Profile tab's Credly/Medium/LinkedIn links.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            OutlinedTextField(
+                value = githubOwner,
+                onValueChange = { githubOwner = it },
+                label = { Text("GitHub Owner") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+            )
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    value = githubRepo,
+                    onValueChange = { githubRepo = it },
+                    label = { Text("Repo") },
+                    singleLine = true,
+                    modifier = Modifier.weight(1f)
+                )
+                OutlinedTextField(
+                    value = githubBranch,
+                    onValueChange = { githubBranch = it },
+                    label = { Text("Branch") },
+                    singleLine = true,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            OutlinedTextField(
+                value = leetcodeUsername,
+                onValueChange = { leetcodeUsername = it },
+                label = { Text("LeetCode Username") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+            )
+            OutlinedTextField(
+                value = credlyUsername,
+                onValueChange = { credlyUsername = it },
+                label = { Text("Credly Username") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+            )
+            OutlinedTextField(
+                value = mediumUsername,
+                onValueChange = { mediumUsername = it },
+                label = { Text("Medium Username") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+            )
+            OutlinedTextField(
+                value = linkedinUsername,
+                onValueChange = { linkedinUsername = it },
+                label = { Text("LinkedIn Username") },
+                singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -253,7 +330,14 @@ fun GlobalSettingsScreen(
                 onClick = {
                     val updatedSettings = settings.copy(
                         globalGithubToken = githubToken.trim(),
-                        globalGeminiApiKey = geminiKey
+                        globalGeminiApiKey = geminiKey,
+                        githubOwnerOverride = githubOwner.trim(),
+                        githubRepoOverride = githubRepo.trim(),
+                        githubBranchOverride = githubBranch.trim(),
+                        leetcodeUsername = leetcodeUsername.trim(),
+                        credlyUsername = credlyUsername.trim(),
+                        mediumUsername = mediumUsername.trim(),
+                        linkedinUsername = linkedinUsername.trim()
                     )
                     AppSettingsStore.save(context, updatedSettings)
                     settings = updatedSettings
@@ -290,6 +374,13 @@ fun GlobalSettingsScreen(
                                 settings = AppSettingsStore.load(context)
                                 githubToken = settings.globalGithubToken
                                 geminiKey = settings.globalGeminiApiKey
+                                githubOwner = settings.githubOwnerOverride
+                                githubRepo = settings.githubRepoOverride
+                                githubBranch = settings.githubBranchOverride
+                                leetcodeUsername = settings.leetcodeUsername
+                                credlyUsername = settings.credlyUsername
+                                mediumUsername = settings.mediumUsername
+                                linkedinUsername = settings.linkedinUsername
                                 backupStatusMessage = "Restore complete. Restart the app to fully reload."
                             },
                             onFailure = { e -> backupStatusMessage = "Restore failed: ${e.message}" }
