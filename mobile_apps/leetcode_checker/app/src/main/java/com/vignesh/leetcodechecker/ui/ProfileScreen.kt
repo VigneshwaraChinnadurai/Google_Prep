@@ -194,7 +194,7 @@ fun ProfileScreen(
         // GitHub Section
         ProfileDropdownSection(
             title = "GitHub",
-            subtitle = "@VigneshwaraChinnadurai",
+            subtitle = gitHubState.savedUsername?.let { "@$it" } ?: "Not configured",
             icon = { 
                 // GitHub icon (using code icon as proxy)
                 Icon(Icons.Filled.Build, contentDescription = null, tint = Color.White)
@@ -227,7 +227,8 @@ fun ProfileScreen(
                 isLoading = leetcodeLoading,
                 error = leetcodeError,
                 onOpenProfile = {
-                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://leetcode.com/u/rockingstarvic/"))
+                    val leetcodeUsername = com.vignesh.leetcodechecker.AppSettingsStore.load(context).leetcodeUsername
+                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://leetcode.com/u/$leetcodeUsername/"))
                     context.startActivity(intent)
                 }
             )

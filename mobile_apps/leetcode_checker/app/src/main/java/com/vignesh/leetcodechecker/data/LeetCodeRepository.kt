@@ -239,7 +239,7 @@ class LeetCodeRepository(
      * rather than deriving contribution counts from local completion history --
      * which only ever has one entry per day and undercounts actual activity.
      */
-    suspend fun fetchSubmissionCalendar(username: String = "rockingstarvic"): Result<Map<String, Int>> {
+    suspend fun fetchSubmissionCalendar(username: String = AppSettingsStore.load(context).leetcodeUsername): Result<Map<String, Int>> {
         return runCatching {
             val query = """
                 query userProfileCalendar(${'$'}username: String!) {
@@ -271,7 +271,7 @@ class LeetCodeRepository(
      * Longest streak has no equivalent API field, so it's computed from the
      * submission calendar -- there's nothing authoritative to match it against.
      */
-    suspend fun fetchLeetCodeProfileSummary(username: String = "rockingstarvic"): Result<LeetCodeProfileSummary> {
+    suspend fun fetchLeetCodeProfileSummary(username: String = AppSettingsStore.load(context).leetcodeUsername): Result<LeetCodeProfileSummary> {
         return runCatching {
             val query = """
                 query leetcodeProfileDetails(${'$'}username: String!) {

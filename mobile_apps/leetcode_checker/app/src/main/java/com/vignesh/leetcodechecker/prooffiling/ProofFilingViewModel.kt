@@ -279,7 +279,9 @@ class ProofFilingViewModel(application: Application) : AndroidViewModel(applicat
     /**
      * Fetch LeetCode stats
      */
-    fun fetchLeetCodeStats(username: String = "rockingstarvic") {
+    fun fetchLeetCodeStats(
+        username: String = com.vignesh.leetcodechecker.AppSettingsStore.load(getApplication()).leetcodeUsername
+    ) {
         viewModelScope.launch {
             _state.update { it.copy(isFetchingStats = true, error = null) }
             

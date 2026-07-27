@@ -108,6 +108,7 @@ fun LeetCodeScreen(
     var settingsGithubOwner by rememberSaveable { mutableStateOf(state.settings.githubOwnerOverride) }
     var settingsGithubRepo by rememberSaveable { mutableStateOf(state.settings.githubRepoOverride) }
     var settingsGithubBranch by rememberSaveable { mutableStateOf(state.settings.githubBranchOverride) }
+    var settingsLeetcodeUsername by rememberSaveable { mutableStateOf(state.settings.leetcodeUsername) }
 
     // Code editing state
     var isEditingCode by rememberSaveable { mutableStateOf(false) }
@@ -129,10 +130,6 @@ fun LeetCodeScreen(
             Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
         }
     }
-
-    val notificationPermissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { }
 
     // Auto-dismiss info message
     LaunchedEffect(state.infoMessage) {
@@ -156,19 +153,10 @@ fun LeetCodeScreen(
         settingsGithubOwner = state.settings.githubOwnerOverride
         settingsGithubRepo = state.settings.githubRepoOverride
         settingsGithubBranch = state.settings.githubBranchOverride
+        settingsLeetcodeUsername = state.settings.leetcodeUsername
     }
-
-    // Request notification permission once
-    LaunchedEffect(Unit) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            val granted = ContextCompat.checkSelfPermission(
-                context, Manifest.permission.POST_NOTIFICATIONS
-            ) == PackageManager.PERMISSION_GRANTED
-            if (!granted) {
-                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-            }
-        }
-    }
+    // Notification permission is requested once at app startup (MainActivity), not here --
+    // it shouldn't be coupled to whichever tab happens to compose first.
 
     Scaffold(modifier = modifier.fillMaxSize()) { paddingValues ->
         LazyColumn(
@@ -757,6 +745,8 @@ fun LeetCodeScreen(
                         onGithubRepoChange = { settingsGithubRepo = it },
                         settingsGithubBranch = settingsGithubBranch,
                         onGithubBranchChange = { settingsGithubBranch = it },
+                        settingsLeetcodeUsername = settingsLeetcodeUsername,
+                        onLeetcodeUsernameChange = { settingsLeetcodeUsername = it },
                         onSave = { showSettingsPasswordDialog = true }
                     )
                 }
@@ -874,12 +864,14 @@ fun LeetCodeScreen(
                     if (settingsPasswordInput == expectedSettingsPassword) {
                         showSettingsPasswordDialog = false
                         settingsPasswordInput = ""
+                        // .copy() -- NOT a fresh AppSettings(...) constructor call. Any field
+                        // not explicitly listed below must fall back to state.settings' current
+                        // value, not the AppSettings class's bare defaults. This panel doesn't
+                        // surface every setting (token, Gemini key, Ollama/backup config live in
+                        // Global Settings), and building a new AppSettings(...) here previously
+                        // silently wiped all of those back to empty on every save.
                         viewModel.saveSettings(
-                            AppSettings(
-                                landingTitle = state.settings.landingTitle,
-                                checkerTitle = state.settings.checkerTitle,
-                                consistencyButtonLabel = state.settings.consistencyButtonLabel,
-                                promptName = state.settings.promptName,
+                            state.settings.copy(
                                 preferredModelsCsv = settingsModelsCsv,
                                 maxModelRetries = settingsMaxRetries.toIntOrNull() ?: state.settings.maxModelRetries,
                                 maxInputTokens = settingsMaxInput.toIntOrNull() ?: state.settings.maxInputTokens,
@@ -889,10 +881,10 @@ fun LeetCodeScreen(
                                 reminderStartHourIst = settingsReminderStart.toIntOrNull() ?: state.settings.reminderStartHourIst,
                                 reminderEndHourIst = settingsReminderEnd.toIntOrNull() ?: state.settings.reminderEndHourIst,
                                 reminderIntervalHours = settingsReminderInterval.toIntOrNull() ?: state.settings.reminderIntervalHours,
-                                revisionFolderName = state.settings.revisionFolderName,
                                 githubOwnerOverride = settingsGithubOwner,
                                 githubRepoOverride = settingsGithubRepo,
-                                githubBranchOverride = settingsGithubBranch
+                                githubBranchOverride = settingsGithubBranch,
+                                leetcodeUsername = settingsLeetcodeUsername.ifBlank { state.settings.leetcodeUsername }
                             )
                         )
                     } else {
@@ -1103,6 +1095,8 @@ private fun LeetCodeSettingsPanel(
     onGithubRepoChange: (String) -> Unit,
     settingsGithubBranch: String,
     onGithubBranchChange: (String) -> Unit,
+    settingsLeetcodeUsername: String,
+    onLeetcodeUsernameChange: (String) -> Unit,
     onSave: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -1211,6 +1205,17 @@ private fun LeetCodeSettingsPanel(
                     textStyle = LocalTextStyle.current.copy(fontSize = 12.sp)
                 )
             }
+
+            HorizontalDivider()
+
+            Text("LeetCode Settings", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+
+            OutlinedTextField(
+                value = settingsLeetcodeUsername, onValueChange = onLeetcodeUsernameChange,
+                label = { Text("LeetCode Username") },
+                modifier = Modifier.fillMaxWidth(), singleLine = true,
+                textStyle = LocalTextStyle.current.copy(fontSize = 12.sp)
+            )
 
             Button(onClick = onSave, modifier = Modifier.fillMaxWidth()) {
                 Text("🔐 Save Settings")

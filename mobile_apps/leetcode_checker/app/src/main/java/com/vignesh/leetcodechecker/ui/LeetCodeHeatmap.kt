@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.vignesh.leetcodechecker.data.LeetCodeActivityStorage
 import com.vignesh.leetcodechecker.data.LeetCodeRepository
+import kotlinx.coroutines.flow.first
 import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -35,10 +36,11 @@ import java.util.*
 @Composable
 fun LeetCodeHeatmap(
     modifier: Modifier = Modifier,
-    username: String = "rockingstarvic"
+    username: String? = null
 ) {
     val context = LocalContext.current
     val scrollState = rememberScrollState()
+    val effectiveUsername = username ?: com.vignesh.leetcodechecker.AppSettingsStore.load(context).leetcodeUsername
 
     // Render immediately from cache (or, failing that, local completion history)
     // so the heatmap is never blank, then refresh from LeetCode's real per-day
@@ -50,17 +52,28 @@ fun LeetCodeHeatmap(
                 .ifEmpty { LeetCodeActivityStorage.getContributionCountByDate(context) }
         )
     }
+    var loadError by remember { mutableStateOf(false) }
 
-    LaunchedEffect(username) {
+    LaunchedEffect(effectiveUsername) {
         if (LeetCodeActivityStorage.isSubmissionCalendarStale(context)) {
-            LeetCodeRepository(context).fetchSubmissionCalendar(username)
+            LeetCodeRepository(context).fetchSubmissionCalendar(effectiveUsername)
                 .onSuccess { calendar ->
                     if (calendar.isNotEmpty()) {
                         LeetCodeActivityStorage.cacheSubmissionCalendar(context, calendar)
                         contributionMap = calendar
+                        loadError = false
                     }
                 }
+                .onFailure { loadError = true }
         }
+    }
+
+    // Open scrolled to the current week (rightmost), not 52 weeks ago -- scrolling
+    // left from here shows history, matching leetcode.com's own heatmap.
+    LaunchedEffect(Unit) {
+        snapshotFlow { scrollState.maxValue }
+            .first { it > 0 }
+            .let { scrollState.scrollTo(it) }
     }
 
     val totalContributions = contributionMap.values.sum()
@@ -95,6 +108,13 @@ fun LeetCodeHeatmap(
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Medium
             )
+            if (loadError) {
+                Text(
+                    text = "Couldn't refresh -- showing cached data",
+                    color = Color(0xFFF0883E),
+                    fontSize = 10.sp
+                )
+            }
         }
         
         Spacer(modifier = Modifier.height(12.dp))
