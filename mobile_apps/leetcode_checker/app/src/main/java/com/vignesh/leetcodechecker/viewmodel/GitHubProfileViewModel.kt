@@ -5,6 +5,8 @@ import android.content.Context
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.vignesh.leetcodechecker.AppSettingsStore
+import com.vignesh.leetcodechecker.BuildConfig
 import com.vignesh.leetcodechecker.api.ContributionDay
 import com.vignesh.leetcodechecker.api.GitHubUser
 import com.vignesh.leetcodechecker.repository.GitHubRepository
@@ -29,37 +31,33 @@ data class GitHubProfileState(
     val isReadmeLoading: Boolean = false
 )
 
-private const val PREFS_NAME = "github_profile_prefs"
-private const val KEY_USERNAME = "github_username"
-private const val DEFAULT_USERNAME = "VigneshwaraChinnadurai"
-
 /**
  * ViewModel for GitHub Profile and Contributions
  */
 class GitHubProfileViewModel(application: Application) : AndroidViewModel(application) {
-    
+
     private val repository = GitHubRepository(application)
-    
+
     private val _uiState = MutableStateFlow(GitHubProfileState())
     val state: StateFlow<GitHubProfileState> = _uiState.asStateFlow()
-    
+
     /**
-     * Get saved GitHub username from SharedPreferences or default
+     * Get the GitHub username to show -- the same single-source-of-truth
+     * githubOwnerOverride (Global Settings) every other GitHub-touching feature in
+     * the app reads, falling back to the build-time default. This used to read from
+     * its own separate SharedPreferences store with its own hardcoded default, so
+     * changing the owner override elsewhere silently never affected this screen.
      */
     fun getSavedUsername(context: Context): String {
-        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        return prefs.getString(KEY_USERNAME, DEFAULT_USERNAME) ?: DEFAULT_USERNAME
+        val override = AppSettingsStore.load(context).githubOwnerOverride
+        return override.ifBlank { BuildConfig.GITHUB_OWNER }
     }
-    
+
     /**
-     * Initialize - automatically load profile with default username
+     * Initialize - automatically load profile with the configured username
      */
     fun initializeWithDefault(context: Context) {
-        val username = getSavedUsername(context)
-        // Save and load profile
-        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        prefs.edit().putString(KEY_USERNAME, username).apply()
-        loadProfile(username)
+        loadProfile(getSavedUsername(context))
     }
     
     fun loadProfile(username: String? = null) {

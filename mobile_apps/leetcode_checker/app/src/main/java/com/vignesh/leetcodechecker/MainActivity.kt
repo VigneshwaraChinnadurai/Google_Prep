@@ -1,15 +1,20 @@
 package com.vignesh.leetcodechecker
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.ui.graphics.Color
+import androidx.core.content.ContextCompat
 import com.vignesh.leetcodechecker.backup.BackupWorker
 import com.vignesh.leetcodechecker.ui.TabbedMainScreen
 import com.vignesh.leetcodechecker.ui.ChallengeFilter
@@ -37,14 +42,34 @@ private val AppLightColors = lightColorScheme(
 )
 
 class MainActivity : ComponentActivity() {
+    // Centralized here (app startup) rather than in any one tab's screen -- every
+    // notification feature (daily challenge, AI news, consistency reminder,
+    // ProofFiling) depends on this being granted, so it shouldn't be coupled to
+    // whichever screen happens to compose first.
+    private val notificationPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val granted = ContextCompat.checkSelfPermission(
+                this, Manifest.permission.POST_NOTIFICATIONS
+            ) == PackageManager.PERMISSION_GRANTED
+            if (!granted) {
+                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
+
         // Schedule consistency reminders
         ConsistencyReminderScheduler.ensureHourlyReminder(this)
         // Schedule daily auto-fetch at 6 AM IST
         ConsistencyReminderScheduler.scheduleDailyAutoFetch(this)
         // Schedule daily AI/ML News auto-fetch at 5 AM IST (one notification per new article)
         ConsistencyReminderScheduler.scheduleDailyAiNewsFetch(this)
+        // Schedule daily ProofFiling stats auto-refresh at 7 AM IST
+        ConsistencyReminderScheduler.scheduleDailyProofFilingFetch(this)
         // Ensure weekly backup is scheduled (no-op until a backup folder is chosen)
         BackupWorker.ensureScheduled(this)
         setContent {

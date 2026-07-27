@@ -175,7 +175,7 @@ class ProofFilingRepository(private val context: Context) {
      * Fetch GitHub stats for the current week
      */
     suspend fun fetchGitHubStats(
-        username: String = BuildConfig.GITHUB_OWNER,
+        username: String = AppSettingsStore.load(context).githubOwnerOverride.ifBlank { BuildConfig.GITHUB_OWNER },
         weekStart: LocalDate = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)),
         weekEnd: LocalDate = LocalDate.now().with(TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY))
     ): Result<GitHubWeeklyStats> = withContext(Dispatchers.IO) {
@@ -218,6 +218,24 @@ class ProofFilingRepository(private val context: Context) {
         }
     }
     
+    private val IST_ZONE: java.time.ZoneId = java.time.ZoneId.of("Asia/Kolkata")
+
+    /**
+     * weekStart/weekEnd come from LocalDate.now() (the device's local, IST calendar
+     * date). Naively appending "T00:00:00Z"/"T23:59:59Z" to that date would silently
+     * treat it as already being a UTC date, skewing the query window by IST's
+     * UTC+5:30 offset -- commits made in the boundary hours near midnight IST could
+     * land in the wrong week. These anchor the date to IST first, then convert to
+     * the correct UTC instant.
+     */
+    private fun startOfDayUtcIso(date: LocalDate): String =
+        date.atStartOfDay(IST_ZONE).withZoneSameInstant(java.time.ZoneOffset.UTC)
+            .format(DateTimeFormatter.ISO_INSTANT)
+
+    private fun endOfDayUtcIso(date: LocalDate): String =
+        date.atTime(23, 59, 59).atZone(IST_ZONE).withZoneSameInstant(java.time.ZoneOffset.UTC)
+            .format(DateTimeFormatter.ISO_INSTANT)
+
     /**
      * Commit messages the app itself auto-generates (daily revision pushes, weekly
      * ProofFiling pushes) -- these aren't real work and would otherwise dominate
@@ -231,14 +249,19 @@ class ProofFilingRepository(private val context: Context) {
     }
 
     /**
-     * List every repo owned by the authenticated user (not just one configured repo).
+     * List every repo the authenticated user can access -- owned repos, plus repos
+     * they collaborate on or that belong to an org they're a member of. Previously
+     * scoped to affiliation=owner only, which silently excluded fork/org/collaborator
+     * activity from the weekly summary.
      */
-    private suspend fun fetchOwnedRepoNames(username: String, token: String): List<String> = withContext(Dispatchers.IO) {
-        val names = mutableListOf<String>()
+    private suspend fun fetchAccessibleRepos(token: String): List<Pair<String, String>> = withContext(Dispatchers.IO) {
+        // (ownerLogin, repoName) -- ownerLogin can differ from the authenticated user
+        // for org/collaborator repos, so it has to be tracked per-repo, not assumed.
+        val repos = mutableListOf<Pair<String, String>>()
         try {
             var page = 1
             while (true) {
-                val url = "$GITHUB_API_BASE/user/repos?affiliation=owner&per_page=100&page=$page"
+                val url = "$GITHUB_API_BASE/user/repos?affiliation=owner,collaborator,organization_member&per_page=100&page=$page"
                 val request = Request.Builder()
                     .url(url)
                     .header("Authorization", "Bearer $token")
@@ -248,7 +271,7 @@ class ProofFilingRepository(private val context: Context) {
 
                 val response = httpClient.newCall(request).execute()
                 if (!response.isSuccessful) {
-                    Log.e(TAG, "Failed to list owned repos: HTTP ${response.code}")
+                    Log.e(TAG, "Failed to list accessible repos: HTTP ${response.code}")
                     break
                 }
                 val body = response.body?.string() ?: break
@@ -258,22 +281,23 @@ class ProofFilingRepository(private val context: Context) {
                 for (i in 0 until items.length()) {
                     val repo = items.getJSONObject(i)
                     val ownerLogin = repo.optJSONObject("owner")?.optString("login").orEmpty()
-                    if (ownerLogin.equals(username, ignoreCase = true)) {
-                        names.add(repo.optString("name"))
+                    val name = repo.optString("name")
+                    if (ownerLogin.isNotBlank() && name.isNotBlank()) {
+                        repos.add(ownerLogin to name)
                     }
                 }
                 if (items.length() < 100) break
                 page++
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to list owned repos", e)
+            Log.e(TAG, "Failed to list accessible repos", e)
         }
-        names
+        repos
     }
 
     /**
-     * Fetch this week's commits across every repo the user owns (not a search-index
-     * approximation), authored by them, on that repo's default branch.
+     * Fetch this week's commits across every repo the user can access (not a
+     * search-index approximation), authored by them, on that repo's default branch.
      */
     private suspend fun fetchRecentCommits(
         username: String,
@@ -281,15 +305,15 @@ class ProofFilingRepository(private val context: Context) {
         weekStart: LocalDate,
         weekEnd: LocalDate
     ): List<CommitInfo> = coroutineScope {
-        val sinceIso = "${weekStart}T00:00:00Z"
-        val untilIso = "${weekEnd}T23:59:59Z"
+        val sinceIso = startOfDayUtcIso(weekStart)
+        val untilIso = endOfDayUtcIso(weekEnd)
 
-        val repos = fetchOwnedRepoNames(username, token)
-        Log.d(TAG, "Scanning ${repos.size} owned repos for commits from $weekStart to $weekEnd")
+        val repos = fetchAccessibleRepos(token)
+        Log.d(TAG, "Scanning ${repos.size} accessible repos for commits from $weekStart to $weekEnd")
 
-        val perRepoResults = repos.map { repo ->
+        val perRepoResults = repos.map { (ownerLogin, repoName) ->
             async(Dispatchers.IO) {
-                fetchCommitsForRepo(username, repo, token, sinceIso, untilIso)
+                fetchCommitsForRepo(username, ownerLogin, repoName, token, sinceIso, untilIso)
             }
         }.awaitAll()
 
@@ -300,6 +324,7 @@ class ProofFilingRepository(private val context: Context) {
 
     private fun fetchCommitsForRepo(
         username: String,
+        ownerLogin: String,
         repo: String,
         token: String,
         sinceIso: String,
@@ -307,7 +332,7 @@ class ProofFilingRepository(private val context: Context) {
     ): List<CommitInfo> {
         val commits = mutableListOf<CommitInfo>()
         try {
-            val url = "$GITHUB_API_BASE/repos/$username/$repo/commits" +
+            val url = "$GITHUB_API_BASE/repos/$ownerLogin/$repo/commits" +
                 "?author=$username&since=$sinceIso&until=$untilIso&per_page=100"
             val request = Request.Builder()
                 .url(url)
@@ -360,7 +385,7 @@ class ProofFilingRepository(private val context: Context) {
             val query = """
                 query {
                   user(login: "$username") {
-                    contributionsCollection(from: "${weekStart}T00:00:00Z", to: "${weekEnd}T23:59:59Z") {
+                    contributionsCollection(from: "${startOfDayUtcIso(weekStart)}", to: "${endOfDayUtcIso(weekEnd)}") {
                       contributionCalendar {
                         totalContributions
                       }
@@ -939,6 +964,6 @@ class ProofFilingRepository(private val context: Context) {
             }
         }
         
-        return learnings.take(10) // Limit suggestions
+        return learnings
     }
 }

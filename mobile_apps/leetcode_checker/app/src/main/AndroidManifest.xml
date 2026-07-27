@@ -45,6 +45,11 @@
             android:name=".AiNewsFetchReceiver"
             android:exported="false" />
 
+        <!-- ProofFiling GitHub/LeetCode stats Auto-Fetch at 7 AM -->
+        <receiver
+            android:name=".prooffiling.ProofFilingDailyFetchReceiver"
+            android:exported="false" />
+
         <!-- LeetCode Streak Widget -->
         <receiver
             android:name=".widget.LeetCodeWidgetProvider"

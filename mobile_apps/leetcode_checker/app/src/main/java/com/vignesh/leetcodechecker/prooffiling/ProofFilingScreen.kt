@@ -584,14 +584,21 @@ private fun SuggestedLearningsSection(
             }
             
             Spacer(modifier = Modifier.height(12.dp))
-            
-            suggestions.take(3).forEach { suggestion ->
-                SuggestionItem(
-                    suggestion = suggestion,
-                    onAccept = { onAccept(suggestion) },
-                    onDismiss = { onDismiss(suggestion.id) }
-                )
-                Spacer(modifier = Modifier.height(8.dp))
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 320.dp)
+                    .verticalScroll(rememberScrollState())
+            ) {
+                suggestions.forEach { suggestion ->
+                    SuggestionItem(
+                        suggestion = suggestion,
+                        onAccept = { onAccept(suggestion) },
+                        onDismiss = { onDismiss(suggestion.id) }
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
             }
         }
     }
