@@ -2,11 +2,12 @@ package com.vignesh.leetcodechecker
 
 import android.app.Application
 import android.content.Context
-import android.os.PowerManager
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import androidx.work.WorkInfo
+import androidx.work.WorkManager
 import com.vignesh.leetcodechecker.BuildConfig
 import com.vignesh.leetcodechecker.data.AiGenerationResult
 import com.vignesh.leetcodechecker.data.DailyChallengeUiModel
@@ -58,33 +59,7 @@ class LeetCodeViewModel(
 
     private val appContext = application.applicationContext
     private val initialSettings = AppSettingsStore.load(appContext)
-    
-    // Wake lock to keep CPU running during LLM inference
-    private val powerManager = appContext.getSystemService(Context.POWER_SERVICE) as PowerManager
-    private var wakeLock: PowerManager.WakeLock? = null
-    
-    private fun acquireWakeLock() {
-        if (wakeLock == null) {
-            wakeLock = powerManager.newWakeLock(
-                PowerManager.PARTIAL_WAKE_LOCK,
-                "LeetCodeChecker:GeminiWakeLock"
-            )
-        }
-        wakeLock?.let {
-            if (!it.isHeld) {
-                it.acquire(30 * 60 * 1000L) // 30 minutes max
-            }
-        }
-    }
-    
-    private fun releaseWakeLock() {
-        wakeLock?.let {
-            if (it.isHeld) {
-                it.release()
-            }
-        }
-    }
-    
+
     private val _uiState = MutableStateFlow(
         LeetCodeUiState(
             isCompletedToday = ConsistencyStorage.isCompletedToday(appContext),
@@ -196,42 +171,51 @@ class LeetCodeViewModel(
         _uiState.value = _uiState.value.copy(
             isAiLoading = true,
             aiError = null,
-            infoMessage = "Refreshing LLM answer (manual confirmation accepted)."
+            infoMessage = "Solving in the background -- safe to leave the app, you'll get a notification when it's ready."
         )
 
-        // Acquire wake lock to prevent sleep during LLM inference
-        acquireWakeLock()
-        
+        // Runs via WorkManager (GeminiSolveWorker), not a plain coroutine here: this
+        // survives the app being backgrounded or the process being killed, instead of
+        // silently cutting off an in-flight, already-billed API call. The worker does
+        // the network call, local save, and notification on its own; this just
+        // observes progress to update the UI live when the app happens to be open.
+        val workId = GeminiSolveWorker.enqueue(appContext, challenge)
+
         viewModelScope.launch {
-            try {
-                repository.generateDetailedAnswer(challenge, forceRefresh = true)
-                    .onSuccess { answer ->
-                        applyAiResult(answer)
-                        ConsistencyStorage.saveAi(appContext, answer)
-                        // Also save to persistent history for offline mode
-                        ConsistencyStorage.saveProblemToHistory(appContext, challenge, "Gemini", answer)
-                        saveRevisionFilesLocally(
-                            challenge = challenge,
-                            aiCode = answer.leetcodePythonCode,
-                            aiExplanation = answer.explanation,
-                            aiValidation = answer.testcaseValidation
+            WorkManager.getInstance(appContext).getWorkInfoByIdFlow(workId).collectLatest { workInfo ->
+                when (workInfo?.state) {
+                    WorkInfo.State.SUCCEEDED -> {
+                        val output = workInfo.outputData
+                        applyAiResult(
+                            AiGenerationResult(
+                                leetcodePythonCode = output.getString(GeminiSolveWorker.KEY_RESULT_CODE).orEmpty(),
+                                testcaseValidation = output.getString(GeminiSolveWorker.KEY_RESULT_VALIDATION).orEmpty(),
+                                explanation = output.getString(GeminiSolveWorker.KEY_RESULT_EXPLANATION).orEmpty(),
+                                rawResponse = "",
+                                debugLog = ""
+                            )
                         )
                         _uiState.value = _uiState.value.copy(
+                            localRevisionPath = output.getString(GeminiSolveWorker.KEY_RESULT_LOCAL_PATH)
+                                ?: _uiState.value.localRevisionPath,
                             infoMessage = "LLM response refreshed and stored locally."
                         )
+                        refreshLocalRevisionHistory()
                     }
-                    .onFailure { throwable ->
-                        val pipelineError = throwable as? PipelineException
+                    WorkInfo.State.FAILED -> {
+                        val output = workInfo.outputData
                         _uiState.value = _uiState.value.copy(
                             isAiLoading = false,
-                            aiError = throwable.message ?: "Could not refresh LLM answer",
-                            aiDebugLog = pipelineError?.debugLog ?: _uiState.value.aiDebugLog,
+                            aiError = output.getString(GeminiSolveWorker.KEY_ERROR) ?: "Could not refresh LLM answer",
+                            aiDebugLog = output.getString(GeminiSolveWorker.KEY_ERROR_DEBUG_LOG) ?: _uiState.value.aiDebugLog,
                             infoMessage = null
                         )
                     }
-            } finally {
-                // Always release wake lock when done
-                releaseWakeLock()
+                    WorkInfo.State.CANCELLED -> {
+                        _uiState.value = _uiState.value.copy(isAiLoading = false, infoMessage = null)
+                    }
+                    else -> Unit
+                }
             }
         }
     }
@@ -521,10 +505,5 @@ class LeetCodeViewModel(
         }
 
         return ownerTrimmed.substringAfterLast('/').ifBlank { ownerTrimmed }
-    }
-    
-    override fun onCleared() {
-        super.onCleared()
-        releaseWakeLock()
     }
 }
