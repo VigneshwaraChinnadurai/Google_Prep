@@ -1,0 +1,46 @@
+Date: 2026-07-27
+Title: Maximum Product of Two Elements in an Array
+URL: https://leetcode.com/problems/maximum-product-of-two-elements-in-an-array/
+
+LLM Explanation:
+### Method: Single Pass to Find Two Largest Elements
+
+The core idea is to maximize the product `(nums[i]-1) * (nums[j]-1)`. Since all elements `nums[k]` are positive (>= 1), the term `nums[k]-1` is non-negative and increases as `nums[k]` increases. To maximize the product, we need to choose the two largest numbers from the array.
+
+The most efficient way to find the two largest numbers is to iterate through the array once while keeping track of the largest and second-largest elements found so far.
+
+**Algorithm:**
+1.  Initialize two variables, `largest` and `second_largest`, to a value smaller than any possible element in `nums` (e.g., 0, since `nums[i] >= 1`).
+2.  Iterate through each number `num` in the input array `nums`.
+3.  For each `num`:
+    - If `num` is greater than or equal to `largest`, it means we've found a new largest number. We update `second_largest` to the old `largest` value, and `largest` to `num`. The `>=` handles cases with duplicate largest numbers correctly.
+    - Otherwise, if `num` is greater than `second_largest` (but smaller than `largest`), we update `second_largest` to `num`.
+4.  After the loop completes, `largest` and `second_largest` will hold the two maximum values from the array.
+5.  The final result is calculated as `(largest - 1) * (second_largest - 1)`.
+
+**Complexity Analysis:**
+- **Time Complexity:** O(n), where n is the number of elements in `nums`. We perform a single pass over the array.
+- **Space Complexity:** O(1), as we only use a constant amount of extra space for the `largest` and `second_largest` variables, regardless of the input size.
+
+LLM Testcase Validation:
+- **Testcase 1:** `nums = [3,4,5,2]`
+  - Iteration 1 (num=3): `largest=3`, `second_largest=0`
+  - Iteration 2 (num=4): `largest=4`, `second_largest=3`
+  - Iteration 3 (num=5): `largest=5`, `second_largest=4`
+  - Iteration 4 (num=2): No change.
+  - Final: `largest=5`, `second_largest=4`.
+  - Result: `(5-1) * (4-1) = 4 * 3 = 12`. **Correct.**
+
+- **Testcase 2:** `nums = [1,5,4,5]`
+  - Iteration 1 (num=1): `largest=1`, `second_largest=0`
+  - Iteration 2 (num=5): `largest=5`, `second_largest=1`
+  - Iteration 3 (num=4): `num > second_largest`, so `second_largest=4`.
+  - Iteration 4 (num=5): `num >= largest`, so `second_largest=5`, `largest=5`.
+  - Final: `largest=5`, `second_largest=5`.
+  - Result: `(5-1) * (5-1) = 4 * 4 = 16`. **Correct.**
+
+- **Testcase 3:** `nums = [3,7]`
+  - Iteration 1 (num=3): `largest=3`, `second_largest=0`
+  - Iteration 2 (num=7): `largest=7`, `second_largest=3`
+  - Final: `largest=7`, `second_largest=3`.
+  - Result: `(7-1) * (3-1) = 6 * 2 = 12`. **Correct.**
