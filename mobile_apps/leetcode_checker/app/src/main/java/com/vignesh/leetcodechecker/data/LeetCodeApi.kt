@@ -133,7 +133,12 @@ data class MatchedUserCalendar(
 
 data class UserCalendarPayload(
     // JSON-encoded string: {"<unix epoch seconds, UTC day start>": <submission count>, ...}
-    val submissionCalendar: String?
+    val submissionCalendar: String?,
+    // LeetCode's own authoritative current-streak value -- the same number leetcode.com
+    // itself displays. Prefer this over recomputing a streak from submissionCalendar,
+    // which can drift from LeetCode's real value by a day or two depending on how they
+    // bucket submissions near a UTC day boundary.
+    val streak: Int? = null
 )
 
 // Combined profile-details response for the Profile tab's LeetCode section:

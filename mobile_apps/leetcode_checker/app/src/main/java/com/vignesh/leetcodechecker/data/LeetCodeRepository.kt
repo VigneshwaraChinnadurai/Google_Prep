@@ -265,9 +265,11 @@ class LeetCodeRepository(
      * Fetch solved-count breakdown, topic/tag mastery, badges, and streaks for the
      * Profile tab's LeetCode section. One combined query -- LeetCode's schema nests
      * all of these under matchedUser, so it costs the same as fetching just one.
-     * Streaks are computed client-side from the submission calendar (LeetCode's API
-     * only exposes a "current streak" field, no "longest streak"), so both numbers
-     * come from one consistent source instead of mixing an API field with our own math.
+     * Current streak uses LeetCode's own authoritative userCalendar.streak field (the
+     * same number leetcode.com itself displays) rather than a client-side
+     * reimplementation, which can drift by a day or two around UTC day boundaries.
+     * Longest streak has no equivalent API field, so it's computed from the
+     * submission calendar -- there's nothing authoritative to match it against.
      */
     suspend fun fetchLeetCodeProfileSummary(username: String = "rockingstarvic"): Result<LeetCodeProfileSummary> {
         return runCatching {
@@ -292,6 +294,7 @@ class LeetCodeRepository(
                       icon
                     }
                     userCalendar {
+                      streak
                       submissionCalendar
                     }
                   }
@@ -316,9 +319,12 @@ class LeetCodeRepository(
                 .take(8)
 
             val calendarRaw = matchedUser.userCalendar?.submissionCalendar
-            val (currentStreak, longestStreak) = calendarRaw
+            val (computedCurrentStreak, longestStreak) = calendarRaw
                 ?.let { computeStreaks(parseSubmissionCalendarJson(it)) }
                 ?: (0 to 0)
+            // Prefer LeetCode's own current-streak value; only fall back to our own
+            // computation if the API didn't return one (e.g. a transient null).
+            val currentStreak = matchedUser.userCalendar?.streak ?: computedCurrentStreak
 
             LeetCodeProfileSummary(
                 easySolved = easy,

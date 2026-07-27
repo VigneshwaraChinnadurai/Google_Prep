@@ -105,9 +105,9 @@ fun ProfileScreen(
         }
     }
     
-    // Load Medium articles when expanded or on refresh
+    // Load Medium articles when expanded, or unconditionally on refresh (even collapsed)
     LaunchedEffect(mediumExpanded, refreshTrigger) {
-        if (mediumExpanded && !mediumLoading) {
+        if ((mediumExpanded || refreshTrigger > 0) && !mediumLoading) {
             mediumLoading = true
             mediumError = null
             try {
@@ -120,9 +120,9 @@ fun ProfileScreen(
         }
     }
     
-    // Load Credly badges when expanded or on refresh
+    // Load Credly badges when expanded, or unconditionally on refresh (even collapsed)
     LaunchedEffect(credlyExpanded, refreshTrigger) {
-        if (credlyExpanded && !credlyLoading) {
+        if ((credlyExpanded || refreshTrigger > 0) && !credlyLoading) {
             credlyLoading = true
             credlyError = null
             try {
@@ -135,9 +135,9 @@ fun ProfileScreen(
         }
     }
 
-    // Load LeetCode profile summary when expanded or on refresh
+    // Load LeetCode profile summary when expanded, or unconditionally on refresh (even collapsed)
     LaunchedEffect(leetcodeExpanded, refreshTrigger) {
-        if (leetcodeExpanded && !leetcodeLoading) {
+        if ((leetcodeExpanded || refreshTrigger > 0) && !leetcodeLoading) {
             leetcodeLoading = true
             leetcodeError = null
             try {
