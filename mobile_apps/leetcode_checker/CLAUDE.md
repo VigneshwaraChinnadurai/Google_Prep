@@ -10,7 +10,7 @@ Android app (Kotlin, Jetpack Compose, MVVM/StateFlow) — daily LeetCode trackin
 
 - **After any code change is complete, `git add`/commit/push it.** If the change touches this app, also build the debug APK (`gradlew assembleDebug`) to confirm it compiles — don't just claim a fix works without building it.
 - Prefer editing existing files; don't create new docs/summary files unless asked.
-- **Every build with user-visible changes gets a new What's New entry.** Add a `WhatsNewEntry` at the top of `getWhatsNewHistory()` in `ui/WhatsNewScreen.kt` (bump `version`/`versionCode`, today's `releaseDate`) before considering the build done — this is what drives the "✨ NEW" badge and the What's New screen users check after an update. Skip it only for changes with zero user-visible effect (pure refactors, internal cleanup).
+- **Every build with user-visible changes gets a new What's New entry, AND the real app version.** Add a `WhatsNewEntry` at the top of `getWhatsNewHistory()` in `ui/WhatsNewScreen.kt` (bump `version`/`versionCode`, today's `releaseDate`) *and* bump `versionCode`/`versionName` in `app/build.gradle.kts` to match — these are two independent numbers (the Gradle one is what Android Settings → App Info actually shows) and previously drifted for the app's entire history (`versionCode` sat at `1`/`"1.0"` while What's New quietly moved on). Skip it only for changes with zero user-visible effect (pure refactors, internal cleanup).
 
 ## Architecture conventions — follow these, don't deviate silently
 

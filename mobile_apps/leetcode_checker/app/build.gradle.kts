@@ -77,8 +77,8 @@ android {
         //         )
         //     }
         // }
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 26
+        versionName = "2.6.0"
         buildConfigField("String", "GEMINI_API_KEY", "\"$geminiApiKey\"")
         buildConfigField("String", "CHATBOT_GEMINI_API_KEY", "\"$chatbotGeminiKey\"")
         buildConfigField("String", "GITHUB_OWNER", "\"$githubOwner\"")

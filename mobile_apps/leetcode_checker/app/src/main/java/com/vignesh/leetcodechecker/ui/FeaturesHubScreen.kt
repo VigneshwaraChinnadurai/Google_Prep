@@ -19,6 +19,8 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.vignesh.leetcodechecker.data.LeetCodeActivityStorage
+import com.vignesh.leetcodechecker.data.LeetCodeProfileSummary
+import com.vignesh.leetcodechecker.data.LeetCodeRepository
 
 /**
  * Features Hub Screen - Central navigation for all app features
@@ -31,6 +33,18 @@ fun FeaturesHubScreen(
     val context = LocalContext.current
     val stats = remember { LeetCodeActivityStorage.loadProblemStats(context) }
     val scrollState = rememberScrollState()
+
+    // Solved/streak/hard here used to come from local, app-only completion history --
+    // which disagreed with the real LeetCode totals shown in the Profile tab (same
+    // pattern as the streak-mismatch bug). Prefer the real API totals once fetched,
+    // falling back to the local count only until that first fetch resolves.
+    var realSummary by remember { mutableStateOf<LeetCodeProfileSummary?>(null) }
+    LaunchedEffect(Unit) {
+        LeetCodeRepository(context).fetchLeetCodeProfileSummary().onSuccess { realSummary = it }
+    }
+    val displayedTotalSolved = realSummary?.totalSolved ?: stats.totalSolved
+    val displayedStreak = realSummary?.currentStreak ?: stats.currentStreak
+    val displayedHardSolved = realSummary?.hardSolved ?: stats.hardSolved
     
     Column(
         modifier = modifier
@@ -60,7 +74,7 @@ fun FeaturesHubScreen(
             }
             
             // Streak badge
-            if (stats.currentStreak > 0) {
+            if (displayedStreak > 0) {
                 Surface(
                     shape = RoundedCornerShape(20.dp),
                     color = Color(0xFFF0883E).copy(alpha = 0.2f)
@@ -72,7 +86,7 @@ fun FeaturesHubScreen(
                         Text("🔥", fontSize = 16.sp)
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = "${stats.currentStreak}",
+                            text = "$displayedStreak",
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFFF0883E)
@@ -100,8 +114,11 @@ fun FeaturesHubScreen(
             FeatureItem("Chatbot", "💬", Color(0xFF00D4AA), FeatureDestination.STRATEGIC_CHATBOT),
             FeatureItem("Analytics", "📊", Color(0xFF58A6FF), FeatureDestination.ANALYTICS),
             FeatureItem("Achievements", "🏆", Color(0xFFFFD700), FeatureDestination.ACHIEVEMENTS),
+            FeatureItem("Goals", "🎯", Color(0xFF39D353), FeatureDestination.GOALS),
             FeatureItem("Flashcards", "📚", Color(0xFFA371F7), FeatureDestination.FLASHCARDS),
             FeatureItem("Focus Mode", "🎧", Color(0xFFF0883E), FeatureDestination.FOCUS),
+            FeatureItem("Interview", "🎤", Color(0xFF00B8A3), FeatureDestination.INTERVIEW),
+            FeatureItem("Leaderboard", "📈", Color(0xFFC0C0C0), FeatureDestination.LEADERBOARD),
             FeatureItem("Offline", "📱", Color(0xFF6E7681), FeatureDestination.OFFLINE),
             FeatureItem("AI/ML News", "🤖", Color(0xFF9C27B0), FeatureDestination.AI_NEWS),
             FeatureItem("Protection", "🔒", Color(0xFFF85149), FeatureDestination.PROTECTION),
@@ -140,7 +157,7 @@ fun FeaturesHubScreen(
         Spacer(modifier = Modifier.height(20.dp))
 
         // Quick Stats Card
-        QuickStatsCard(stats = stats)
+        QuickStatsCard(totalSolved = displayedTotalSolved, streak = displayedStreak, hardSolved = displayedHardSolved)
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -203,7 +220,7 @@ private fun FeatureGridItem(
 }
 
 @Composable
-private fun QuickStatsCard(stats: LeetCodeActivityStorage.ProblemStats) {
+private fun QuickStatsCard(totalSolved: Int, streak: Int, hardSolved: Int) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
@@ -216,17 +233,17 @@ private fun QuickStatsCard(stats: LeetCodeActivityStorage.ProblemStats) {
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             QuickStatItem(
-                value = "${stats.totalSolved}",
+                value = "$totalSolved",
                 label = "Solved",
                 color = Color(0xFF39D353)
             )
             QuickStatItem(
-                value = "${stats.currentStreak}",
+                value = "$streak",
                 label = "Streak",
                 color = Color(0xFFF0883E)
             )
             QuickStatItem(
-                value = "${stats.hardSolved}",
+                value = "$hardSolved",
                 label = "Hard",
                 color = Color(0xFFFF375F)
             )
