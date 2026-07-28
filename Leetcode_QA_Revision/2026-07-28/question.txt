@@ -1,0 +1,24 @@
+Date: 2026-07-28
+Question ID: 3517
+Title: Smallest Palindromic Rearrangement I
+Difficulty: Medium
+Tags: String, Sorting, Counting Sort
+URL: https://leetcode.com/problems/smallest-palindromic-rearrangement-i/
+
+Question:
+You are given a palindromic string s . Return the lexicographically smallest palindromic permutation of s . Example 1: Input: s = &quot;z&quot; Output: &quot;z&quot; Explanation: A string of only one character is already the lexicographically smallest palindrome. Example 2: Input: s = &quot;babab&quot; Output: &quot;abbba&quot; Explanation: Rearranging &quot;babab&quot; &rarr; &quot;abbba&quot; gives the smallest lexicographic palindrome. Example 3: Input: s = &quot;daccad&quot; Output: &quot;acddca&quot; Explanation: Rearranging &quot;daccad&quot; &rarr; &quot;acddca&quot; gives the smallest lexicographic palindrome. Constraints: 1 &lt;= s.length &lt;= 10 5 s consists of lowercase English letters. s is guaranteed to be palindromic.
+
+Starter Code (Python3):
+class Solution:
+    def smallestPalindrome(self, s: str) -> str:
+        
+
+Testcases:
+"z"
+"babab"
+"daccad"
+
+Expected Output / Validation:
+"z"
+"babab"
+"daccad"
