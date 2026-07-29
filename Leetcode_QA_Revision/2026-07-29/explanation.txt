@@ -1,0 +1,54 @@
+Date: 2026-07-29
+Title: Smallest Palindromic Rearrangement II
+URL: https://leetcode.com/problems/smallest-palindromic-rearrangement-ii/
+
+LLM Explanation:
+The user wants me to solve the LeetCode problem "Smallest Palindromic Rearrangement II".
+
+### Method Explanation
+
+The problem asks for the k-th lexicographically smallest palindromic permutation of a given string `s`.
+
+A key insight is that any palindrome is uniquely determined by its first half (including the middle character if the length is odd). For example, the palindrome "racecar" is determined by its first half "race". The rest is a mirror image. Therefore, finding the k-th smallest palindromic permutation is equivalent to finding the k-th smallest permutation of the characters that form the first half.
+
+The overall approach is as follows:
+
+1.  **Character Analysis:**
+    First, we count the frequency of each character in the input string `s`. Since `s` is a palindrome, at most one character can have an odd count.
+    - The characters for the first half of the new palindrome are determined by taking half of each character's count (integer division). For example, if `s` has four 'a's and two 'b's, the first half will be a permutation of two 'a's and one 'b'.
+    - If there's a character with an odd count, it must be the middle character of the new palindrome.
+
+2.  **k-th Permutation Algorithm:**
+    The core of the problem is to construct the k-th lexicographically smallest permutation of the multiset of characters forming the first half. We can build this permutation character by character from left to right.
+
+    Let's say the length of the first half is `L`, and we have the counts of available characters. To decide the first character:
+    - We iterate through the available characters in alphabetical order (e.g., 'a', 'b', 'c', ...).
+    - For each character `c`, we calculate how many unique permutations can be formed with the *remaining* characters if we choose `c` for the current position. Let this be `perms_count`.
+    - We compare `k` with `perms_count`.
+        - If `k <= perms_count`, it means our target permutation lies within this block. So, we fix `c` as the character for the current position and proceed to find the k-th permutation of the remaining characters.
+        - If `k > perms_count`, our target permutation is not in this block. We subtract `perms_count` from `k` and try the next character in alphabetical order.
+
+3.  **Efficient Permutation Counting:**
+    The number of unique permutations of a multiset of length `N` with character counts `n_1, n_2, ...` is given by the multinomial coefficient `N! / (n_1! * n_2! * ...)`.
+    - A naive re-computation at each step would be too slow due to large numbers (`L` can be up to 5000).
+    - We can optimize this. Let `P` be the number of permutations for the current set of remaining characters. If we choose a character `c` (with count `n_c`) from the `current_L` remaining characters, the number of permutations for the new remaining set is `P * n_c / current_L`.
+    - By pre-calculating factorials and maintaining the denominator of the multinomial coefficient, we can efficiently compute the required permutation counts at each step using large integer arithmetic, which Python handles automatically.
+
+4.  **Final Construction:**
+    - First, we check if `k` exceeds the total number of possible palindromic permutations. If so, we return an empty string.
+    - Otherwise, we construct the first half string using the k-th permutation algorithm.
+    - The final palindrome is formed by concatenating the first half, the middle character (if any), and the reverse of the first half.
+
+### Complexity
+-   **Time Complexity:** `O(L * A * D^p)`, where `L` is the length of the first half, `A` is the alphabet size (26), `D` is the number of digits in the permutation counts (can be `O(L log L)`), and `p` is the exponent from the bignum multiplication algorithm (e.g., `p=1.585` for Karatsuba). While worst-case is high, it passes due to the nature of test cases and Python's efficient bignum implementation.
+-   **Space Complexity:** `O(L)` for storing factorials and the resulting first half string.
+
+LLM Testcase Validation:
+```
+"abba"
+2
+"aa"
+2
+"bacab"
+1
+```
