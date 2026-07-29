@@ -1,0 +1,44 @@
+Date: 2026-07-29
+Question ID: 3518
+Title: Smallest Palindromic Rearrangement II
+Difficulty: Hard
+Tags: Hash Table, Math, String, Combinatorics, Counting
+URL: https://leetcode.com/problems/smallest-palindromic-rearrangement-ii/
+
+Question:
+You are given a palindromic string s and an integer k . Return the k-th lexicographically smallest palindromic permutation of s . If there are fewer than k distinct palindromic permutations, return an empty string. Note: Different rearrangements that yield the same palindromic string are considered identical and are counted once. Example 1: Input: s = &quot;abba&quot;, k = 2 Output: &quot;baab&quot; Explanation: The two distinct palindromic rearrangements of &quot;abba&quot; are &quot;abba&quot; and &quot;baab&quot; . Lexicographically, &quot;abba&quot; comes before &quot;baab&quot; . Since k = 2 , the output is &quot;baab&quot; . Example 2: Input: s = &quot;aa&quot;, k = 2 Output: &quot;&quot; Explanation: There is only one palindromic rearrangement: &quot;aa&quot; . The output is an empty string since k = 2 exceeds the number of possible rearrangements. Example 3: Input: s = &quot;bacab&quot;, k = 1 Output: &quot;abcba&quot; Explanation: The two distinct palindromic rearrangements of &quot;bacab&quot; are &quot;abcba&quot; and &quot;bacab&quot; . Lexicographically, &quot;abcba&quot; comes before &quot;bacab&quot; . Since k = 1 , the output is &quot;abcba&quot; . Constraints: 1 &lt;= s.length &lt;= 10 4 s consists of lowercase English letters. s is guaranteed to be palindromic. 1 &lt;= k &lt;= 10 6
+
+Starter Code (Python3):
+class Solution:
+    def smallestPalindrome(self, s: str, k: int) -> str:
+        
+
+Testcases:
+"abba"
+2
+"aa"
+2
+"bacab"
+1
+
+Expected Output / Validation:
+- **Testcase 1:** `s = "abba", k = 2`
+  - `n=4`, `L=2`. First half characters: `{'a': 1, 'b': 1}`. Middle char: `""`.
+  - Total permutations of `{"a", "b"}` is `2!/(1!1!) = 2`.
+  - Permutations are "ab" and "ba".
+  - 1st smallest: first half "ab" -> "abba".
+  - 2nd smallest: first half "ba" -> "baab".
+  - For `k=2`, the output is "baab". My code correctly calculates this.
+
+- **Testcase 2:** `s = "aa", k = 2`
+  - `n=2`, `L=1`. First half characters: `{'a': 1}`. Middle char: `""`.
+  - Total permutations of `{"a"}` is `1!/1! = 1`.
+  - Since `k=2` is greater than the total number of unique palindromic permutations (1), the output should be an empty string. My code correctly handles this check.
+
+- **Testcase 3:** `s = "bacab", k = 1`
+  - `n=5`, `L=2`. First half characters: `{'a': 1, 'b': 1}`. Middle char: `"c"`.
+  - Total permutations of `{"a", "b"}` is `2!/(1!1!) = 2`.
+  - Permutations are "ab" and "ba".
+  - 1st smallest: first half "ab", middle "c" -> "abcba".
+  - 2nd smallest: first half "ba", middle "c" -> "bacab".
+  - For `k=1`, the output is "abcba". My code correctly calculates this.
