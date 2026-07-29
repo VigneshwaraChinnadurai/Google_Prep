@@ -22,23 +22,11 @@ Testcases:
 1
 
 Expected Output / Validation:
-- **Testcase 1:** `s = "abba", k = 2`
-  - `n=4`, `L=2`. First half characters: `{'a': 1, 'b': 1}`. Middle char: `""`.
-  - Total permutations of `{"a", "b"}` is `2!/(1!1!) = 2`.
-  - Permutations are "ab" and "ba".
-  - 1st smallest: first half "ab" -> "abba".
-  - 2nd smallest: first half "ba" -> "baab".
-  - For `k=2`, the output is "baab". My code correctly calculates this.
-
-- **Testcase 2:** `s = "aa", k = 2`
-  - `n=2`, `L=1`. First half characters: `{'a': 1}`. Middle char: `""`.
-  - Total permutations of `{"a"}` is `1!/1! = 1`.
-  - Since `k=2` is greater than the total number of unique palindromic permutations (1), the output should be an empty string. My code correctly handles this check.
-
-- **Testcase 3:** `s = "bacab", k = 1`
-  - `n=5`, `L=2`. First half characters: `{'a': 1, 'b': 1}`. Middle char: `"c"`.
-  - Total permutations of `{"a", "b"}` is `2!/(1!1!) = 2`.
-  - Permutations are "ab" and "ba".
-  - 1st smallest: first half "ab", middle "c" -> "abcba".
-  - 2nd smallest: first half "ba", middle "c" -> "bacab".
-  - For `k=1`, the output is "abcba". My code correctly calculates this.
+```
+"abba"
+2
+"aa"
+2
+"bacab"
+1
+```
