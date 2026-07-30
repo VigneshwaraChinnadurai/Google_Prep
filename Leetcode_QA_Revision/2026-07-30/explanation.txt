@@ -1,0 +1,34 @@
+Date: 2026-07-30
+Title: Minimum Number of Pushes to Type Word I
+URL: https://leetcode.com/problems/minimum-number-of-pushes-to-type-word-i/
+
+LLM Explanation:
+The problem asks for the minimum number of pushes to type a given word with distinct letters, allowing us to remap letters to 8 telephone keys. The cost to type a letter depends on its position on a key: the first letter costs 1 push, the second costs 2, and so on.
+
+The key insight is to use a greedy approach. Since all letters in the word are distinct and must be typed once, the specific identity of a letter doesn't matter, only the cost of the slot it's assigned to. To minimize the total cost, we must assign the `n` letters of the word to the `n` cheapest available slots on the keypad.
+
+The available slots and their costs are structured in tiers:
+-   **Tier 1:** 8 slots (position 1 on each of the 8 keys) with a cost of 1 push each.
+-   **Tier 2:** 8 slots (position 2 on each key) with a cost of 2 pushes each.
+-   **Tier 3:** 8 slots (position 3 on each key) with a cost of 3 pushes each.
+-   And so on.
+
+Our greedy strategy is to fill these tiers in order:
+1.  The first 8 letters are assigned to the Tier 1 slots, each costing 1 push.
+2.  The next 8 letters (if any) are assigned to the Tier 2 slots, each costing 2 pushes.
+3.  This continues until all `n` letters are assigned.
+
+This logic can be implemented with a simple loop. We can iterate from `i = 0` to `n-1`, representing the `n` letters. The cost for the `i`-th letter is determined by which tier it falls into.
+-   Letters with indices 0-7 fall into the first tier (cost 1).
+-   Letters with indices 8-15 fall into the second tier (cost 2).
+-   In general, the letter at index `i` falls into tier `i // 8`, and its cost is `(i // 8) + 1`.
+
+By summing this cost for each `i` from 0 to `n-1`, we get the minimum total number of pushes.
+
+**Complexity Analysis:**
+-   **Time Complexity:** O(N), where N is the length of the `word`. We iterate through the word's length once. Given the constraint N <= 26, this is effectively constant time.
+-   **Space Complexity:** O(1), as we only use a few variables for the calculation.
+
+LLM Testcase Validation:
+"abcde"
+"xycdefghij"
