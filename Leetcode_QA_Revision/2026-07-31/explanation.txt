@@ -1,0 +1,72 @@
+Date: 2026-07-31
+Title: Minimum Number of Pushes to Type Word II
+URL: https://leetcode.com/problems/minimum-number-of-pushes-to-type-word-ii/
+
+LLM Explanation:
+The problem asks for the minimum number of pushes to type a given `word` by optimally remapping letters to 8 telephone keys (2-9). The number of pushes for a letter depends on its position on a key: the first letter costs 1 push, the second costs 2, and so on.
+
+### Optimal Strategy: Greedy Approach
+
+To minimize the total number of pushes, we should assign the most frequently occurring characters to the positions that require the fewest pushes. This is a classic greedy strategy. The total cost is the sum of `frequency * push_cost` for each unique character. To minimize this sum, we must pair the largest frequencies with the smallest push costs.
+
+The available push costs are determined by the 8 keys:
+- There are 8 slots available that cost 1 push each (the first position on each of the 8 keys).
+- There are 8 slots that cost 2 pushes each (the second position on each key).
+- There are 8 slots that cost 3 pushes each, and so on.
+
+### Algorithm Steps
+
+1.  **Count Frequencies**: First, we count the occurrences of each character in the `word`. A hash map (like `collections.Counter`) is ideal for this.
+
+2.  **Sort Frequencies**: We extract the frequencies of all unique characters and sort them in descending order. This places the most common characters first.
+
+3.  **Assign Costs and Calculate Total**: We iterate through the sorted list of frequencies. The character with the highest frequency gets the cheapest cost, the second-highest gets the next cheapest, and so on.
+    - The 8 most frequent characters are assigned to the 1-push slots.
+    - The next 8 most frequent (9th to 16th) are assigned to the 2-push slots.
+    - The next 8 (17th to 24th) are assigned to the 3-push slots.
+    - The remaining (25th and 26th) are assigned to the 4-push slots.
+
+    A simple formula can determine the cost for the character at index `i` (0-indexed) in the sorted frequency list: `push_cost = (i // 8) + 1`. We multiply each character's frequency by its assigned push cost and sum these values to get the minimum total pushes.
+
+### Complexity Analysis
+
+-   **Time Complexity**: O(N), where N is the length of the `word`.
+    -   Counting character frequencies takes O(N) time.
+    -   The number of unique characters is at most 26. Sorting these frequencies takes O(U log U), where U <= 26, which is constant time, O(1).
+    -   The final loop runs at most 26 times, also O(1).
+    -   Thus, the dominant operation is the initial frequency count.
+
+-   **Space Complexity**: O(1).
+    -   The hash map for frequencies and the list of frequencies will store at most 26 entries, corresponding to the letters of the alphabet. This is constant space.
+
+### Edge Cases
+
+-   **Short words**: The logic holds. If there are 8 or fewer unique characters, all will be assigned a push cost of 1.
+-   **Words with many unique characters**: The algorithm correctly assigns increasing costs to less frequent characters as the 1-push, 2-push, etc., slots are filled.
+-   **Words with one repeated character**: The single unique character will be assigned a cost of 1, and the total pushes will be its frequency.
+
+LLM Testcase Validation:
+```python
+# Testcases
+s = Solution()
+
+# Testcase 1
+word1 = "abcde"
+expected1 = 5
+result1 = s.minimumPushes(word1)
+assert result1 == expected1, f"Testcase 1 Failed: expected {expected1}, got {result1}"
+
+# Testcase 2
+word2 = "xyzxyzxyzxyz"
+expected2 = 12
+result2 = s.minimumPushes(word2)
+assert result2 == expected2, f"Testcase 2 Failed: expected {expected2}, got {result2}"
+
+# Testcase 3
+word3 = "aabbccddeeffgghhiiiiii"
+expected3 = 24
+result3 = s.minimumPushes(word3)
+assert result3 == expected3, f"Testcase 3 Failed: expected {expected3}, got {result3}"
+
+print("All testcases passed.")
+```
