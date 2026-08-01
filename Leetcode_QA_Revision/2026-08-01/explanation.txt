@@ -1,0 +1,40 @@
+Date: 2026-08-01
+Title: Predict the Winner
+URL: https://leetcode.com/problems/predict-the-winner/
+
+LLM Explanation:
+This problem is a classic game theory scenario that can be solved using dynamic programming with the minimax principle. Both players play optimally to maximize their own score.
+
+### Core Idea: Score Difference
+Instead of tracking the absolute scores of Player 1 and Player 2, it's more effective to focus on the **score difference** between the current player and their opponent. Each player's goal is to maximize this difference when it's their turn.
+
+### Recurrence Relation
+Let `dp[i][j]` represent the maximum score difference a player can achieve over their opponent for the subarray `nums[i...j]`.
+
+A player whose turn it is for the subarray `nums[i...j]` has two choices:
+1.  **Take `nums[i]`**: Their score increases by `nums[i]`. The game continues on the subarray `nums[i+1...j]`, but now it's the opponent's turn. The opponent will play optimally on this subarray and achieve a score difference of `dp[i+1][j]` over the current player. Therefore, the current player's net score difference from this move is `nums[i] - dp[i+1][j]`.
+2.  **Take `nums[j]`**: Similarly, if they take the last element, their net score difference will be `nums[j] - dp[i][j-1]`.
+
+Since the player plays optimally, they will choose the move that maximizes their score difference. This gives us the recurrence relation:
+`dp[i][j] = max(nums[i] - dp[i+1][j], nums[j] - dp[i][j-1])`
+
+### Base Case
+When the subarray has only one element (`i == j`), the current player takes that element. The score difference is simply `nums[i]`. So, `dp[i][i] = nums[i]`.
+
+### Dynamic Programming Implementation
+This problem has overlapping subproblems, making it a perfect candidate for dynamic programming. We can compute the `dp` values for all possible subarrays, starting from smaller subarrays and building up to the entire array.
+
+A 2D DP table of size `n x n` could be used. However, we can optimize the space to `O(n)`. Notice that to compute `dp` values for subarrays starting at index `i`, we only need the `dp` values for subarrays that started at `i+1`. By iterating `i` from `n-1` down to `0`, we can use a single 1D array `dp` to store the required values.
+
+### Final Result
+After filling the DP table, `dp[n-1]` will hold the score difference for the entire game (`nums[0...n-1]`) from Player 1's perspective. Player 1 wins if their score is greater than or equal to Player 2's score, which means `score1 - score2 >= 0`. Thus, we return `dp[n-1] >= 0`.
+
+### Complexity
+-   **Time Complexity**: `O(n^2)`, where `n` is the length of `nums`. We have two nested loops to fill the DP table.
+-   **Space Complexity**: `O(n)` for the 1D DP array.
+
+LLM Testcase Validation:
+```
+[1,5,2]
+[1,5,233,7]
+```
