@@ -1,0 +1,50 @@
+Date: 2026-08-03
+Title: Stone Game III
+URL: https://leetcode.com/problems/stone-game-iii/
+
+LLM Explanation:
+This problem is a classic two-player optimal strategy game, which can be solved using dynamic programming. Since it's a zero-sum (or constant-sum) game where both players play optimally, we can use the minimax principle.
+
+### Dynamic Programming Approach
+
+Let's define `dp[i]` as the maximum score *difference* the current player can achieve over the opponent, starting from the pile at index `i`. Alice's goal is to maximize this difference, and Bob's goal is to minimize it (which is equivalent to maximizing his own score difference when it's his turn).
+
+#### Recurrence Relation
+
+When it's a player's turn at index `i`, they have three choices:
+1.  **Take 1 stone:** They gain `stoneValue[i]`. The game state becomes `i+1`, and it's the opponent's turn. The opponent, from `i+1`, will achieve a score difference of `dp[i+1]`. So, the current player's net score difference for this move is `stoneValue[i] - dp[i+1]`.
+2.  **Take 2 stones:** They gain `stoneValue[i] + stoneValue[i+1]`. The opponent will then achieve a score difference of `dp[i+2]`. The net difference is `(stoneValue[i] + stoneValue[i+1]) - dp[i+2]`.
+3.  **Take 3 stones:** They gain `stoneValue[i] + stoneValue[i+1] + stoneValue[i+2]`. The opponent will achieve `dp[i+3]`. The net difference is `(stoneValue[i] + ... + stoneValue[i+2]) - dp[i+3]`.
+
+Since the current player plays optimally, they will choose the move that maximizes their score difference. Thus, the recurrence relation is:
+`dp[i] = max(take_1_diff, take_2_diff, take_3_diff)`
+
+#### Implementation (Bottom-Up with Space Optimization)
+
+We can compute the `dp` values starting from the end of the array and moving backwards to the beginning.
+-   **Base Case:** If we are past the last stone (e.g., at index `n`), there are no stones left to take, so the score difference is 0. `dp[n] = 0`.
+-   **Iteration:** We calculate `dp[i]` for `i` from `n-1` down to `0`.
+
+Notice that to calculate `dp[i]`, we only need `dp[i+1]`, `dp[i+2]`, and `dp[i+3]`. This means we don't need to store the entire `dp` array of size `n`. We can use just three variables to keep track of the next three states, achieving O(1) space complexity.
+
+Let `dp1`, `dp2`, `dp3` store the values for `dp[i+1]`, `dp[i+2]`, and `dp[i+3]`, respectively. We iterate `i` from `n-1` down to `0`, calculating `dp[i]` and updating `dp1`, `dp2`, `dp3` in each step.
+
+#### Final Result
+
+After the loop finishes, the value for `dp[0]` will represent the final score difference Alice can achieve since she starts first.
+-   If `dp[0] > 0`, Alice's score is greater than Bob's. Alice wins.
+-   If `dp[0] < 0`, Bob's score is greater. Bob wins.
+-   If `dp[0] == 0`, their scores are equal. It's a Tie.
+
+### Complexity
+-   **Time Complexity:** O(N), where N is the number of stones. We iterate through the array once.
+-   **Space Complexity:** O(1), as we only use a few variables to store the DP states regardless of the input size.
+
+LLM Testcase Validation:
+```
+[1,2,3,7]
+[1,2,3,-9]
+[1,2,3,6]
+[-1,-2,-3]
+[5]
+```
