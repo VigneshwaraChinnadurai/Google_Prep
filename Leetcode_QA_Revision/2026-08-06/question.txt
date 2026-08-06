@@ -1,0 +1,33 @@
+Date: 2026-08-06
+Question ID: 3345
+Title: Smallest Divisible Digit Product I
+Difficulty: Easy
+Tags: Math, Enumeration
+URL: https://leetcode.com/problems/smallest-divisible-digit-product-i/
+
+Question:
+You are given two integers n and t . Return the smallest number greater than or equal to n such that the product of its digits is divisible by t . Example 1: Input: n = 10, t = 2 Output: 10 Explanation: The digit product of 10 is 0, which is divisible by 2, making it the smallest number greater than or equal to 10 that satisfies the condition. Example 2: Input: n = 15, t = 3 Output: 16 Explanation: The digit product of 16 is 6, which is divisible by 3, making it the smallest number greater than or equal to 15 that satisfies the condition. Constraints: 1 &lt;= n &lt;= 100 1 &lt;= t &lt;= 10
+
+Starter Code (Python3):
+class Solution:
+    def smallestNumber(self, n: int, t: int) -> int:
+        
+
+Testcases:
+10
+2
+15
+3
+
+Expected Output / Validation:
+- n = 10, t = 2
+  - Check x = 10: Digits are 1, 0. Product = 1 * 0 = 0.
+  - 0 % 2 == 0. This is true.
+  - Return 10. Correct.
+
+- n = 15, t = 3
+  - Check x = 15: Digits are 1, 5. Product = 1 * 5 = 5.
+  - 5 % 3 != 0.
+  - Check x = 16: Digits are 1, 6. Product = 1 * 6 = 6.
+  - 6 % 3 == 0. This is true.
+  - Return 16. Correct.
