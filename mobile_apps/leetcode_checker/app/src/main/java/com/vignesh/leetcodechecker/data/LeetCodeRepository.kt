@@ -443,37 +443,8 @@ class LeetCodeRepository(
 
             logDebug(debug, "Selected model: $selectedModel")
 
-            val systemPrompt = """
-You are LC-Autonomous-Solver ($promptName).
-Return only these tags in order:
-<leetcode_python3_code>...</leetcode_python3_code>
-<testcase_validation>...</testcase_validation>
-<explanation>...</explanation>
-Hard rules:
-- Python 3 only, LeetCode-ready, class Solution style.
-- Match provided starter signature and method args.
-- No markdown fences.
-- Prefer optimal approach; include complexity and edge cases.
-- Validate against provided testcases.
-""".trimIndent()
-
-            val userPrompt = """
-Date=${challenge.date}
-Id=${challenge.questionId}
-Title=${challenge.title}
-Difficulty=${challenge.difficulty}
-Tags=${challenge.tags.joinToString()}
-URL=${challenge.url}
-
-Statement:
-${challenge.fullStatement.ifBlank { challenge.descriptionPreview }}
-
-StarterCode:
-${challenge.pythonStarterCode.ifBlank { "class Solution:\n    pass" }}
-
-Testcases:
-${challenge.exampleTestcases.ifBlank { "Not provided" }}
-""".trimIndent()
+            val systemPrompt = buildSystemPrompt(promptName)
+            val userPrompt = buildUserPrompt(challenge)
 
             val boundedSystemPrompt = truncateToApproxTokenLimit(systemPrompt, maxInputTokens)
             val remainingInputBudget = (maxInputTokens - estimateApproxTokens(boundedSystemPrompt))
@@ -537,6 +508,80 @@ ${challenge.exampleTestcases.ifBlank { "Not provided" }}
             answerCache[cacheKey] = result
             result
         }
+    }
+
+    private fun buildSystemPrompt(promptName: String): String = """
+You are LC-Autonomous-Solver ($promptName).
+Return only these tags in order:
+<leetcode_python3_code>...</leetcode_python3_code>
+<testcase_validation>...</testcase_validation>
+<explanation>...</explanation>
+Hard rules:
+- Python 3 only, LeetCode-ready, class Solution style.
+- Match provided starter signature and method args.
+- No markdown fences.
+- Prefer optimal approach; include complexity and edge cases.
+- Validate against provided testcases.
+""".trimIndent()
+
+    private fun buildUserPrompt(challenge: DailyChallengeUiModel): String = """
+Date=${challenge.date}
+Id=${challenge.questionId}
+Title=${challenge.title}
+Difficulty=${challenge.difficulty}
+Tags=${challenge.tags.joinToString()}
+URL=${challenge.url}
+
+Statement:
+${challenge.fullStatement.ifBlank { challenge.descriptionPreview }}
+
+StarterCode:
+${challenge.pythonStarterCode.ifBlank { "class Solution:\n    pass" }}
+
+Testcases:
+${challenge.exampleTestcases.ifBlank { "Not provided" }}
+""".trimIndent()
+
+    /**
+     * Build the full solve prompt for the "Claude (Manual)" provider -- copied to the
+     * clipboard and handed to the Claude app via a share intent instead of an API call.
+     * Unlike generateDetailedAnswer's Gemini path, this isn't token-bounded: it's going
+     * to a human pasting into a chat app, not a request with an input-token budget.
+     */
+    fun buildManualSolvePrompt(challenge: DailyChallengeUiModel): String {
+        val promptName = AppSettingsStore.load(context).promptName.ifBlank { PROMPT_NAME }
+        return buildSystemPrompt(promptName) + "\n\n" + buildUserPrompt(challenge)
+    }
+
+    /**
+     * Parse a manually-pasted LLM reply (e.g. copied back from the Claude app) using the
+     * exact same <leetcode_python3_code>/<testcase_validation>/<explanation> tags the
+     * Gemini path expects -- buildManualSolvePrompt's system prompt instructs the model
+     * to return them, so any capable LLM given that prompt produces a parseable reply.
+     */
+    fun parseManualResponse(rawText: String): Result<AiGenerationResult> = runCatching {
+        if (rawText.isBlank()) {
+            error("Clipboard is empty. Copy the assistant's full reply first, then try again.")
+        }
+
+        val code = extractTaggedSection(rawText, "leetcode_python3_code")
+        val validation = extractTaggedSection(rawText, "testcase_validation")
+        val explanation = extractTaggedSection(rawText, "explanation")
+
+        if (code.isBlank() && validation.isBlank() && explanation.isBlank()) {
+            error(
+                "Couldn't find the expected <leetcode_python3_code>/<testcase_validation>/<explanation> " +
+                    "tags in the pasted text. Make sure you copied the assistant's complete reply."
+            )
+        }
+
+        AiGenerationResult(
+            leetcodePythonCode = code.ifBlank { rawText }.trim(),
+            testcaseValidation = validation.trim(),
+            explanation = explanation.trim(),
+            rawResponse = rawText,
+            debugLog = "Parsed from manually pasted response (Claude manual provider)."
+        )
     }
 
     private suspend fun generateWithRetry(

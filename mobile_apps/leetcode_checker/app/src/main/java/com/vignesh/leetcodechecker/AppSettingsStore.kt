@@ -34,6 +34,10 @@ data class AppSettings(
     val githubRepoOverride: String = "",
     val githubBranchOverride: String = "",
     val leetcodeUsername: String = "rockingstarvic",
+    // "gemini" (paid API, automatic) or "claude_manual" (no API key -- copies the
+    // prompt to the clipboard and hands off to the Claude app; user pastes the
+    // reply back in). See LeetCodeRepository.buildManualSolvePrompt/parseManualResponse.
+    val llmProvider: String = "gemini",
     val credlyUsername: String = "vigneshwarachinnadurai",
     val mediumUsername: String = "rockingstarvic",
     val linkedinUsername: String = "vigneshwarac",
@@ -88,6 +92,7 @@ object AppSettingsStore {
                 githubRepoOverride = json.optString("githubRepoOverride", "").trim(),
                 githubBranchOverride = json.optString("githubBranchOverride", "").trim(),
                 leetcodeUsername = json.optString("leetcodeUsername", "rockingstarvic").trim(),
+                llmProvider = json.optString("llmProvider", "gemini"),
                 credlyUsername = json.optString("credlyUsername", "vigneshwarachinnadurai").trim(),
                 mediumUsername = json.optString("mediumUsername", "rockingstarvic").trim(),
                 linkedinUsername = json.optString("linkedinUsername", "vigneshwarac").trim(),
@@ -126,6 +131,7 @@ object AppSettingsStore {
             .put("githubRepoOverride", settings.githubRepoOverride)
             .put("githubBranchOverride", settings.githubBranchOverride)
             .put("leetcodeUsername", settings.leetcodeUsername)
+            .put("llmProvider", settings.llmProvider)
             .put("credlyUsername", settings.credlyUsername)
             .put("mediumUsername", settings.mediumUsername)
             .put("linkedinUsername", settings.linkedinUsername)

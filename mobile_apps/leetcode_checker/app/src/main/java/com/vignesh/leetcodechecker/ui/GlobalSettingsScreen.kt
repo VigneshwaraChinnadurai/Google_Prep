@@ -55,6 +55,7 @@ fun GlobalSettingsScreen(
     var githubRepo by remember { mutableStateOf(settings.githubRepoOverride) }
     var githubBranch by remember { mutableStateOf(settings.githubBranchOverride) }
     var leetcodeUsername by remember { mutableStateOf(settings.leetcodeUsername) }
+    var llmProvider by remember { mutableStateOf(settings.llmProvider) }
     var credlyUsername by remember { mutableStateOf(settings.credlyUsername) }
     var mediumUsername by remember { mutableStateOf(settings.mediumUsername) }
     var linkedinUsername by remember { mutableStateOf(settings.linkedinUsername) }
@@ -176,6 +177,37 @@ fun GlobalSettingsScreen(
                 label = { Text("Global Gemini API Key") },
                 modifier = Modifier.fillMaxWidth()
             )
+
+            HorizontalDivider()
+
+            Text(
+                text = "LLM Provider for \"LLM Solve\"",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.primary
+            )
+
+            Text(
+                text = if (llmProvider == "claude_manual") {
+                    "Claude (manual, no API key): copies the prompt to your clipboard and opens Claude so you can paste it in using your existing subscription. You paste Claude's reply back into the app yourself -- no per-request billing."
+                } else {
+                    "Gemini (API key, automatic): the app calls Gemini directly and populates the solution for you. Billed per request against the key above."
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FilterChip(
+                    selected = llmProvider != "claude_manual",
+                    onClick = { llmProvider = "gemini" },
+                    label = { Text("Gemini (API)") }
+                )
+                FilterChip(
+                    selected = llmProvider == "claude_manual",
+                    onClick = { llmProvider = "claude_manual" },
+                    label = { Text("Claude (Manual)") }
+                )
+            }
 
             HorizontalDivider()
 
@@ -335,6 +367,7 @@ fun GlobalSettingsScreen(
                         githubRepoOverride = githubRepo.trim(),
                         githubBranchOverride = githubBranch.trim(),
                         leetcodeUsername = leetcodeUsername.trim(),
+                        llmProvider = llmProvider,
                         credlyUsername = credlyUsername.trim(),
                         mediumUsername = mediumUsername.trim(),
                         linkedinUsername = linkedinUsername.trim()
@@ -378,6 +411,7 @@ fun GlobalSettingsScreen(
                                 githubRepo = settings.githubRepoOverride
                                 githubBranch = settings.githubBranchOverride
                                 leetcodeUsername = settings.leetcodeUsername
+                                llmProvider = settings.llmProvider
                                 credlyUsername = settings.credlyUsername
                                 mediumUsername = settings.mediumUsername
                                 linkedinUsername = settings.linkedinUsername

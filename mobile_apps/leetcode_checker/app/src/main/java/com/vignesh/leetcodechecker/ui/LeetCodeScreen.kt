@@ -271,7 +271,29 @@ fun LeetCodeScreen(
                         Text("Fetch Challenge", fontSize = 11.sp)
                     }
                     Button(
-                        onClick = { showLlmConfirmation = true },
+                        onClick = {
+                            if (state.settings.llmProvider == "claude_manual") {
+                                val prompt = viewModel.claudeManualPrompt()
+                                if (prompt == null) {
+                                    Toast.makeText(context, "Refresh API first to load daily challenge content.", Toast.LENGTH_SHORT).show()
+                                } else {
+                                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                    clipboard.setPrimaryClip(ClipData.newPlainText("Claude solve prompt", prompt))
+                                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                                        type = "text/plain"
+                                        putExtra(Intent.EXTRA_TEXT, prompt)
+                                    }
+                                    context.startActivity(Intent.createChooser(shareIntent, "Open in Claude"))
+                                    Toast.makeText(
+                                        context,
+                                        "Prompt copied. Paste it in Claude, then tap 'Paste Claude Response' below.",
+                                        Toast.LENGTH_LONG
+                                    ).show()
+                                }
+                            } else {
+                                showLlmConfirmation = true
+                            }
+                        },
                         enabled = !state.isLoading && !state.isAiLoading && state.challenge != null,
                         modifier = Modifier.weight(1f),
                         colors = ButtonDefaults.buttonColors(
@@ -286,7 +308,29 @@ fun LeetCodeScreen(
                             )
                             Spacer(Modifier.width(6.dp))
                         }
-                        Text("🤖 LLM Solve", fontSize = 11.sp)
+                        Text(
+                            if (state.settings.llmProvider == "claude_manual") "🤖 Copy Prompt for Claude" else "🤖 LLM Solve",
+                            fontSize = 11.sp
+                        )
+                    }
+                }
+            }
+
+            if (state.settings.llmProvider == "claude_manual") {
+                item {
+                    OutlinedButton(
+                        onClick = {
+                            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                            val pasted = clipboard.primaryClip
+                                ?.takeIf { it.itemCount > 0 }
+                                ?.getItemAt(0)?.text?.toString()
+                                .orEmpty()
+                            viewModel.applyClaudeManualResponse(pasted)
+                        },
+                        enabled = state.challenge != null,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("📋 Paste Claude Response", fontSize = 12.sp)
                     }
                 }
             }

@@ -220,6 +220,60 @@ class LeetCodeViewModel(
         }
     }
 
+    /**
+     * The prompt to copy to the clipboard for the "Claude (Manual)" provider, or null if
+     * there's no challenge loaded yet to build one from.
+     */
+    fun claudeManualPrompt(): String? {
+        val challenge = _uiState.value.challenge ?: return null
+        return repository.buildManualSolvePrompt(challenge)
+    }
+
+    /**
+     * Parse a manually-pasted Claude reply (see claudeManualPrompt) and apply it exactly
+     * like a successful Gemini result -- same UI fields, same local revision-file save and
+     * history entry, so GitHub push and everything downstream works identically regardless
+     * of which provider produced the answer.
+     */
+    fun applyClaudeManualResponse(pastedText: String) {
+        val challenge = _uiState.value.challenge
+        if (challenge == null) {
+            _uiState.value = _uiState.value.copy(infoMessage = "Refresh API first to load daily challenge content.")
+            return
+        }
+
+        repository.parseManualResponse(pastedText).fold(
+            onSuccess = { result ->
+                applyAiResult(result)
+                ConsistencyStorage.saveAi(appContext, result)
+                ConsistencyStorage.saveProblemToHistory(appContext, challenge, "Claude", result)
+
+                viewModelScope.launch {
+                    val localPath = runCatching {
+                        val files = RevisionExportManager.buildRevisionFiles(
+                            challenge = challenge,
+                            aiCode = result.leetcodePythonCode,
+                            aiExplanation = result.explanation,
+                            aiValidation = result.testcaseValidation
+                        )
+                        RevisionExportManager.writeLocalRevisionFiles(appContext, files)
+                    }.getOrNull()
+
+                    _uiState.value = _uiState.value.copy(
+                        localRevisionPath = localPath ?: _uiState.value.localRevisionPath,
+                        infoMessage = "Claude's response applied and stored locally."
+                    )
+                    refreshLocalRevisionHistory()
+                }
+            },
+            onFailure = { error ->
+                _uiState.value = _uiState.value.copy(
+                    infoMessage = error.message ?: "Couldn't parse the pasted response."
+                )
+            }
+        )
+    }
+
     fun markCompletedToday() {
         ConsistencyStorage.markCompletedToday(appContext)
         

@@ -118,5 +118,8 @@
       "resurface_at_day": 8
     }
   ],
-  "active_session": null
+  "active_session": {
+    "day": 8,
+    "start_time": "2026-08-03T21:45:16+05:30"
+  }
 }
