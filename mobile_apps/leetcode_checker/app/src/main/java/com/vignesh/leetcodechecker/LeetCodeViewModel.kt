@@ -95,6 +95,18 @@ class LeetCodeViewModel(
         )
     }
 
+    /**
+     * Reload settings from disk. The ViewModel is hoisted above tab switching and only
+     * loads settings once at creation (loadFromLocalStorage(), called from init), so a
+     * change made in Global Settings -- a different screen entirely -- never reaches an
+     * already-running LeetCodeViewModel on its own. Call this whenever the LeetCode tab
+     * is (re-)entered so it always reflects the latest settings without needing an app
+     * restart.
+     */
+    fun refreshSettings() {
+        _uiState.value = _uiState.value.copy(settings = AppSettingsStore.load(appContext))
+    }
+
     fun saveSettings(settings: AppSettings) {
         val sanitized = settings.copy(
             maxModelRetries = settings.maxModelRetries.coerceIn(1, 10),

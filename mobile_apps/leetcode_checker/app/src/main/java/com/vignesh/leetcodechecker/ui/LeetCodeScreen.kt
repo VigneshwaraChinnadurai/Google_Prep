@@ -138,6 +138,13 @@ fun LeetCodeScreen(
         }
     }
 
+    // Pick up settings changes made elsewhere (e.g. the LLM provider toggle in Global
+    // Settings) every time this tab is re-entered -- the ViewModel survives tab switches
+    // and otherwise only loads settings once, at its own creation.
+    LaunchedEffect(Unit) {
+        viewModel.refreshSettings()
+    }
+
     // Sync settings form when loaded
     LaunchedEffect(state.settings) {
         settingsModelsCsv = state.settings.preferredModelsCsv

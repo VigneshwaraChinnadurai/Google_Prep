@@ -564,6 +564,16 @@ ${challenge.exampleTestcases.ifBlank { "Not provided" }}
             error("Clipboard is empty. Copy the assistant's full reply first, then try again.")
         }
 
+        // buildManualSolvePrompt's system prompt literally contains
+        // "<leetcode_python3_code>...</leetcode_python3_code>" etc. as format examples --
+        // if the user pastes the prompt back instead of Claude's actual reply (e.g. tapped
+        // this button by habit without getting a real answer first), extractTaggedSection
+        // would otherwise "succeed" by matching those examples and silently saving "..." as
+        // the solution. Catch that specific mistake with a precise, unambiguous message.
+        if (rawText.contains("LC-Autonomous-Solver") || rawText.contains("Return only these tags in order")) {
+            error("This looks like the prompt you copied, not Claude's reply. Paste Claude's actual response instead.")
+        }
+
         val code = extractTaggedSection(rawText, "leetcode_python3_code")
         val validation = extractTaggedSection(rawText, "testcase_validation")
         val explanation = extractTaggedSection(rawText, "explanation")
