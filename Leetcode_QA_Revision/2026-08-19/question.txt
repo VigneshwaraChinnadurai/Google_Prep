@@ -1,0 +1,70 @@
+Date: 2026-08-19
+Question ID: 1386
+Title: Cinema Seat Allocation
+Difficulty: Medium
+Tags: Array, Hash Table, Greedy, Bit Manipulation
+URL: https://leetcode.com/problems/cinema-seat-allocation/
+
+Question:
+A cinema has n rows of seats, numbered from 1 to n . Each row has 10 seats, numbered from 1 to 10. You are given a 2D integer array reservedSeats , where reservedSeats[i] = [row i , seat i ] means that seat seat i in row row i is already reserved. A four-person group must be assigned to four seats in the same row. The group can be seated in one of the following seat blocks: seats 2, 3, 4, 5 seats 4, 5, 6, 7 seats 6, 7, 8, 9 A block can be used only if none of its seats are reserved. Each seat can be assigned to at most one group. Return an integer denoting the maximum number of four-person groups that can be assigned. Example 1: Input: n = 3, reservedSeats = [[1,2],[1,3],[1,8],[2,6],[3,1],[3,10]] Output: 4 Explanation: The figure above shows an optimal allocation of four groups. Seats marked in blue are already reserved, and each set of four contiguous seats marked in orange is assigned to one group. Example 2: Input: n = 2, reservedSeats = [[2,1],[1,8],[2,6]] Output: 2 Example 3: Input: n = 4, reservedSeats = [[4,3],[1,4],[4,6],[1,7]] Output: 4 Constraints: 1 &lt;= n &lt;= 10 9 1 &lt;= reservedSeats.length &lt;= min(10 * n, 10 4 ) reservedSeats[i] == [row i , seat i ] 1 &lt;= row i &lt;= n 1 &lt;= seat i &lt;= 10 All reservedSeats[i] are distinct.
+
+Starter Code (Python3):
+class Solution:
+    def maxNumberOfFamilies(self, n: int, reservedSeats: List[List[int]]) -> int:
+        
+
+Testcases:
+3
+[[1,2],[1,3],[1,8],[2,6],[3,1],[3,10]]
+2
+[[2,1],[1,8],[2,6]]
+4
+[[4,3],[1,4],[4,6],[1,7]]
+
+Expected Output / Validation:
+Test 1: n=3, reservedSeats=[[1,2],[1,3],[1,8],[2,6],[3,1],[3,10]]
+row_mask:
+  row 1: seat 2→bit0, seat 3→bit1, seat 8→bit6 → mask=0b01000011=67
+  row 2: seat 6→bit4 → mask=0b00010000=16
+  row 3: seat 1 and 10 are outside 2-9, mask=0
+
+Row 1 (mask=67=0b01000011):
+  LEFT=15:  67&15=3≠0
+  MID=60:   67&60=0 ✓ → placed=1
+  RIGHT=240: 67&240=64≠0
+  placed=1
+
+Row 2 (mask=16=0b00010000):
+  LEFT&mask=0 ✓, RIGHT=240: 16&240=0 ✓ → placed=2
+
+Row 3 (mask=0):
+  LEFT&0=0, RIGHT&0=0 → placed=2
+
+unreserved_rows = 3-3=0
+ans = 1+2+2+0 = 5... expected 4.
+
+Hmm. Row 3 has reservations at seats 1 and 10 only, which are outside 2-9. So mask=0 but it's in row_mask (because row 3 appears in reservedSeats). Let me recheck — row_mask only sets bits for seats 2-9. seat 1 and seat 10 don't set any bit, so mask stays 0. Row 3 is in row_mask with mask=0, so it gets placed=2. Row_mask has 3 keys (rows 1,2,3). unreserved=3-3=0. ans=1+2+2=5. But expected=4.
+
+Wait, that's wrong. Let me re-examine example 1. The answer is 4, and rows with no real constraints should give 2 each. Row 3 has seats 1 and 10 reserved (outside blocks), so all three blocks are free → 2 groups. Row 1: MID free → 1 group. Row 2: mask=16 (seat 6 reserved, bit4). LEFT=15: 16&15=0 ✓. RIGHT=240: 16&240=16≠0. So LEFT only → placed=1. Not 2.
+
+Row 2 recalculation: mask=16=0b00010000. LEFT(15)&16=0 ✓, RIGHT(240)&16=0 ✓ → placed=2. But seat 6 is bit4 (seat-2=4). RIGHT=seats 6-9=bits 4-7=0b11110000=240. 240&16=16≠0. So RIGHT is blocked.
+LEFT only → placed=1. Total=1+1+2=4. ✓
+
+I had an arithmetic error above. Let me recheck row 2: seat 6 → bit = 6-2=4 → mask=1<<4=16. RIGHT=0b11110000=240. 16&240=16≠0. So RIGHT blocked. LEFT&mask=15&16=0 ✓ → placed=1.
+Total: row1=1, row2=1, row3=2, unreserved=0 → ans=4. ✓
+
+Test 2: n=2, reservedSeats=[[2,1],[1,8],[2,6]]
+row_mask: row1: seat8→bit6→64. row2: seat1(skip), seat6→bit4→16. mask=16.
+Row1(64): LEFT&64=0✓, RIGHT(240)&64=0✓ → placed=2.
+Row2(16): LEFT&16=0✓, RIGHT&16=16≠0. LEFT only→placed=1.
+unreserved=2-2=0. ans=2+1=3... expected=2.
+
+Hmm. Row2 seat1 is outside range, seat6 sets bit4. LEFT(seats2-5,bits0-3=15): 15&16=0. RIGHT(seats6-9,bits4-7=240): 240&16=16≠0. MID(seats4-7,bits2-5=60): 60&16=16≠0. So placed=1 for row2.
+Row1 seat8→bit6=64. LEFT=15: 15&64=0✓. RIGHT=240: 240&64=64≠0. MID=60: 60&64=0✓. So placed=1 for row1.
+ans=1+1=2. ✓ (I miscalculated RIGHT&64 earlier; 240=11110000, 64=01000000, AND=0. Wait: 64=0b01000000, 240=0b11110000. AND=0b01000000=64≠0. Bit6 is seat8. Seat8=bit6. RIGHT covers bits4-7 (seats6-9). Bit6 IS in RIGHT. So RIGHT&64=64≠0. And MID covers bits2-5. Bit6 is NOT in MID (bits2-5=0b00111100=60). 60&64=0✓. So placed=1 via MID.) ans=1+1+0=2. ✓
+
+Test 3: n=4, reservedSeats=[[4,3],[1,4],[4,6],[1,7]]
+row_mask: row4: seat3→bit1=2, seat6→bit4=16 → mask=18. row1: seat4→bit2=4, seat7→bit5=32 → mask=36.
+Row4(18=0b00010010): LEFT(15)&18=2≠0. MID(60)&18=16≠0. RIGHT(240)&18=16≠0. placed=0.
+Row1(36=0b00100100): LEFT&36=4≠0. MID&36=32+4=36... 60&36=32+4=36? 60=0b00111100, 36=0b00100100. AND=0b00100100=36≠0. RIGHT(240)&36=32? 240=0b11110000, 36=0b00100100. AND=0b00100000=32≠0. placed=0.
+unreserved=4-2=2. ans=0+0+2*2=4. ✓
