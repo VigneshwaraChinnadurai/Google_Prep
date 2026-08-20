@@ -1,0 +1,28 @@
+Date: 2026-08-20
+Title: Distribute Elements Into Two Arrays I
+URL: https://leetcode.com/problems/distribute-elements-into-two-arrays-i/
+
+LLM Explanation:
+APPROACH: Direct simulation as described.
+
+Initialise arr1 with nums[0] and arr2 with nums[1]. For each subsequent element, compare the last elements of arr1 and arr2: if arr1's last > arr2's last append to arr1, otherwise append to arr2. Return arr1 + arr2.
+
+COMPLEXITY:
+  Time:  O(n)
+  Space: O(n)
+
+EDGE CASES:
+  All elements distinct (guaranteed), so ties (arr1[-1] == arr2[-1]) never occur.
+  Minimum n=3 always provides at least one decision step.
+
+LLM Testcase Validation:
+Test 1: nums=[2,1,3]
+arr1=[2], arr2=[1]
+i=2: arr1[-1]=2 > arr2[-1]=1 → arr1=[2,3]
+result=[2,3]+[1]=[2,3,1] ✓
+
+Test 2: nums=[5,4,3,8]
+arr1=[5], arr2=[4]
+i=2: 5>4 → arr1=[5,3]
+i=3: arr1[-1]=3 < arr2[-1]=4 → arr2=[4,8]
+result=[5,3]+[4,8]=[5,3,4,8] ✓
