@@ -1,0 +1,52 @@
+Date: 2026-08-21
+Title: Kth Smallest Amount With Single Denomination Combination
+URL: https://leetcode.com/problems/kth-smallest-amount-with-single-denomination-combination/
+
+LLM Explanation:
+APPROACH: Binary search + inclusion-exclusion over coin subsets.
+
+KEY INSIGHT:
+The set of amounts producible by coin c is exactly the multiples of c. The union of all coin sets is the union of multiples of each coin. By inclusion-exclusion (Möbius over subsets):
+
+  count(x) = Σ_{S⊆coins, S≠∅} (-1)^(|S|+1) * floor(x / lcm(S))
+
+This counts how many distinct multiples of at least one coin are ≤ x.
+
+BINARY SEARCH:
+count(x) is non-decreasing. We binary search for the smallest x with count(x) >= k.
+Search range: [1, k * min(coins)] — the k-th smallest is at most k * min(coins)
+(the min coin produces values min, 2*min, ..., k*min so the k-th is at most k*min).
+
+PREPROCESSING:
+1. Remove redundant coins: if coin a | coin b, all multiples of b are already multiples of a, so b is redundant. After filtering, n ≤ 15 in the worst case but typically much smaller.
+2. Precompute LCM for all 2^n subsets. Cap LCM at k*max_coin+1 to prevent overflow — any LCM larger than this contributes 0 to the floor division anyway.
+
+COMPLEXITY:
+  Preprocessing: O(2^n * n) for subset LCMs
+  Binary search: O(log(k * min_coin)) iterations, each O(2^n)
+  Total: O(2^n * (n + log(k * min_coin)))
+  With n≤15: 32768 * (15 + 31) ≈ 1.5M ops. Very fast.
+
+EDGE CASES:
+  Coins that are multiples of other coins are removed to avoid double-counting.
+  LCM capping prevents integer overflow for large subsets.
+  k up to 2*10^9 handled correctly by binary search bounds.
+
+LLM Testcase Validation:
+Test 1: coins=[3,6,9], k=3
+After filtering: 6%3==0 remove 6, 9%3==0 remove 9. coins=[3]. n=1.
+subset_lcm[1]=3.
+count(x)=x//3.
+Binary search lo=1, hi=3*3=9.
+count(5)=1<3, count(7)=2<3, count(9)=3>=3 → hi=9.
+Result=9. ✓
+
+Test 2: coins=[5,2], k=7
+After filtering: 5%2≠0, 2%5≠0. coins=[2,5]. n=2.
+subset_lcm[01]=2, subset_lcm[10]=5, subset_lcm[11]=lcm(2,5)=10.
+count(x) = floor(x/2) + floor(x/5) - floor(x/10).
+count(12)=6+2-1=7>=7. count(11)=5+2-1=6<7.
+Binary search lo=1, hi=7*2=14.
+→ lo=12. ✓
+
+Sequence check: 2,4,5,6,8,10,12 → 7th=12. ✓
