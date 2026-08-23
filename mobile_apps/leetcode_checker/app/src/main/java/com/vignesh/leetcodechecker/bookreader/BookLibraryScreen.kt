@@ -45,7 +45,7 @@ private val BookColors = object {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BookLibraryScreen(onBackClick: () -> Unit) {
+fun BookLibraryScreen(onBackClick: (() -> Unit)?) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
@@ -84,8 +84,10 @@ fun BookLibraryScreen(onBackClick: () -> Unit) {
             TopAppBar(
                 title = { Text("📖 Book Reader", color = BookColors.onSurface) },
                 navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = BookColors.onSurface)
+                    if (onBackClick != null) {
+                        IconButton(onClick = onBackClick) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = BookColors.onSurface)
+                        }
                     }
                 },
                 actions = {

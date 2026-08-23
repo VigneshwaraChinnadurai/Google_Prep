@@ -109,6 +109,8 @@ fun FeaturesHubScreen(
         Spacer(modifier = Modifier.height(12.dp))
         
         val features = listOf(
+            FeatureItem("LeetCode", "🏠", Color(0xFF1F6FEB), FeatureDestination.LEETCODE),
+            FeatureItem("Ollama", "🔧", Color(0xFF6E7681), FeatureDestination.OLLAMA),
             FeatureItem("Global Settings", "⚙", Color(0xFFA3A3A3), FeatureDestination.GLOBAL_SETTINGS),
             FeatureItem("AI Hub", "🧠", Color(0xFFFF6B6B), FeatureDestination.AI_LEARNING_HUB),
             FeatureItem("Chatbot", "💬", Color(0xFF00D4AA), FeatureDestination.STRATEGIC_CHATBOT),
@@ -122,8 +124,7 @@ fun FeaturesHubScreen(
             FeatureItem("Offline", "📱", Color(0xFF6E7681), FeatureDestination.OFFLINE),
             FeatureItem("AI/ML News", "🤖", Color(0xFF9C27B0), FeatureDestination.AI_NEWS),
             FeatureItem("Protection", "🔒", Color(0xFFF85149), FeatureDestination.PROTECTION),
-            FeatureItem("What's New", "✨", Color(0xFFFFB347), FeatureDestination.WHATS_NEW),
-            FeatureItem("Book Reader", "📖", Color(0xFF34D8C4), FeatureDestination.BOOK_READER)
+            FeatureItem("What's New", "✨", Color(0xFFFFB347), FeatureDestination.WHATS_NEW)
         )
         
         // Check for unseen updates
@@ -281,6 +282,7 @@ data class FeatureItem(
 )
 
 enum class FeatureDestination {
+    LEETCODE,
     ANALYTICS,
     GOALS,
     ACHIEVEMENTS,
