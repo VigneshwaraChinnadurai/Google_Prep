@@ -211,6 +211,12 @@ dependencies {
     // DocumentFile for writing dated backup files into a user-chosen SAF folder
     implementation("androidx.documentfile:documentfile:1.0.1")
 
+    // PDF text extraction for the Book Reader's PDF voice-over -- Android's built-in
+    // PdfRenderer only rasterizes pages to images, it has no text extraction at all, so
+    // this is a real dependency rather than something to hand-roll (unlike e.g. the raw
+    // SMTP client elsewhere in this app, which was simple enough not to need one).
+    implementation("com.tom-roush:pdfbox-android:2.0.27.0")
+
     // Backports java.time.* and List#removeFirst/removeLast (Java 21) to minSdk 24
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 

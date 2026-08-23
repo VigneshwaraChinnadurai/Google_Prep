@@ -63,7 +63,12 @@ data class AppSettings(
     val notificationEmailFrom: String = "",
     val notificationEmailAppPassword: String = "",
     val notificationEmailTo: String = "",
-    val emailOnGithubPushEnabled: Boolean = false
+    val emailOnGithubPushEnabled: Boolean = false,
+
+    // ── Text-to-Speech (Book Reader) ────────────────────────────
+    val ttsProvider: String = "android",  // "android" (free, offline) or "elevenlabs" (paid, natural)
+    val elevenLabsApiKey: String = "",
+    val elevenLabsVoiceId: String = "21m00Tcm4TlvDq8ikWAM"  // ElevenLabs' public "Rachel" voice
 )
 
 object AppSettingsStore {
@@ -116,7 +121,11 @@ object AppSettingsStore {
                 notificationEmailFrom = json.optString("notificationEmailFrom", "").trim(),
                 notificationEmailAppPassword = json.optString("notificationEmailAppPassword", ""),
                 notificationEmailTo = json.optString("notificationEmailTo", "").trim(),
-                emailOnGithubPushEnabled = json.optBoolean("emailOnGithubPushEnabled", false)
+                emailOnGithubPushEnabled = json.optBoolean("emailOnGithubPushEnabled", false),
+                ttsProvider = json.optString("ttsProvider", "android"),
+                elevenLabsApiKey = json.optString("elevenLabsApiKey", ""),
+                elevenLabsVoiceId = json.optString("elevenLabsVoiceId", "21m00Tcm4TlvDq8ikWAM").trim()
+                    .ifBlank { "21m00Tcm4TlvDq8ikWAM" }
             )
         }.getOrElse { AppSettings() }
     }
@@ -160,6 +169,9 @@ object AppSettingsStore {
             .put("notificationEmailAppPassword", settings.notificationEmailAppPassword)
             .put("notificationEmailTo", settings.notificationEmailTo)
             .put("emailOnGithubPushEnabled", settings.emailOnGithubPushEnabled)
+            .put("ttsProvider", settings.ttsProvider)
+            .put("elevenLabsApiKey", settings.elevenLabsApiKey)
+            .put("elevenLabsVoiceId", settings.elevenLabsVoiceId)
             .toString()
 
         prefs(context).edit().putString(KEY_SETTINGS, json).apply()

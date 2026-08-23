@@ -229,12 +229,14 @@ object BackupManager {
         var preservedGithubToken: String? = null
         var preservedGeminiKey: String? = null
         var preservedEmailAppPassword: String? = null
+        var preservedElevenLabsKey: String? = null
         if (prefsName == SETTINGS_PREFS_NAME) {
             val currentSettings = prefs.getString(SETTINGS_BLOB_KEY, null)
                 ?.let { runCatching { JSONObject(it) }.getOrNull() }
             preservedGithubToken = currentSettings?.optString("globalGithubToken")?.takeIf { it.isNotBlank() }
             preservedGeminiKey = currentSettings?.optString("globalGeminiApiKey")?.takeIf { it.isNotBlank() }
             preservedEmailAppPassword = currentSettings?.optString("notificationEmailAppPassword")?.takeIf { it.isNotBlank() }
+            preservedElevenLabsKey = currentSettings?.optString("elevenLabsApiKey")?.takeIf { it.isNotBlank() }
         }
 
         val editor = prefs.edit()
@@ -253,7 +255,7 @@ object BackupManager {
                     key,
                     restoredStringValue(
                         key, entry.optString("value"),
-                        preservedGithubToken, preservedGeminiKey, preservedEmailAppPassword
+                        preservedGithubToken, preservedGeminiKey, preservedEmailAppPassword, preservedElevenLabsKey
                     )
                 )
                 "stringset" -> {
@@ -271,10 +273,11 @@ object BackupManager {
         value: String,
         preservedGithubToken: String?,
         preservedGeminiKey: String?,
-        preservedEmailAppPassword: String?
+        preservedEmailAppPassword: String?,
+        preservedElevenLabsKey: String?
     ): String {
         if (key != SETTINGS_BLOB_KEY ||
-            (preservedGithubToken == null && preservedGeminiKey == null && preservedEmailAppPassword == null)
+            (preservedGithubToken == null && preservedGeminiKey == null && preservedEmailAppPassword == null && preservedElevenLabsKey == null)
         ) {
             return value
         }
@@ -289,6 +292,9 @@ object BackupManager {
         if (restoredSettings.optString("notificationEmailAppPassword").isBlank() && preservedEmailAppPassword != null) {
             restoredSettings.put("notificationEmailAppPassword", preservedEmailAppPassword)
         }
+        if (restoredSettings.optString("elevenLabsApiKey").isBlank() && preservedElevenLabsKey != null) {
+            restoredSettings.put("elevenLabsApiKey", preservedElevenLabsKey)
+        }
         return restoredSettings.toString()
     }
 
@@ -302,6 +308,7 @@ object BackupManager {
             settingsJson.put("globalGithubToken", "")
             settingsJson.put("globalGeminiApiKey", "")
             settingsJson.put("notificationEmailAppPassword", "")
+            settingsJson.put("elevenLabsApiKey", "")
             settingsEntry.put("value", settingsJson.toString())
         }
     }

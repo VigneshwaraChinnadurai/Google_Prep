@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.vignesh.leetcodechecker.AppSettingsStore
+import com.vignesh.leetcodechecker.data.ElevenLabsSpeechService
 import com.vignesh.leetcodechecker.email.EmailAttachment
 import com.vignesh.leetcodechecker.email.GmailSmtpSender
 import kotlinx.coroutines.CompletableDeferred
@@ -40,9 +41,13 @@ import java.io.File
  *
  * EPUB rendering: renders each chapter's raw XHTML in a WebView -- simplest faithful
  * rendering (keeps the book's own formatting) without a heavy EPUB-rendering dependency.
- * PDF rendering: Android's built-in PdfRenderer rasterizes pages to bitmaps -- view-only,
- * no extracted text, so read-aloud/mail-voice-over are unavailable for PDFs (flagged in the
- * UI) until a text-extraction library is added.
+ * PDF rendering: Android's built-in PdfRenderer rasterizes pages to bitmaps for the visual
+ * view; PdfTextExtractor (PDFBox-Android) separately pulls the current page's text so
+ * read-aloud/mail-voice-over work for PDFs too. A page with no embedded text layer (e.g. a
+ * scanned image) still has nothing to read -- that's flagged in the UI, not a bug.
+ *
+ * Voice provider: Android's built-in TextToSpeech (free, offline) or ElevenLabs (paid API,
+ * more natural voices) per AppSettings.ttsProvider, configured in Global Settings.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -54,21 +59,26 @@ fun BookReaderScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val bookFile = remember(book) { File(BookLibraryStorage.booksDir(context), book.storedFileName) }
+    val appSettings = remember { AppSettingsStore.load(context) }
 
     var chapterIndex by remember { mutableStateOf(book.lastChapterIndex) }
     var pdfPageCount by remember { mutableStateOf(1) }
+    var pdfPageText by remember { mutableStateOf("") }
     var isSpeaking by remember { mutableStateOf(false) }
     var ttsReady by remember { mutableStateOf(false) }
     var isMailing by remember { mutableStateOf(false) }
     var mailStatus by remember { mutableStateOf<String?>(null) }
+    var readAloudError by remember { mutableStateOf<String?>(null) }
 
     val ttsHolder = remember { arrayOfNulls<TextToSpeech>(1) }
+    val mediaPlayerHolder = remember { arrayOfNulls<android.media.MediaPlayer>(1) }
     DisposableEffect(Unit) {
         val engine = TextToSpeech(context) { status -> ttsReady = status == TextToSpeech.SUCCESS }
         ttsHolder[0] = engine
         onDispose {
             runCatching { engine.stop() }
             engine.shutdown()
+            mediaPlayerHolder[0]?.let { runCatching { it.stop(); it.release() } }
         }
     }
 
@@ -91,13 +101,21 @@ fun BookReaderScreen(
         if (safeIndex != book.lastChapterIndex) onProgress(book.copy(lastChapterIndex = safeIndex))
     }
 
+    LaunchedEffect(bookFile, safeIndex, book.format) {
+        if (book.format == BookFormat.PDF) {
+            pdfPageText = PdfTextExtractor.extractPageText(context, bookFile, safeIndex).getOrDefault("")
+        }
+    }
+
     val chapterHtml = epubChapters.getOrNull(safeIndex)?.html
     val chapterTitle = epubChapters.getOrNull(safeIndex)?.title ?: book.title
     val speakableText = when (book.format) {
         BookFormat.TXT -> txtContent
         BookFormat.EPUB -> chapterHtml?.let { EpubReader.plainText(it) }.orEmpty()
+        BookFormat.PDF -> pdfPageText
         else -> ""
     }
+    val voiceReady = if (appSettings.ttsProvider == "elevenlabs") appSettings.elevenLabsApiKey.isNotBlank() else ttsReady
 
     Scaffold(
         topBar = {
@@ -175,57 +193,87 @@ fun BookReaderScreen(
                 }
             }
 
-            if (book.format == BookFormat.PDF) {
+            if (book.format == BookFormat.PDF && speakableText.isBlank()) {
                 Text(
-                    "Voice-over isn't available for PDFs yet -- Android's built-in PdfRenderer only " +
-                        "rasterizes pages to images, it doesn't extract text. Would need a separate PDF " +
-                        "text-extraction library to support this.",
+                    "This page doesn't have any extractable text (it may be a scanned image), " +
+                        "so voice-over isn't available for it.",
                     modifier = Modifier.padding(16.dp),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-            } else {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Button(
-                        enabled = ttsReady && speakableText.isNotBlank(),
-                        onClick = {
-                            val tts = ttsHolder[0]
-                            if (isSpeaking) {
-                                tts?.stop()
-                                isSpeaking = false
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Button(
+                    enabled = voiceReady && speakableText.isNotBlank(),
+                    onClick = {
+                        readAloudError = null
+                        if (isSpeaking) {
+                            if (appSettings.ttsProvider == "elevenlabs") {
+                                mediaPlayerHolder[0]?.let { runCatching { it.stop(); it.release() } }
+                                mediaPlayerHolder[0] = null
                             } else {
-                                speakChapter(tts, speakableText) { speaking -> isSpeaking = speaking }
+                                ttsHolder[0]?.stop()
                             }
-                        }
-                    ) {
-                        Text(if (isSpeaking) "⏹ Stop" else "🔊 Read Aloud")
-                    }
-
-                    OutlinedButton(
-                        enabled = ttsReady && speakableText.isNotBlank() && !isMailing,
-                        onClick = {
-                            isMailing = true
-                            mailStatus = null
+                            isSpeaking = false
+                        } else if (appSettings.ttsProvider == "elevenlabs") {
                             scope.launch {
-                                mailStatus = mailVoiceOver(context, ttsHolder[0], chapterTitle, speakableText)
-                                isMailing = false
+                                speakChapterElevenLabs(
+                                    context = context,
+                                    apiKey = appSettings.elevenLabsApiKey,
+                                    voiceId = appSettings.elevenLabsVoiceId,
+                                    text = speakableText,
+                                    mediaPlayerHolder = mediaPlayerHolder,
+                                    onSpeakingChange = { speaking -> isSpeaking = speaking },
+                                    onError = { err -> readAloudError = err }
+                                )
                             }
+                        } else {
+                            speakChapter(ttsHolder[0], speakableText) { speaking -> isSpeaking = speaking }
                         }
-                    ) {
-                        Text(if (isMailing) "Mailing..." else "✉️ Mail Voice-Over")
                     }
+                ) {
+                    Text(if (isSpeaking) "⏹ Stop" else "🔊 Read Aloud")
                 }
-                mailStatus?.let { status ->
-                    Text(
-                        text = status,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = if (status.startsWith("Sent")) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
-                    )
+
+                OutlinedButton(
+                    enabled = voiceReady && speakableText.isNotBlank() && !isMailing,
+                    onClick = {
+                        isMailing = true
+                        mailStatus = null
+                        scope.launch {
+                            mailStatus = if (appSettings.ttsProvider == "elevenlabs") {
+                                mailVoiceOverElevenLabs(
+                                    context, appSettings.elevenLabsApiKey, appSettings.elevenLabsVoiceId,
+                                    chapterTitle, speakableText
+                                )
+                            } else {
+                                mailVoiceOver(context, ttsHolder[0], chapterTitle, speakableText)
+                            }
+                            isMailing = false
+                        }
+                    }
+                ) {
+                    Text(if (isMailing) "Mailing..." else "✉️ Mail Voice-Over")
                 }
+            }
+            readAloudError?.let { err ->
+                Text(
+                    text = err,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
+            mailStatus?.let { status ->
+                Text(
+                    text = status,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (status.startsWith("Sent")) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+                )
             }
         }
     }
@@ -284,6 +332,94 @@ private fun speakChapter(tts: TextToSpeech?, text: String, onSpeakingChange: (Bo
     text.chunked(chunkSize).forEachIndexed { index, chunk ->
         val mode = if (index == 0) TextToSpeech.QUEUE_FLUSH else TextToSpeech.QUEUE_ADD
         tts.speak(chunk, mode, null, "chunk_$index")
+    }
+}
+
+/**
+ * ElevenLabs equivalent of speakChapter(): synthesizes the whole request as one MP3 (no
+ * chunking -- ElevenLabsSpeechService already truncates to its per-request character cap,
+ * same truncation spirit as mailVoiceOver's Android-TTS max-utterance-length truncation)
+ * and plays it back with MediaPlayer.
+ */
+private suspend fun speakChapterElevenLabs(
+    context: Context,
+    apiKey: String,
+    voiceId: String,
+    text: String,
+    mediaPlayerHolder: Array<android.media.MediaPlayer?>,
+    onSpeakingChange: (Boolean) -> Unit,
+    onError: (String) -> Unit
+) {
+    if (text.isBlank()) return
+    onSpeakingChange(true)
+    val bytes = ElevenLabsSpeechService.synthesize(apiKey, voiceId, text).getOrElse { e ->
+        onSpeakingChange(false)
+        onError(e.message ?: "ElevenLabs synthesis failed.")
+        return
+    }
+    val file = withContext(Dispatchers.IO) {
+        File(context.cacheDir, "read_aloud_${System.currentTimeMillis()}.mp3").apply { writeBytes(bytes) }
+    }
+    runCatching {
+        val player = android.media.MediaPlayer()
+        mediaPlayerHolder[0] = player
+        player.setDataSource(file.absolutePath)
+        player.setOnCompletionListener {
+            onSpeakingChange(false)
+            it.release()
+            mediaPlayerHolder[0] = null
+            file.delete()
+        }
+        player.setOnErrorListener { mp, _, _ ->
+            onSpeakingChange(false)
+            mp.release()
+            mediaPlayerHolder[0] = null
+            true
+        }
+        player.prepare()
+        player.start()
+    }.onFailure { e ->
+        onSpeakingChange(false)
+        onError(e.message ?: "Couldn't play the synthesized audio.")
+    }
+}
+
+/**
+ * ElevenLabs equivalent of mailVoiceOver(): synthesizes one MP3 (already-raw audio bytes,
+ * no WAV-file synthesizeToFile() round trip needed) and emails it as an attachment.
+ */
+private suspend fun mailVoiceOverElevenLabs(
+    context: Context,
+    apiKey: String,
+    voiceId: String,
+    subjectTitle: String,
+    text: String
+): String {
+    if (text.isBlank()) return "Nothing to synthesize."
+    return withContext(Dispatchers.IO) {
+        runCatching {
+            val bytes = ElevenLabsSpeechService.synthesize(apiKey, voiceId, text).getOrThrow()
+
+            val settings = AppSettingsStore.load(context)
+            if (settings.notificationEmailFrom.isBlank() || settings.notificationEmailAppPassword.isBlank()) {
+                error("Configure your email in Global Settings first (Email Notifications section).")
+            }
+            val to = settings.notificationEmailTo.ifBlank { settings.notificationEmailFrom }
+
+            GmailSmtpSender.send(
+                fromEmail = settings.notificationEmailFrom,
+                appPassword = settings.notificationEmailAppPassword,
+                toEmail = to,
+                subject = "Voice-over: $subjectTitle",
+                body = "Attached: an ElevenLabs voice-over reading of \"$subjectTitle\" from the Book Reader." +
+                    if (text.length > ElevenLabsSpeechService.MAX_CHARS_PER_REQUEST) {
+                        "\n\n(Truncated to ElevenLabs' per-request character limit.)"
+                    } else "",
+                attachment = EmailAttachment(fileName = "voiceover.mp3", mimeType = "audio/mpeg", bytes = bytes)
+            ).getOrThrow()
+
+            "Sent to $to"
+        }.getOrElse { e -> "Failed: ${e.message}" }
     }
 }
 

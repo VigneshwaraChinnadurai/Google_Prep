@@ -69,6 +69,15 @@ fun GlobalSettingsScreen(
     var emailTestResult by remember { mutableStateOf<String?>(null) }
     var isTestingEmail by remember { mutableStateOf(false) }
 
+    // Text-to-speech provider for the Book Reader (Android built-in TTS, free/offline,
+    // vs ElevenLabs API, paid/natural-sounding)
+    var ttsProvider by remember { mutableStateOf(settings.ttsProvider) }
+    var elevenLabsApiKey by remember { mutableStateOf(settings.elevenLabsApiKey) }
+    var elevenLabsVoiceId by remember { mutableStateOf(settings.elevenLabsVoiceId) }
+    var elevenLabsKeyVisible by remember { mutableStateOf(false) }
+    var voicePreviewResult by remember { mutableStateOf<String?>(null) }
+    var isPreviewingVoice by remember { mutableStateOf(false) }
+
     var backupInProgress by remember { mutableStateOf(false) }
     var restoreInProgress by remember { mutableStateOf(false) }
     var backupStatusMessage by remember { mutableStateOf<String?>(null) }
@@ -398,6 +407,116 @@ fun GlobalSettingsScreen(
             HorizontalDivider()
 
             Text(
+                text = "Text-to-Speech Voice",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.primary
+            )
+
+            Text(
+                text = if (ttsProvider == "elevenlabs") {
+                    "ElevenLabs (paid API): natural, expressive voices for Book Reader Read Aloud and mail voice-overs. Billed per character by ElevenLabs -- get a key at elevenlabs.io."
+                } else {
+                    "Android built-in (free, offline): uses your device's system text-to-speech engine. No API key, no per-use cost, but a more robotic voice."
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FilterChip(
+                    selected = ttsProvider != "elevenlabs",
+                    onClick = { ttsProvider = "android" },
+                    label = { Text("Android (Free)") }
+                )
+                FilterChip(
+                    selected = ttsProvider == "elevenlabs",
+                    onClick = { ttsProvider = "elevenlabs" },
+                    label = { Text("ElevenLabs") }
+                )
+            }
+
+            if (ttsProvider == "elevenlabs") {
+                OutlinedTextField(
+                    value = elevenLabsApiKey,
+                    onValueChange = {
+                        elevenLabsApiKey = it
+                        voicePreviewResult = null
+                    },
+                    label = { Text("ElevenLabs API Key") },
+                    singleLine = true,
+                    visualTransformation = if (elevenLabsKeyVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                    trailingIcon = {
+                        TextButton(onClick = { elevenLabsKeyVisible = !elevenLabsKeyVisible }) {
+                            Text(if (elevenLabsKeyVisible) "Hide" else "Show")
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                OutlinedTextField(
+                    value = elevenLabsVoiceId,
+                    onValueChange = { elevenLabsVoiceId = it },
+                    label = { Text("Voice ID (default = Rachel)") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    OutlinedButton(
+                        enabled = elevenLabsApiKey.isNotBlank() && !isPreviewingVoice,
+                        onClick = {
+                            isPreviewingVoice = true
+                            voicePreviewResult = null
+                            scope.launch {
+                                val result = com.vignesh.leetcodechecker.data.ElevenLabsSpeechService.synthesize(
+                                    elevenLabsApiKey.trim(),
+                                    elevenLabsVoiceId.trim(),
+                                    "This is a preview of your selected ElevenLabs voice."
+                                )
+                                voicePreviewResult = result.fold(
+                                    onSuccess = { bytes ->
+                                        withContext(Dispatchers.IO) {
+                                            runCatching {
+                                                val file = java.io.File(context.cacheDir, "tts_preview.mp3")
+                                                file.writeBytes(bytes)
+                                                val player = android.media.MediaPlayer()
+                                                player.setDataSource(file.absolutePath)
+                                                player.setOnCompletionListener { it.release() }
+                                                player.prepare()
+                                                player.start()
+                                            }
+                                        }
+                                        "OK - playing preview"
+                                    },
+                                    onFailure = { e -> "Failed: ${e.message}" }
+                                )
+                                isPreviewingVoice = false
+                            }
+                        }
+                    ) {
+                        Text(if (isPreviewingVoice) "Loading..." else "Preview Voice")
+                    }
+
+                    voicePreviewResult?.let { result ->
+                        Text(
+                            text = result,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = if (result.startsWith("OK")) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                MaterialTheme.colorScheme.error
+                            }
+                        )
+                    }
+                }
+            }
+
+            HorizontalDivider()
+
+            Text(
                 text = "Backup & Restore",
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.primary
@@ -494,7 +613,10 @@ fun GlobalSettingsScreen(
                         notificationEmailFrom = emailFrom.trim(),
                         notificationEmailAppPassword = emailAppPassword.trim(),
                         notificationEmailTo = emailTo.trim(),
-                        emailOnGithubPushEnabled = emailOnPushEnabled
+                        emailOnGithubPushEnabled = emailOnPushEnabled,
+                        ttsProvider = ttsProvider,
+                        elevenLabsApiKey = elevenLabsApiKey.trim(),
+                        elevenLabsVoiceId = elevenLabsVoiceId.trim()
                     )
                     AppSettingsStore.save(context, updatedSettings)
                     settings = updatedSettings
@@ -543,6 +665,9 @@ fun GlobalSettingsScreen(
                                 emailAppPassword = settings.notificationEmailAppPassword
                                 emailTo = settings.notificationEmailTo
                                 emailOnPushEnabled = settings.emailOnGithubPushEnabled
+                                ttsProvider = settings.ttsProvider
+                                elevenLabsApiKey = settings.elevenLabsApiKey
+                                elevenLabsVoiceId = settings.elevenLabsVoiceId
                                 backupStatusMessage = "Restore complete. Restart the app to fully reload."
                             },
                             onFailure = { e -> backupStatusMessage = "Restore failed: ${e.message}" }
