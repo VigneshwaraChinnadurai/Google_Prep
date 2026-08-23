@@ -17,6 +17,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Email
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -27,6 +28,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.vignesh.leetcodechecker.mail.MailInboxScreen
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -53,9 +55,15 @@ fun BookLibraryScreen(onBackClick: () -> Unit) {
     var pendingFileUri by remember { mutableStateOf<Uri?>(null) }
     var isImporting by remember { mutableStateOf(false) }
     var importError by remember { mutableStateOf<String?>(null) }
+    var showMail by remember { mutableStateOf(false) }
 
     val filePicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) pendingFileUri = uri
+    }
+
+    if (showMail) {
+        MailInboxScreen(onBackClick = { showMail = false })
+        return
     }
 
     val currentSelection = selectedBook
@@ -81,6 +89,9 @@ fun BookLibraryScreen(onBackClick: () -> Unit) {
                     }
                 },
                 actions = {
+                    IconButton(onClick = { showMail = true }) {
+                        Icon(Icons.Filled.Email, contentDescription = "Mail", tint = BookColors.onSurface)
+                    }
                     IconButton(
                         onClick = {
                             filePicker.launch(arrayOf("application/epub+zip", "application/pdf", "text/plain", "*/*"))
