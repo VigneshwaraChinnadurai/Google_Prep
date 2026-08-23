@@ -498,8 +498,8 @@ class LeetCodeViewModel(
                     revisionRootFolder = revisionFolder
                 )
 
-                localPath
-            }.onSuccess { localPath ->
+                Pair(localPath, files)
+            }.onSuccess { (localPath, files) ->
                 _uiState.value = _uiState.value.copy(
                     isPushLoading = false,
                     localRevisionPath = localPath,
@@ -509,8 +509,23 @@ class LeetCodeViewModel(
                     context = appContext,
                     scope = viewModelScope,
                     subject = "LeetCode Checker: pushed #${challenge.questionId}. ${challenge.title}",
-                    body = "Pushed today's revision (${challenge.date}) to GitHub: #${challenge.questionId}. " +
-                        "${challenge.title} (${challenge.difficulty})\n${challenge.url}"
+                    // The full content already generated for the GitHub push -- problem
+                    // statement, tags/DSA concepts, testcases, solution code, and LLM
+                    // explanation/testcase validation -- so the email needs everything, not
+                    // just a link.
+                    body = buildString {
+                        appendLine("Pushed today's revision (${challenge.date}) to GitHub: #${challenge.questionId}. ${challenge.title} (${challenge.difficulty})")
+                        appendLine(challenge.url)
+                        appendLine()
+                        appendLine("==================== QUESTION ====================")
+                        appendLine(files.questionText)
+                        appendLine()
+                        appendLine("==================== SOLUTION (Python3) ====================")
+                        appendLine(files.answerPython)
+                        appendLine()
+                        appendLine("==================== EXPLANATION ====================")
+                        appendLine(files.explanationText)
+                    }
                 )
             }.onFailure { error ->
                 _uiState.value = _uiState.value.copy(
