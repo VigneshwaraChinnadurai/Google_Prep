@@ -505,6 +505,13 @@ class LeetCodeViewModel(
                     localRevisionPath = localPath,
                     infoMessage = "Pushed question.txt, answer.py, explanation.txt to GitHub successfully."
                 )
+                com.vignesh.leetcodechecker.email.PushEmailNotifier.notifyPushed(
+                    context = appContext,
+                    scope = viewModelScope,
+                    subject = "LeetCode Checker: pushed #${challenge.questionId}. ${challenge.title}",
+                    body = "Pushed today's revision (${challenge.date}) to GitHub: #${challenge.questionId}. " +
+                        "${challenge.title} (${challenge.difficulty})\n${challenge.url}"
+                )
             }.onFailure { error ->
                 _uiState.value = _uiState.value.copy(
                     isPushLoading = false,

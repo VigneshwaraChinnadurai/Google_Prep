@@ -60,6 +60,15 @@ fun GlobalSettingsScreen(
     var mediumUsername by remember { mutableStateOf(settings.mediumUsername) }
     var linkedinUsername by remember { mutableStateOf(settings.linkedinUsername) }
 
+    // Email notifications (Gmail SMTP via App Password)
+    var emailFrom by remember { mutableStateOf(settings.notificationEmailFrom) }
+    var emailAppPassword by remember { mutableStateOf(settings.notificationEmailAppPassword) }
+    var emailTo by remember { mutableStateOf(settings.notificationEmailTo) }
+    var emailOnPushEnabled by remember { mutableStateOf(settings.emailOnGithubPushEnabled) }
+    var emailPasswordVisible by remember { mutableStateOf(false) }
+    var emailTestResult by remember { mutableStateOf<String?>(null) }
+    var isTestingEmail by remember { mutableStateOf(false) }
+
     var backupInProgress by remember { mutableStateOf(false) }
     var restoreInProgress by remember { mutableStateOf(false) }
     var backupStatusMessage by remember { mutableStateOf<String?>(null) }
@@ -278,6 +287,117 @@ fun GlobalSettingsScreen(
             HorizontalDivider()
 
             Text(
+                text = "Email Notifications",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.primary
+            )
+
+            Text(
+                text = "Sends mail via Gmail's SMTP server using a Gmail App Password -- not full OAuth. " +
+                    "Generate one at myaccount.google.com -> Security -> 2-Step Verification -> App Passwords " +
+                    "(requires 2-Step Verification to be on). This is a real password with mail-send access to " +
+                    "that account, so use a dedicated Gmail account if you'd rather not grant that to this app.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            OutlinedTextField(
+                value = emailFrom,
+                onValueChange = {
+                    emailFrom = it
+                    emailTestResult = null
+                },
+                label = { Text("Gmail Address (sender)") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            OutlinedTextField(
+                value = emailAppPassword,
+                onValueChange = {
+                    emailAppPassword = it
+                    emailTestResult = null
+                },
+                label = { Text("Gmail App Password") },
+                singleLine = true,
+                visualTransformation = if (emailPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                trailingIcon = {
+                    TextButton(onClick = { emailPasswordVisible = !emailPasswordVisible }) {
+                        Text(if (emailPasswordVisible) "Hide" else "Show")
+                    }
+                },
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            OutlinedTextField(
+                value = emailTo,
+                onValueChange = { emailTo = it },
+                label = { Text("Send Notifications To (blank = same as sender)") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("Email me on GitHub push", style = MaterialTheme.typography.bodyMedium)
+                    Text(
+                        "Sends a short email every time a daily revision or ProofFiling push succeeds.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Switch(checked = emailOnPushEnabled, onCheckedChange = { emailOnPushEnabled = it })
+            }
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                OutlinedButton(
+                    enabled = emailFrom.isNotBlank() && emailAppPassword.isNotBlank() && !isTestingEmail,
+                    onClick = {
+                        isTestingEmail = true
+                        emailTestResult = null
+                        val to = emailTo.trim().ifBlank { emailFrom.trim() }
+                        scope.launch {
+                            val result = com.vignesh.leetcodechecker.email.GmailSmtpSender.send(
+                                fromEmail = emailFrom.trim(),
+                                appPassword = emailAppPassword.trim(),
+                                toEmail = to,
+                                subject = "LeetCode Checker: test email",
+                                body = "This is a test email from the LeetCode Checker app's Global Settings. If you got this, email notifications are working."
+                            )
+                            emailTestResult = result.fold(
+                                onSuccess = { "OK - sent to $to" },
+                                onFailure = { e -> "Failed: ${e.message}" }
+                            )
+                            isTestingEmail = false
+                        }
+                    }
+                ) {
+                    Text(if (isTestingEmail) "Sending..." else "Send Test Email")
+                }
+
+                emailTestResult?.let { result ->
+                    Text(
+                        text = result,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = if (result.startsWith("OK")) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.error
+                        }
+                    )
+                }
+            }
+
+            HorizontalDivider()
+
+            Text(
                 text = "Backup & Restore",
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.primary
@@ -370,7 +490,11 @@ fun GlobalSettingsScreen(
                         llmProvider = llmProvider,
                         credlyUsername = credlyUsername.trim(),
                         mediumUsername = mediumUsername.trim(),
-                        linkedinUsername = linkedinUsername.trim()
+                        linkedinUsername = linkedinUsername.trim(),
+                        notificationEmailFrom = emailFrom.trim(),
+                        notificationEmailAppPassword = emailAppPassword.trim(),
+                        notificationEmailTo = emailTo.trim(),
+                        emailOnGithubPushEnabled = emailOnPushEnabled
                     )
                     AppSettingsStore.save(context, updatedSettings)
                     settings = updatedSettings
@@ -415,6 +539,10 @@ fun GlobalSettingsScreen(
                                 credlyUsername = settings.credlyUsername
                                 mediumUsername = settings.mediumUsername
                                 linkedinUsername = settings.linkedinUsername
+                                emailFrom = settings.notificationEmailFrom
+                                emailAppPassword = settings.notificationEmailAppPassword
+                                emailTo = settings.notificationEmailTo
+                                emailOnPushEnabled = settings.emailOnGithubPushEnabled
                                 backupStatusMessage = "Restore complete. Restart the app to fully reload."
                             },
                             onFailure = { e -> backupStatusMessage = "Restore failed: ${e.message}" }

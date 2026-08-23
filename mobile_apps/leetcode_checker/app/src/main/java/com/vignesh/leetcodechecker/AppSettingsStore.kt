@@ -57,7 +57,13 @@ data class AppSettings(
 
     // ── Backup ───────────────────────────────────────────────────
     val backupFolderUri: String = "",
-    val lastBackupTimeMillis: Long = 0L
+    val lastBackupTimeMillis: Long = 0L,
+
+    // ── Email Notifications (Gmail SMTP, App Password -- not OAuth) ────
+    val notificationEmailFrom: String = "",
+    val notificationEmailAppPassword: String = "",
+    val notificationEmailTo: String = "",
+    val emailOnGithubPushEnabled: Boolean = false
 )
 
 object AppSettingsStore {
@@ -106,7 +112,11 @@ object AppSettingsStore {
                 globalGithubToken = json.optString("globalGithubToken", ""),
                 globalGeminiApiKey = json.optString("globalGeminiApiKey", ""),
                 backupFolderUri = json.optString("backupFolderUri", ""),
-                lastBackupTimeMillis = json.optLong("lastBackupTimeMillis", 0L)
+                lastBackupTimeMillis = json.optLong("lastBackupTimeMillis", 0L),
+                notificationEmailFrom = json.optString("notificationEmailFrom", "").trim(),
+                notificationEmailAppPassword = json.optString("notificationEmailAppPassword", ""),
+                notificationEmailTo = json.optString("notificationEmailTo", "").trim(),
+                emailOnGithubPushEnabled = json.optBoolean("emailOnGithubPushEnabled", false)
             )
         }.getOrElse { AppSettings() }
     }
@@ -146,6 +156,10 @@ object AppSettingsStore {
             .put("globalGeminiApiKey", settings.globalGeminiApiKey)
             .put("backupFolderUri", settings.backupFolderUri)
             .put("lastBackupTimeMillis", settings.lastBackupTimeMillis)
+            .put("notificationEmailFrom", settings.notificationEmailFrom)
+            .put("notificationEmailAppPassword", settings.notificationEmailAppPassword)
+            .put("notificationEmailTo", settings.notificationEmailTo)
+            .put("emailOnGithubPushEnabled", settings.emailOnGithubPushEnabled)
             .toString()
 
         prefs(context).edit().putString(KEY_SETTINGS, json).apply()

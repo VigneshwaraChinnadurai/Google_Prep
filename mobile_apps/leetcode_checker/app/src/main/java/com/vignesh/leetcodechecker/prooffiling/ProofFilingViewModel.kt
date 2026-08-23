@@ -427,7 +427,7 @@ class ProofFilingViewModel(application: Application) : AndroidViewModel(applicat
             
             result.fold(
                 onSuccess = { updatedEntry ->
-                    _state.update { 
+                    _state.update {
                         it.copy(
                             isPushing = false,
                             currentEntry = updatedEntry,
@@ -435,9 +435,16 @@ class ProofFilingViewModel(application: Application) : AndroidViewModel(applicat
                             showPreview = false
                         )
                     }
+                    com.vignesh.leetcodechecker.email.PushEmailNotifier.notifyPushed(
+                        context = getApplication(),
+                        scope = viewModelScope,
+                        subject = "LeetCode Checker: ProofFiling pushed (${updatedEntry.weekStartDate} - ${updatedEntry.weekEndDate})",
+                        body = "Pushed this week's ProofFiling entry (${updatedEntry.weekStartDate} to " +
+                            "${updatedEntry.weekEndDate}) to GitHub."
+                    )
                 },
                 onFailure = { error ->
-                    _state.update { 
+                    _state.update {
                         it.copy(
                             isPushing = false,
                             error = "Failed to push to GitHub: ${error.message}"

@@ -228,11 +228,13 @@ object BackupManager {
         // credentials that are already configured and working on this device.
         var preservedGithubToken: String? = null
         var preservedGeminiKey: String? = null
+        var preservedEmailAppPassword: String? = null
         if (prefsName == SETTINGS_PREFS_NAME) {
             val currentSettings = prefs.getString(SETTINGS_BLOB_KEY, null)
                 ?.let { runCatching { JSONObject(it) }.getOrNull() }
             preservedGithubToken = currentSettings?.optString("globalGithubToken")?.takeIf { it.isNotBlank() }
             preservedGeminiKey = currentSettings?.optString("globalGeminiApiKey")?.takeIf { it.isNotBlank() }
+            preservedEmailAppPassword = currentSettings?.optString("notificationEmailAppPassword")?.takeIf { it.isNotBlank() }
         }
 
         val editor = prefs.edit()
@@ -249,7 +251,10 @@ object BackupManager {
                 "float" -> editor.putFloat(key, entry.optDouble("value").toFloat())
                 "string" -> editor.putString(
                     key,
-                    restoredStringValue(key, entry.optString("value"), preservedGithubToken, preservedGeminiKey)
+                    restoredStringValue(
+                        key, entry.optString("value"),
+                        preservedGithubToken, preservedGeminiKey, preservedEmailAppPassword
+                    )
                 )
                 "stringset" -> {
                     val arr = entry.optJSONArray("value") ?: JSONArray()
@@ -265,9 +270,14 @@ object BackupManager {
         key: String,
         value: String,
         preservedGithubToken: String?,
-        preservedGeminiKey: String?
+        preservedGeminiKey: String?,
+        preservedEmailAppPassword: String?
     ): String {
-        if (key != SETTINGS_BLOB_KEY || (preservedGithubToken == null && preservedGeminiKey == null)) return value
+        if (key != SETTINGS_BLOB_KEY ||
+            (preservedGithubToken == null && preservedGeminiKey == null && preservedEmailAppPassword == null)
+        ) {
+            return value
+        }
         val restoredSettings = runCatching { JSONObject(value) }.getOrNull() ?: return value
 
         if (restoredSettings.optString("globalGithubToken").isBlank() && preservedGithubToken != null) {
@@ -275,6 +285,9 @@ object BackupManager {
         }
         if (restoredSettings.optString("globalGeminiApiKey").isBlank() && preservedGeminiKey != null) {
             restoredSettings.put("globalGeminiApiKey", preservedGeminiKey)
+        }
+        if (restoredSettings.optString("notificationEmailAppPassword").isBlank() && preservedEmailAppPassword != null) {
+            restoredSettings.put("notificationEmailAppPassword", preservedEmailAppPassword)
         }
         return restoredSettings.toString()
     }
@@ -288,6 +301,7 @@ object BackupManager {
             val settingsJson = runCatching { JSONObject(settingsEntry.optString("value")) }.getOrNull() ?: return
             settingsJson.put("globalGithubToken", "")
             settingsJson.put("globalGeminiApiKey", "")
+            settingsJson.put("notificationEmailAppPassword", "")
             settingsEntry.put("value", settingsJson.toString())
         }
     }
