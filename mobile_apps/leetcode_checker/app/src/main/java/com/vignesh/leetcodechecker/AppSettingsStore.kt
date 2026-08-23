@@ -68,7 +68,12 @@ data class AppSettings(
     // ── Text-to-Speech (Book Reader) ────────────────────────────
     val ttsProvider: String = "android",  // "android" (free, offline) or "elevenlabs" (paid, natural)
     val elevenLabsApiKey: String = "",
-    val elevenLabsVoiceId: String = "21m00Tcm4TlvDq8ikWAM"  // ElevenLabs' public "Rachel" voice
+    val elevenLabsVoiceId: String = "21m00Tcm4TlvDq8ikWAM",  // ElevenLabs' public "Rachel" voice
+
+    // ── App Lock ─────────────────────────────────────────────────
+    // Defaults on (like a payment app); auto-skipped at runtime on devices with no
+    // biometric/PIN/pattern enrolled at all, so this can't lock anyone out.
+    val requireBiometricLock: Boolean = true
 )
 
 object AppSettingsStore {
@@ -125,7 +130,8 @@ object AppSettingsStore {
                 ttsProvider = json.optString("ttsProvider", "android"),
                 elevenLabsApiKey = json.optString("elevenLabsApiKey", ""),
                 elevenLabsVoiceId = json.optString("elevenLabsVoiceId", "21m00Tcm4TlvDq8ikWAM").trim()
-                    .ifBlank { "21m00Tcm4TlvDq8ikWAM" }
+                    .ifBlank { "21m00Tcm4TlvDq8ikWAM" },
+                requireBiometricLock = json.optBoolean("requireBiometricLock", true)
             )
         }.getOrElse { AppSettings() }
     }
@@ -172,6 +178,7 @@ object AppSettingsStore {
             .put("ttsProvider", settings.ttsProvider)
             .put("elevenLabsApiKey", settings.elevenLabsApiKey)
             .put("elevenLabsVoiceId", settings.elevenLabsVoiceId)
+            .put("requireBiometricLock", settings.requireBiometricLock)
             .toString()
 
         prefs(context).edit().putString(KEY_SETTINGS, json).apply()

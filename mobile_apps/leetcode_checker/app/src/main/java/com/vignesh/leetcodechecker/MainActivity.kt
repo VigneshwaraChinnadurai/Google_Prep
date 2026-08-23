@@ -6,7 +6,6 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -15,7 +14,9 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.ui.graphics.Color
 import androidx.core.content.ContextCompat
+import androidx.fragment.app.FragmentActivity
 import com.vignesh.leetcodechecker.backup.BackupWorker
+import com.vignesh.leetcodechecker.security.AppLockGate
 import com.vignesh.leetcodechecker.ui.TabbedMainScreen
 import com.vignesh.leetcodechecker.ui.ChallengeFilter
 
@@ -41,7 +42,7 @@ private val AppLightColors = lightColorScheme(
     onSurface = Color(0xFF121417)
 )
 
-class MainActivity : ComponentActivity() {
+class MainActivity : FragmentActivity() {
     // Centralized here (app startup) rather than in any one tab's screen -- every
     // notification feature (daily challenge, AI news, consistency reminder,
     // ProofFiling) depends on this being granted, so it shouldn't be coupled to
@@ -75,20 +76,22 @@ class MainActivity : ComponentActivity() {
         setContent {
             val darkTheme = isSystemInDarkTheme()
             MaterialTheme(colorScheme = if (darkTheme) AppDarkColors else AppLightColors) {
-                TabbedMainScreen(
-                    application = application,
-                    onOpenLink = { url ->
-                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
-                        startActivity(intent)
-                    },
-                    leetcodeScreenContent = { onOpenLink, challengeFilter, onClearFilter ->
-                        com.vignesh.leetcodechecker.ui.LeetCodeScreen(
-                            onOpenLink = onOpenLink,
-                            challengeFilter = challengeFilter,
-                            onClearFilter = onClearFilter
-                        )
-                    }
-                )
+                AppLockGate(activity = this) {
+                    TabbedMainScreen(
+                        application = application,
+                        onOpenLink = { url ->
+                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                            startActivity(intent)
+                        },
+                        leetcodeScreenContent = { onOpenLink, challengeFilter, onClearFilter ->
+                            com.vignesh.leetcodechecker.ui.LeetCodeScreen(
+                                onOpenLink = onOpenLink,
+                                challengeFilter = challengeFilter,
+                                onClearFilter = onClearFilter
+                            )
+                        }
+                    )
+                }
             }
         }
     }

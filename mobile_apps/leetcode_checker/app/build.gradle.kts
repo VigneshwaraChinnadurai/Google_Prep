@@ -217,6 +217,12 @@ dependencies {
     // SMTP client elsewhere in this app, which was simple enough not to need one).
     implementation("com.tom-roush:pdfbox-android:2.0.27.0")
 
+    // App-lock biometric prompt (fingerprint/face, falling back to device PIN/pattern) --
+    // the official Jetpack library for this, not something to hand-roll like the SMTP
+    // client. Requires MainActivity to be a FragmentActivity, hence fragment-ktx too.
+    implementation("androidx.biometric:biometric:1.1.0")
+    implementation("androidx.fragment:fragment-ktx:1.8.4")
+
     // Backports java.time.* and List#removeFirst/removeLast (Java 21) to minSdk 24
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 

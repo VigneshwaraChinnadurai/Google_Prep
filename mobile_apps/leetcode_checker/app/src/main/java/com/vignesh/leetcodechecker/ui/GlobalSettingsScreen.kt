@@ -78,6 +78,8 @@ fun GlobalSettingsScreen(
     var voicePreviewResult by remember { mutableStateOf<String?>(null) }
     var isPreviewingVoice by remember { mutableStateOf(false) }
 
+    var requireBiometricLock by remember { mutableStateOf(settings.requireBiometricLock) }
+
     var backupInProgress by remember { mutableStateOf(false) }
     var restoreInProgress by remember { mutableStateOf(false) }
     var backupStatusMessage by remember { mutableStateOf<String?>(null) }
@@ -517,6 +519,32 @@ fun GlobalSettingsScreen(
             HorizontalDivider()
 
             Text(
+                text = "App Lock",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.primary
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("Require biometric unlock", style = MaterialTheme.typography.bodyMedium)
+                    Text(
+                        "Like a payment app: prompts fingerprint/face (or your device PIN/pattern " +
+                            "as a fallback) every time the app is opened or comes back from the " +
+                            "background. Auto-disabled on devices with no lock screen configured.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Switch(checked = requireBiometricLock, onCheckedChange = { requireBiometricLock = it })
+            }
+
+            HorizontalDivider()
+
+            Text(
                 text = "Backup & Restore",
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.primary
@@ -616,7 +644,8 @@ fun GlobalSettingsScreen(
                         emailOnGithubPushEnabled = emailOnPushEnabled,
                         ttsProvider = ttsProvider,
                         elevenLabsApiKey = elevenLabsApiKey.trim(),
-                        elevenLabsVoiceId = elevenLabsVoiceId.trim()
+                        elevenLabsVoiceId = elevenLabsVoiceId.trim(),
+                        requireBiometricLock = requireBiometricLock
                     )
                     AppSettingsStore.save(context, updatedSettings)
                     settings = updatedSettings
@@ -668,6 +697,7 @@ fun GlobalSettingsScreen(
                                 ttsProvider = settings.ttsProvider
                                 elevenLabsApiKey = settings.elevenLabsApiKey
                                 elevenLabsVoiceId = settings.elevenLabsVoiceId
+                                requireBiometricLock = settings.requireBiometricLock
                                 backupStatusMessage = "Restore complete. Restart the app to fully reload."
                             },
                             onFailure = { e -> backupStatusMessage = "Restore failed: ${e.message}" }
