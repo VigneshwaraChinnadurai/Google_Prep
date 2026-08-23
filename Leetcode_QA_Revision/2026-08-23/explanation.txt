@@ -1,0 +1,53 @@
+Date: 2026-08-23
+Title: Sum Game
+URL: https://leetcode.com/problems/sum-game/
+
+LLM Explanation:
+APPROACH: Math / Greedy insight — reduce to a single closed-form condition.
+
+KEY INSIGHT:
+Both players play optimally. Consider what happens with the '?' characters:
+
+1. If a '?' appears in the left half and one in the right half, Bob can always
+   mirror Alice's move: whatever digit Alice places in one half, Bob places
+   (9 - that digit) in the other, maintaining a net contribution of 9 to the
+   difference left_sum - right_sum. These pairs cancel out strategically.
+
+2. After pairing across halves, suppose there are excess '?'s all on one side.
+   Alice tries to widen the gap; Bob tries to close it. For each pair of same-
+   side '??', Bob can pick digits summing to 9 (e.g. 0+9 or 4+5) to add
+   exactly 9 to that side's sum. Alice picks one digit, Bob picks the complement.
+
+3. Bob wins (can always equalise) if and only if:
+     left_sum + left_q * 4.5  ==  right_sum + right_q * 4.5
+   i.e. left_sum - right_sum == (right_q - left_q) * 4.5
+   Multiply by 2 to avoid fractions:
+     2*(left_sum - right_sum) == (right_q - left_q) * 9
+
+   This works because: pairs of '?' across halves cancel, and pairs within the
+   same half each contribute 9 on average (Bob controls one of each pair).
+
+Alice wins iff this equality does NOT hold.
+
+CORRECTNESS VERIFICATION via parity: total '?' = left_q + right_q. The number
+of cross-half pairs is min(left_q, right_q), leaving |left_q - right_q| same-
+side '?', always even (since total '?' is even and paired off). Bob handles each
+same-side pair optimally.
+
+COMPLEXITY: O(n) time, O(1) extra space.
+
+LLM Testcase Validation:
+Test 1: num="5023", half=2
+left: digits 5,0 → left_sum=5, left_q=0
+right: digits 2,3 → right_sum=5, right_q=0
+2*(5-5) = 0, (0-0)*9 = 0. 0==0 → Alice does NOT win → return False ✓
+
+Test 2: num="25??", half=2
+left: 2,5 → left_sum=7, left_q=0
+right: ?,? → right_sum=0, right_q=2
+2*(7-0)=14, (2-0)*9=18. 14≠18 → Alice wins → return True ✓
+
+Test 3: num="?3295???", half=4
+left: ?,3,2,9 → left_sum=14, left_q=1
+right: 5,?,?,? → right_sum=5, right_q=3
+2*(14-5)=18, (3-1)*9=18. 18==18 → Bob wins → return False ✓
