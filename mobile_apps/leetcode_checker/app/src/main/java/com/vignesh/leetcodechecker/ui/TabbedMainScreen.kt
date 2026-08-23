@@ -56,7 +56,8 @@ enum class FeatureScreen {
     PROFILE,
     OLLAMA,
     CHATBOT,
-    GITHUB_PROFILE
+    GITHUB_PROFILE,
+    BOOK_READER
 }
 
 /**
@@ -194,6 +195,7 @@ fun TabbedMainScreen(
                                     FeatureDestination.AI_LEARNING_HUB -> FeatureScreen.AI_LEARNING_HUB
                                     FeatureDestination.STRATEGIC_CHATBOT -> FeatureScreen.STRATEGIC_CHATBOT
                                     FeatureDestination.WHATS_NEW -> FeatureScreen.WHATS_NEW
+                                    FeatureDestination.BOOK_READER -> FeatureScreen.BOOK_READER
                                 }
                             }
                         )
@@ -247,6 +249,9 @@ fun TabbedMainScreen(
                             onBackClick = { featureScreen = FeatureScreen.HUB }
                         )
                         FeatureScreen.WHATS_NEW -> WhatsNewScreen(
+                            onBackClick = { featureScreen = FeatureScreen.HUB }
+                        )
+                        FeatureScreen.BOOK_READER -> com.vignesh.leetcodechecker.bookreader.BookLibraryScreen(
                             onBackClick = { featureScreen = FeatureScreen.HUB }
                         )
                         else -> {

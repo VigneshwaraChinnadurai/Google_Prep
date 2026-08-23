@@ -122,7 +122,8 @@ fun FeaturesHubScreen(
             FeatureItem("Offline", "📱", Color(0xFF6E7681), FeatureDestination.OFFLINE),
             FeatureItem("AI/ML News", "🤖", Color(0xFF9C27B0), FeatureDestination.AI_NEWS),
             FeatureItem("Protection", "🔒", Color(0xFFF85149), FeatureDestination.PROTECTION),
-            FeatureItem("What's New", "✨", Color(0xFFFFB347), FeatureDestination.WHATS_NEW)
+            FeatureItem("What's New", "✨", Color(0xFFFFB347), FeatureDestination.WHATS_NEW),
+            FeatureItem("Book Reader", "📖", Color(0xFF34D8C4), FeatureDestination.BOOK_READER)
         )
         
         // Check for unseen updates
@@ -298,5 +299,6 @@ enum class FeatureDestination {
     PROTECTION,
     AI_LEARNING_HUB,
     STRATEGIC_CHATBOT,
-    WHATS_NEW
+    WHATS_NEW,
+    BOOK_READER
 }
