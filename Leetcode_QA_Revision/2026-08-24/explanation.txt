@@ -1,0 +1,62 @@
+Date: 2026-08-24
+Title: Stone Game VIII
+URL: https://leetcode.com/problems/stone-game-viii/
+
+LLM Explanation:
+APPROACH: Greedy DP with prefix sums — O(n) time.
+
+KEY INSIGHT:
+When a player removes the leftmost x stones (x > 1) and replaces them with
+their sum S = stones[0]+...+stones[x-1] = prefix[x-1], the new row starts
+with value prefix[x-1]. The next player then picks some y > 1 stones from
+this new row, getting prefix[x-1] + stones[x] + ... + stones[x+y-2] = prefix[x+y-2].
+
+So every move is characterised by choosing a "cut index" i (1-indexed prefix):
+the current player scores prefix[i], and the new leftmost stone becomes prefix[i].
+The next player must pick a cut index j > i.
+
+Define dp[i] = best (current_player_score - opponent_score) when it's the current
+player's turn and they must cut at some index in [i, n-1].
+
+Base: dp[n-1] = prefix[n-1]  (forced move, opponent scores nothing more)
+
+Transition (right to left): at index i, current player can:
+
+  1. Cut here: gains prefix[i], then opponent plays from i+1 → opponent gets dp[i+1],
+     so net = prefix[i] - dp[i+1]
+  2. Skip to i+1: dp[i+1] (same player now chooses from i+1 onward)
+
+dp[i] = max(prefix[i] - dp[i+1], dp[i+1])
+
+Alice goes first and must pick i in [1, n-1]. Answer = dp[1].
+
+This collapses to a single scalar updated right to left, giving O(n) time and O(1) space.
+
+COMPLEXITY: O(n) time, O(1) extra space (prefix built in-place or as array O(n)).
+EDGE CASES: n=2 → only one possible cut (index 1), Alice must take both stones.
+
+LLM Testcase Validation:
+Test 1: stones=[-1,2,-3,4,-5]
+prefix=[-1,1,-2,2,-3]
+n=5. Start dp=prefix[4]=-3.
+i=3: dp=max(prefix[3]-(-3), -3)=max(2+3,-3)=max(5,-3)=5
+i=2: dp=max(prefix[2]-5, 5)=max(-2-5,5)=max(-7,5)=5
+i=1: dp=max(prefix[1]-5, 5)=max(1-5,5)=max(-4,5)=5
+Return 5 ✓
+
+Test 2: stones=[7,-6,5,10,5,-2,-6]
+prefix=[7,1,6,16,21,19,13]
+n=7. dp=prefix[6]=13.
+i=5: dp=max(19-13,13)=max(6,13)=13
+i=4: dp=max(21-13,13)=max(8,13)=13
+i=3: dp=max(16-13,13)=max(3,13)=13
+i=2: dp=max(6-13,13)=max(-7,13)=13
+i=1: dp=max(1-13,13)=max(-12,13)=13
+Return 13 ✓
+
+Test 3: stones=[-10,-12]
+prefix=[-10,-22]
+n=2. dp=prefix[1]=-22.
+i=1 loop doesn't execute (range(0,0,-1) empty).
+Wait: range(n-2, 0, -1) = range(0, 0, -1) → empty.
+Return dp=-22 ✓
