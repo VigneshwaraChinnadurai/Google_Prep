@@ -1,0 +1,48 @@
+Date: 2026-08-26
+Question ID: 2904
+Title: Shortest and Lexicographically Smallest Beautiful String
+Difficulty: Medium
+Tags: String, Sliding Window
+URL: https://leetcode.com/problems/shortest-and-lexicographically-smallest-beautiful-string/
+
+Question:
+You are given a binary string s and a positive integer k . A substring of s is beautiful if the number of 1 &#39;s in it is exactly k . Let len be the length of the shortest beautiful substring. Return the lexicographically smallest beautiful substring of string s with length equal to len . If s doesn&#39;t contain a beautiful substring, return an empty string . A string a is lexicographically larger than a string b (of the same length) if in the first position where a and b differ, a has a character strictly larger than the corresponding character in b . For example, &quot;abcd&quot; is lexicographically larger than &quot;abcc&quot; because the first position they differ is at the fourth character, and d is greater than c . Example 1: Input: s = &quot;100011001&quot;, k = 3 Output: &quot;11001&quot; Explanation: There are 7 beautiful substrings in this example: 1. The substring &quot; 100011 001&quot;. 2. The substring &quot; 1000110 01&quot;. 3. The substring &quot; 10001100 1&quot;. 4. The substring &quot;1 00011001 &quot;. 5. The substring &quot;10 0011001 &quot;. 6. The substring &quot;100 011001 &quot;. 7. The substring &quot;1000 11001 &quot;. The length of the shortest beautiful substring is 5. The lexicographically smallest beautiful substring with length 5 is the substring &quot;11001&quot;. Example 2: Input: s = &quot;1011&quot;, k = 2 Output: &quot;11&quot; Explanation: There are 3 beautiful substrings in this example: 1. The substring &quot; 101 1&quot;. 2. The substring &quot;1 011 &quot;. 3. The substring &quot;10 11 &quot;. The length of the shortest beautiful substring is 2. The lexicographically smallest beautiful substring with length 2 is the substring &quot;11&quot;. Example 3: Input: s = &quot;000&quot;, k = 1 Output: &quot;&quot; Explanation: There are no beautiful substrings in this example. Constraints: 1 &lt;= s.length &lt;= 100 1 &lt;= k &lt;= s.length
+
+Starter Code (Python3):
+class Solution:
+    def shortestBeautifulSubstring(self, s: str, k: int) -> str:
+        
+
+Testcases:
+"100011001"
+3
+"1011"
+2
+"000"
+1
+
+Expected Output / Validation:
+Test 1: s="100011001", k=3
+Iterate i=0..8. For each i, expand j until ones==3, record substring.
+i=0: ones hits 3 at j=5 → "100011" (len 6)
+i=1: s[1]='0', accumulate to j=5 → "00011" wait ones=2 at j=5('1'), j=6('0'),j=7('0'),j=8('1')=3 → "000110" wait let me recheck.
+s = "100011001" indices 0-8.
+i=0: 1,0,0,0,1,1 → ones=3 at j=5, sub="100011" len=6. best="100011"
+i=1: 0,0,0,1,1,0,0,1 → j=1:0,j=2:0,j=3:0,j=4:1,j=5:1,j=6:0,j=7:0,j=8:1→ones=3 at j=8, sub="00011001" len=8. 8>6 skip.
+i=2: similar, longer.
+i=3: 0,1,1,0,0,1 → j=3:0,j=4:1,j=5:1,j=6:0,j=7:0,j=8:1→ones=3 at j=8, sub="011001" len=6. Same len, "011001"<"100011"→best="011001"
+i=4: 1,1,0,0,1 → ones=3 at j=8, sub="11001" len=5<6→best="11001"
+i=5: 1,0,0,1 → ones=2 at j=8, never reaches 3. No break(ones never==k). Wait: s[5]='1',s[6]='0',s[7]='0',s[8]='1'→ones=2. No match.
+i=6: s[6]='0',s[7]='0',s[8]='1'→ones=1. No.
+i=7: s[7]='0',s[8]='1'→ones=1. No.
+i=8: s[8]='1'→ones=1. No.
+best="11001" ✓
+
+Test 2: s="1011", k=2
+i=0: 1,0,1→ones=2 at j=2, sub="101" len=3. best="101"
+i=1: 0,1,1→ones=2 at j=3, sub="011" len=3. "011"<"101"→best="011"
+i=2: 1,1→ones=2 at j=3, sub="11" len=2<3→best="11"
+i=3: 1→ones=1. No.
+best="11" ✓
+
+Test 3: s="000", k=1. No ones found anywhere. best="" ✓
