@@ -10,66 +10,78 @@ class Solution:
         if (n % 2 == 0 and odd_count > 0) or (n % 2 == 1 and odd_count != 1):
             return ""
         
-        # Find middle character (for odd length palindromes)
+        # Find middle character
         middle_char = ''
         for ch, cnt in char_count.items():
             if cnt % 2 == 1:
                 middle_char = ch
                 break
         
-        # Prepare character counts for first half
         half_len = n // 2
-        half_counts = {}
-        for ch, cnt in char_count.items():
-            half_counts[ch] = cnt // 2
+        half_counts = {ch: cnt // 2 for ch, cnt in char_count.items()}
         
         def build_palindrome(first_half):
-            result = list(first_half) + ([middle_char] if n % 2 == 1 else []) + list(reversed(first_half))
-            return ''.join(result)
+            return ''.join(first_half) + (middle_char if n % 2 == 1 else '') + ''.join(reversed(first_half))
         
-        def get_smallest_suffix(remaining, length):
-            """Build lexicographically smallest suffix from remaining chars"""
+        def fill_smallest(remaining, length):
+            """Fill with smallest available characters"""
             result = []
             rem = remaining.copy()
             for _ in range(length):
+                found = False
                 for ch in sorted(rem.keys()):
                     if rem[ch] > 0:
                         result.append(ch)
                         rem[ch] -= 1
+                        if rem[ch] == 0:
+                            del rem[ch]
+                        found = True
                         break
-                else:
+                if not found:
                     return None
             return result
         
-        def backtrack(pos, current, remaining):
-            if pos == half_len:
-                pal = build_palindrome(current)
+        # Try to match target up to position i, then go greater at position i
+        for i in range(half_len + 1):
+            remaining = half_counts.copy()
+            first_half = []
+            
+            # Match target for positions 0 to i-1
+            valid = True
+            for j in range(i):
+                target_char = target[j]
+                if remaining.get(target_char, 0) > 0:
+                    first_half.append(target_char)
+                    remaining[target_char] -= 1
+                    if remaining[target_char] == 0:
+                        del remaining[target_char]
+                else:
+                    valid = False
+                    break
+            
+            if not valid:
+                continue
+            
+            if i == half_len:
+                # All matched, check if equal
+                pal = build_palindrome(first_half)
                 if pal > target:
                     return pal
-                return None
+                continue
             
-            # Try each character in sorted order (greedy for lexicographically smallest)
+            # Try characters > target[i] at position i
+            target_char = target[i]
             for ch in sorted(remaining.keys()):
-                if remaining[ch] > 0:
-                    new_current = current + [ch]
+                if ch > target_char and remaining[ch] > 0:
                     new_remaining = remaining.copy()
                     new_remaining[ch] -= 1
                     if new_remaining[ch] == 0:
                         del new_remaining[ch]
                     
-                    # Build smallest possible completion and check early
-                    suffix = get_smallest_suffix(new_remaining, half_len - pos - 1)
+                    # Fill rest with smallest chars
+                    suffix = fill_smallest(new_remaining, half_len - i - 1)
                     if suffix is not None:
-                        complete_half = new_current + suffix
-                        pal = build_palindrome(complete_half)
-                        if pal > target:
-                            return pal
-                    
-                    # Continue backtracking for other possibilities
-                    result = backtrack(pos + 1, new_current, new_remaining)
-                    if result:
-                        return result
-            
-            return None
+                        result_half = first_half + [ch] + suffix
+                        return build_palindrome(result_half)
         
-        return backtrack(0, [], half_counts) or ""
+        return ""
