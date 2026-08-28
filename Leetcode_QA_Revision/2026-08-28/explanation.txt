@@ -1,0 +1,63 @@
+Date: 2026-08-28
+Title: Lexicographically Smallest Palindromic Permutation Greater Than Target
+URL: https://leetcode.com/problems/lexicographically-smallest-palindromic-permutation-greater-than-target/
+
+LLM Explanation:
+**Problem Analysis:**
+Find the lexicographically smallest palindromic permutation of `s` that is strictly greater than `target`.
+
+**Key Insights:**
+1. A string can form a palindrome only if:
+   - Even length: all characters have even frequencies
+   - Odd length: exactly one character has odd frequency
+
+2. A palindrome is completely determined by its first half (second half mirrors it).
+
+3. For efficiency, we only construct the first half and mirror it.
+
+**Algorithm:**
+1. **Validate palindrome possibility** using character frequency analysis
+2. **Extract middle character** (if odd length) from the character with odd frequency
+3. **Backtracking with pruning:**
+   - For each position in the first half, try characters in sorted order (greedy for smallest)
+   - At each step, build the smallest possible completion and check if resulting palindrome > target
+   - If found, return immediately (lexicographically smallest by greedy order)
+   - This prunes branches that can't lead to valid solutions early
+
+4. **Early termination:** Once we find a valid palindrome > target, return it (guaranteed to be smallest due to sorted exploration order)
+
+**Complexity:**
+- Time: O(n! / (2^k)) worst case for permutations, but heavily pruned in practice. For each valid branch, we do O(n) work.
+- Space: O(n) for recursion stack and character counts
+
+**Edge Cases:**
+- Cannot form palindrome → return ""
+- Target is already the largest palindrome → return ""
+- Odd-length strings with exactly one odd-frequency character
+
+LLM Testcase Validation:
+Test Case 1: s="baba", target="abba"
+- char_count: {b:2, a:2}, odd_count=0 ✓
+- Palindromes possible: "abba", "baab"
+- "abba" > "abba"? No
+- "baab" > "abba"? Yes ✓
+- Expected: "baab" ✓
+
+Test Case 2: s="baba", target="bbaa"
+- Same palindromes: "abba", "baab"
+- "abba" > "bbaa"? No
+- "baab" > "bbaa"? No
+- Expected: "" ✓
+
+Test Case 3: s="abc", target="abb"
+- char_count: {a:1, b:1, c:1}, odd_count=3
+- n=3 (odd), requires odd_count==1
+- 3 ≠ 1, return ""
+- Expected: "" ✓
+
+Test Case 4: s="aac", target="abb"
+- char_count: {a:2, c:1}, odd_count=1 ✓
+- middle_char='c', half_counts={a:1}
+- Only palindrome: "aca"
+- "aca" > "abb"? Yes ✓
+- Expected: "aca" ✓
