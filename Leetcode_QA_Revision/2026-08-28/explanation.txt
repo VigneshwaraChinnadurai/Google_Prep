@@ -3,61 +3,48 @@ Title: Lexicographically Smallest Palindromic Permutation Greater Than Target
 URL: https://leetcode.com/problems/lexicographically-smallest-palindromic-permutation-greater-than-target/
 
 LLM Explanation:
-**Problem Analysis:**
-Find the lexicographically smallest palindromic permutation of `s` that is strictly greater than `target`.
+**Optimized Algorithm:**
+Instead of exploring all permutations, use a greedy "next permutation" approach:
 
-**Key Insights:**
-1. A string can form a palindrome only if:
-   - Even length: all characters have even frequencies
-   - Odd length: exactly one character has odd frequency
+1. **Validate palindrome feasibility** using character frequencies
 
-2. A palindrome is completely determined by its first half (second half mirrors it).
+2. **Greedy construction:**
+   - For each position i in the first half:
+     - Match target characters for positions 0 to i-1
+     - At position i, try placing characters strictly greater than target[i]
+     - Fill remaining positions with smallest available characters
+     - Build palindrome and return immediately if valid
 
-3. For efficiency, we only construct the first half and mirror it.
-
-**Algorithm:**
-1. **Validate palindrome possibility** using character frequency analysis
-2. **Extract middle character** (if odd length) from the character with odd frequency
-3. **Backtracking with pruning:**
-   - For each position in the first half, try characters in sorted order (greedy for smallest)
-   - At each step, build the smallest possible completion and check if resulting palindrome > target
-   - If found, return immediately (lexicographically smallest by greedy order)
-   - This prunes branches that can't lead to valid solutions early
-
-4. **Early termination:** Once we find a valid palindrome > target, return it (guaranteed to be smallest due to sorted exploration order)
+3. **Why it works:**
+   - By iterating i from 0 to half_len, we find the leftmost position where we can increment
+   - Placing smallest chars after gives the lexicographically smallest result
+   - Greedy matching before increment preserves this property
 
 **Complexity:**
-- Time: O(n! / (2^k)) worst case for permutations, but heavily pruned in practice. For each valid branch, we do O(n) work.
-- Space: O(n) for recursion stack and character counts
+- Time: O(n²) - at most n positions × n characters to try
+- Space: O(n) for character counts and result
 
-**Edge Cases:**
-- Cannot form palindrome → return ""
-- Target is already the largest palindrome → return ""
-- Odd-length strings with exactly one odd-frequency character
+**Key Optimization:**
+Avoids recursive backtracking entirely by constructing directly. At most we try n different positions × n different characters, making it polynomial instead of exponential.
 
 LLM Testcase Validation:
 Test Case 1: s="baba", target="abba"
-- char_count: {b:2, a:2}, odd_count=0 ✓
-- Palindromes possible: "abba", "baab"
-- "abba" > "abba"? No
-- "baab" > "abba"? Yes ✓
+- half_len=2, middle_char='', half_counts={a:1, b:1}
+- i=0: Try ch>'a' → ch='b', fill_smallest([a:1], 1)=['a'] → "ba" + mirror → "baab" > "abba" ✓
 - Expected: "baab" ✓
 
 Test Case 2: s="baba", target="bbaa"
-- Same palindromes: "abba", "baab"
-- "abba" > "bbaa"? No
-- "baab" > "bbaa"? No
+- i=0: Try ch>'b' → none available
+- i=1: Match 'b' at pos 0, try ch>'b' at pos 1 → none available
+- i=2: All matched, "bbaa" > "bbaa"? No
 - Expected: "" ✓
 
 Test Case 3: s="abc", target="abb"
-- char_count: {a:1, b:1, c:1}, odd_count=3
-- n=3 (odd), requires odd_count==1
-- 3 ≠ 1, return ""
+- odd_count=3, n=3 requires odd_count==1 → return "" ✓
 - Expected: "" ✓
 
 Test Case 4: s="aac", target="abb"
-- char_count: {a:2, c:1}, odd_count=1 ✓
-- middle_char='c', half_counts={a:1}
-- Only palindrome: "aca"
-- "aca" > "abb"? Yes ✓
+- half_len=1, middle_char='c', half_counts={a:1}
+- i=0: Try ch>'a' → none from half_counts
+- i=1: Match 'a' at pos 0, "a" + "c" + "a" = "aca" > "abb" ✓
 - Expected: "aca" ✓
