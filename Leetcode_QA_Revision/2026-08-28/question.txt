@@ -24,23 +24,28 @@ Testcases:
 "abb"
 
 Expected Output / Validation:
-Test Case 1: s="baba", target="abba"
-- half_len=2, middle_char='', half_counts={a:1, b:1}
-- i=0: Try ch>'a' → ch='b', fill_smallest([a:1], 1)=['a'] → "ba" + mirror → "baab" > "abba" ✓
-- Expected: "baab" ✓
+Test 1: s="baba", target="abba"
+freq={a:2,b:2}, no odd chars, m=2, mid="", half_count={a:1,b:1}
+tight_avail[0]={a:1,b:1}
+p=0: 'a' consumed → tight_avail[1]={b:1}
+p=1: 'b' consumed → tight_avail[2]={}. tight_ok=True.
+Tight case: palindrome("ab")="ab"+"ba"="abba". "abba">"abba"? No.
+Increment p=1: avail={b:1}, target[1]='b'. No c>'b'. Skip.
+Increment p=0: avail={a:1,b:1}, target[0]='a'. best_c='b'. avail={a:1}. fill="a".
+half="b"+"a"="ba". palindrome="ba"+"ab"="baab". Return "baab" ✓
 
-Test Case 2: s="baba", target="bbaa"
-- i=0: Try ch>'b' → none available
-- i=1: Match 'b' at pos 0, try ch>'b' at pos 1 → none available
-- i=2: All matched, "bbaa" > "bbaa"? No
-- Expected: "" ✓
+Test 2: s="baba", target="bbaa"
+p=0: 'b' consumed → tight_avail[1]={a:1}
+p=1: target[1]='b' not in {a:1}. tight_ok=False.
+Tight: skip. Increment p=1: avail={a:1}, target[1]='b'. No c>'b' in {a}. Skip.
+Increment p=0: avail={a:1,b:1}, target[0]='b'. No c>'b'. Skip.
+Return "" ✓
 
-Test Case 3: s="abc", target="abb"
-- odd_count=3, n=3 requires odd_count==1 → return "" ✓
-- Expected: "" ✓
+Test 3: s="abc", target="abb"
+freq={a:1,b:1,c:1}. odd_chars=['a','b','c'], len=3>1. Return "" ✓
 
-Test Case 4: s="aac", target="abb"
-- half_len=1, middle_char='c', half_counts={a:1}
-- i=0: Try ch>'a' → none from half_counts
-- i=1: Match 'a' at pos 0, "a" + "c" + "a" = "aca" > "abb" ✓
-- Expected: "aca" ✓
+Test 4: s="aac", target="abb"
+freq={a:2,c:1}, odd_chars=['c'], m=1, mid='c', half_count={a:1}
+p=0: 'a' consumed → tight_avail[1]={}. tight_ok=True.
+Tight case: palindrome("a")="a"+"c"+"a"="aca". "aca">"abb"? 'a'='a','c'>'b' → Yes!
+Return "aca" ✓
