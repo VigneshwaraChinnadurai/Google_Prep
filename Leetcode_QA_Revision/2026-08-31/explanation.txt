@@ -1,0 +1,42 @@
+Date: 2026-08-31
+Title: Find the Minimum and Maximum Number of Nodes Between Critical Points
+URL: https://leetcode.com/problems/find-the-minimum-and-maximum-number-of-nodes-between-critical-points/
+
+LLM Explanation:
+APPROACH: Single pass, collect critical point indices, then compute distances.
+
+Traverse the list with (prev, curr, next) triple. A node is critical if its value
+is strictly greater than both neighbours (local max) or strictly less than both
+(local min). Collect 1-based indices of all critical points.
+
+Maximum distance = last critical index - first critical index (always largest gap).
+Minimum distance = smallest consecutive difference in the criticals list
+(the minimum gap must occur between adjacent critical points in the list).
+
+COMPLEXITY: O(n) time, O(c) space where c = number of critical points ≤ n.
+
+EDGE CASES:
+  Fewer than 2 nodes: loop never executes, return [-1,-1].
+  Fewer than 2 critical points: return [-1,-1].
+  Equal adjacent values: strictly greater/less condition excludes them.
+
+LLM Testcase Validation:
+Test 1: [3,1] — only 2 nodes, curr.next is None immediately. criticals=[]. Return [-1,-1] ✓
+
+Test 2: [5,3,1,2,5,1,2]
+idx=1,prev=5,curr=3: 3<5 but next=1<3 → local min? 3>1 yes. 3<5 yes → local min at idx=1? Wait prev=5,curr=3,nxt=1. curr.val=3 < prev.val=5 AND curr.val=3 > nxt.val=1 → not minima (3>1). Not maxima (3<5). Skip.
+idx=2,prev=3,curr=1,nxt=2: 1<3 and 1<2 → local min. criticals=[2].
+idx=3,prev=1,curr=2,nxt=5: 2>1 but 2<5 → neither. Skip.
+idx=4,prev=2,curr=5,nxt=1: 5>2 and 5>1 → local max. criticals=[2,4].
+idx=5,prev=5,curr=1,nxt=2: 1<5 and 1<2 → local min. criticals=[2,4,5].
+curr=nxt=2, nxt=None → loop ends.
+max_dist=5-2=3, min_dist=min(4-2,5-4)=min(2,1)=1. Return [1,3] ✓
+
+Test 3: [1,3,2,2,3,2,2,2,7]
+idx=1,prev=1,curr=3,nxt=2: 3>1 and 3>2 → local max. criticals=[1].
+idx=2,prev=3,curr=2,nxt=2: 2<3 but 2==2 → neither.
+idx=3,prev=2,curr=2,nxt=3: equal prev → neither.
+idx=4,prev=2,curr=3,nxt=2: 3>2 and 3>2 → local max. criticals=[1,4].
+idx=5,prev=3,curr=2,nxt=2: 2<3 but 2==2 → neither.
+... remaining: 2,2,7 — no criticals (last node has no next in check).
+max_dist=4-1=3, min_dist=4-1=3. Return [3,3] ✓
