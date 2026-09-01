@@ -1,0 +1,54 @@
+Date: 2026-09-01
+Question ID: 3568
+Title: Minimum Moves to Clean the Classroom
+Difficulty: Medium
+Tags: Array, Hash Table, Bit Manipulation, Breadth-First Search, Matrix
+URL: https://leetcode.com/problems/minimum-moves-to-clean-the-classroom/
+
+Question:
+You are given an m x n grid classroom where a student volunteer is tasked with cleaning up litter scattered around the room. Each cell in the grid is one of the following: &#39;S&#39; : Starting position of the student &#39;L&#39; : Litter that must be collected (once collected, the cell becomes empty) &#39;R&#39; : Reset area that restores the student&#39;s energy to full capacity, regardless of their current energy level (can be used multiple times) &#39;X&#39; : Obstacle the student cannot pass through &#39;.&#39; : Empty space You are also given an integer energy , representing the student&#39;s maximum energy capacity. The student starts with this energy from the starting position &#39;S&#39; . Each move to an adjacent cell (up, down, left, or right) costs 1 unit of energy. If the energy reaches 0, the student can only continue if they are on a reset area &#39;R&#39; , which resets the energy to its maximum capacity energy . Return the minimum number of moves required to collect all litter items, or -1 if it&#39;s impossible. Example 1: Input: classroom = [&quot;S.&quot;, &quot;XL&quot;], energy = 2 Output: 2 Explanation: The student starts at cell (0, 0) with 2 units of energy. Since cell (1, 0) contains an obstacle &#39;X&#39;, the student cannot move directly downward. A valid sequence of moves to collect all litter is as follows: Move 1: From (0, 0) &rarr; (0, 1) with 1 unit of energy and 1 unit remaining. Move 2: From (0, 1) &rarr; (1, 1) to collect the litter &#39;L&#39; . The student collects all the litter using 2 moves. Thus, the output is 2. Example 2: Input: classroom = [&quot;LS&quot;, &quot;RL&quot;], energy = 4 Output: 3 Explanation: The student starts at cell (0, 1) with 4 units of energy. A valid sequence of moves to collect all litter is as follows: Move 1: From (0, 1) &rarr; (0, 0) to collect the first litter &#39;L&#39; with 1 unit of energy used and 3 units remaining. Move 2: From (0, 0) &rarr; (1, 0) to &#39;R&#39; to reset and restore energy back to 4. Move 3: From (1, 0) &rarr; (1, 1) to collect the second litter &#39;L&#39; . The student collects all the litter using 3 moves. Thus, the output is 3. Example 3: Input: classroom = [&quot;L.S&quot;, &quot;RXL&quot;], energy = 3 Output: -1 Explanation: No valid path collects all &#39;L&#39; . Constraints: 1 &lt;= m == classroom.length &lt;= 20 1 &lt;= n == classroom[i].length &lt;= 20 classroom[i][j] is one of &#39;S&#39; , &#39;L&#39; , &#39;R&#39; , &#39;X&#39; , or &#39;.&#39; 1 &lt;= energy &lt;= 50 There is exactly one &#39;S&#39; in the grid. There are at most 10 &#39;L&#39; cells in the grid.
+
+Starter Code (Python3):
+class Solution:
+    def minMoves(self, classroom: List[str], energy: int) -> int:
+        
+
+Testcases:
+["S.", "XL"]
+2
+["LS", "RL"]
+4
+["L.S", "RXL"]
+3
+
+Expected Output / Validation:
+Test 1: classroom=["S.","XL"], energy=2
+start=(0,0), litter=[(1,1)], full_mask=1
+BFS: (0,0,0,2)→right→(0,1,0,1)→down→(1,1,1,0). mask==full_mask. Return 2 ✓
+
+Test 2: classroom=["LS","RL"], energy=4
+start=(0,1), litter=[(0,0),(1,1)], full_mask=3
+Init: S at (0,1) not litter. mask=0.
+Move 1: (0,1)→(0,0)='L'→nmask=1, e=3. moves=1.
+Move 2: (0,0)→(1,0)='R'→ne=4, nmask=1. moves=2.
+Move 3: (1,0)→(1,1)='L'→nmask=3=full_mask. Return 3 ✓
+
+Test 3: classroom=["L.S","RXL"], energy=3
+start=(0,2), litter=[(0,0),(1,2)], full_mask=3.
+(1,2) is blocked: to reach (1,2) from (0,2) needs (1,2)='L' reachable.
+(0,2)→(0,1)→(0,0)='L'→mask=1,e=1.
+From (0,0) e=1→(1,0)='R'→ne=3,e reset. mask=1,moves=3.
+From (1,0): right→(1,1)='X' blocked. up→(0,0) already visited with mask=1,e=3.
+From (0,0) e=3→(0,1)→(0,2)→(1,2)? need to get there.
+(0,2)→down=(1,2)='L'→nmask=3. Return moves at that step.
+Path: (0,2)→(0,1)→(0,0)→(1,0)→(0,0)→(0,1)→(0,2)→(1,2). But (1,2) is 'L'.
+Wait: classroom=["L.S","RXL"]: row0=[L,.,S], row1=[R,X,L].
+(1,1)='X' blocks. To reach (1,2) from (0,2): (0,2)→(1,2) direct (down).
+From (0,0) collect L (mask=1). Need energy to reach (1,2).
+(0,0)→(1,0) resets energy. (1,0)→up=(0,0). (1,0)→right=(1,1)=X. Stuck.
+Can't reach (1,2) from left side due to X. Can only reach (1,2) from (0,2).
+But (0,2) reachable from (0,1), and from (1,2) only (impossible loop).
+Energy from start: (0,2)→(1,2)=1 move, mask=0b10. Then need (0,0).
+(1,2)→(0,2)→(0,1)→(0,0)='L' needs 3 more moves, e=4-3=1 from initial 4... wait energy=3.
+(0,2) start e=3. →(1,2) e=2, mask=bit1. →(0,2) e=1. →(0,1) e=0. →(0,0) need e>0. Stuck.
+No path covers both. BFS exhausts. Return -1 ✓
