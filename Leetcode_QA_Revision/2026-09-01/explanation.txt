@@ -1,0 +1,66 @@
+Date: 2026-09-01
+Title: Minimum Moves to Clean the Classroom
+URL: https://leetcode.com/problems/minimum-moves-to-clean-the-classroom/
+
+LLM Explanation:
+APPROACH: BFS on state (row, col, litter_mask, energy_remaining).
+
+STATE SPACE:
+  Position: m×n ≤ 400 cells
+  Litter mask: 2^10 = 1024 (at most 10 litter cells)
+  Energy: 1..50 levels
+  Total states: 400 × 1024 × 50 = ~20M — feasible.
+
+BFS guarantees minimum moves since each step costs 1.
+
+KEY MECHANICS:
+  - Energy decreases by 1 per move. If e=0, can't move (e<=0 check before moving).
+  - Landing on 'R' resets energy to full capacity.
+  - Landing on 'L' sets the corresponding bit in litter_mask.
+  - 'X' cells are impassable.
+  - When litter_mask reaches full_mask, return current move count + 1.
+
+VISITED ARRAY: 4D boolean array [r][c][mask][energy] prevents re-exploring
+identical states, ensuring termination and correctness.
+
+COMPLEXITY:
+  Time:  O(m × n × 2^L × E) where L ≤ 10, E ≤ 50
+  Space: O(m × n × 2^L × E) for visited array
+
+EDGE CASES:
+  No litter: return 0 immediately.
+  Starting on litter: initial mask includes that litter bit.
+  Energy exhausted far from R: state becomes dead (e=0, not on R).
+  Disconnected litter behind obstacles: BFS naturally returns -1.
+
+LLM Testcase Validation:
+Test 1: classroom=["S.","XL"], energy=2
+start=(0,0), litter=[(1,1)], full_mask=1
+BFS: (0,0,0,2)→right→(0,1,0,1)→down→(1,1,1,0). mask==full_mask. Return 2 ✓
+
+Test 2: classroom=["LS","RL"], energy=4
+start=(0,1), litter=[(0,0),(1,1)], full_mask=3
+Init: S at (0,1) not litter. mask=0.
+Move 1: (0,1)→(0,0)='L'→nmask=1, e=3. moves=1.
+Move 2: (0,0)→(1,0)='R'→ne=4, nmask=1. moves=2.
+Move 3: (1,0)→(1,1)='L'→nmask=3=full_mask. Return 3 ✓
+
+Test 3: classroom=["L.S","RXL"], energy=3
+start=(0,2), litter=[(0,0),(1,2)], full_mask=3.
+(1,2) is blocked: to reach (1,2) from (0,2) needs (1,2)='L' reachable.
+(0,2)→(0,1)→(0,0)='L'→mask=1,e=1.
+From (0,0) e=1→(1,0)='R'→ne=3,e reset. mask=1,moves=3.
+From (1,0): right→(1,1)='X' blocked. up→(0,0) already visited with mask=1,e=3.
+From (0,0) e=3→(0,1)→(0,2)→(1,2)? need to get there.
+(0,2)→down=(1,2)='L'→nmask=3. Return moves at that step.
+Path: (0,2)→(0,1)→(0,0)→(1,0)→(0,0)→(0,1)→(0,2)→(1,2). But (1,2) is 'L'.
+Wait: classroom=["L.S","RXL"]: row0=[L,.,S], row1=[R,X,L].
+(1,1)='X' blocks. To reach (1,2) from (0,2): (0,2)→(1,2) direct (down).
+From (0,0) collect L (mask=1). Need energy to reach (1,2).
+(0,0)→(1,0) resets energy. (1,0)→up=(0,0). (1,0)→right=(1,1)=X. Stuck.
+Can't reach (1,2) from left side due to X. Can only reach (1,2) from (0,2).
+But (0,2) reachable from (0,1), and from (1,2) only (impossible loop).
+Energy from start: (0,2)→(1,2)=1 move, mask=0b10. Then need (0,0).
+(1,2)→(0,2)→(0,1)→(0,0)='L' needs 3 more moves, e=4-3=1 from initial 4... wait energy=3.
+(0,2) start e=3. →(1,2) e=2, mask=bit1. →(0,2) e=1. →(0,1) e=0. →(0,0) need e>0. Stuck.
+No path covers both. BFS exhausts. Return -1 ✓
