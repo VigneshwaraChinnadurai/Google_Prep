@@ -1,0 +1,48 @@
+Date: 2026-09-02
+Title: Construct Uniform Parity Array I
+URL: https://leetcode.com/problems/construct-uniform-parity-array-i/
+
+LLM Explanation:
+APPROACH: Parity analysis — O(n).
+
+Each nums2[i] is either nums1[i] (same parity as nums1[i]) or nums1[i] - nums1[j]
+for some j≠i (parity = parity(nums1[i]) XOR parity(nums1[j])).
+
+So nums2[i] can be:
+  - Same parity as nums1[i] (use nums1[i] itself, or subtract same-parity j)
+  - Opposite parity to nums1[i] (subtract different-parity j)
+
+ALL-ODD possible: every even element needs an odd j to pair with. Works iff count_odd >= 1.
+ALL-EVEN possible:
+  - Every even element stays even (trivial).
+  - Every odd element needs another odd j to pair with (odd-odd=even). Works iff count_odd != 1.
+  So: all-even iff count_odd == 0 OR count_odd >= 2.
+
+Return True if either target is achievable.
+
+NOTE: This means the answer is False only when:
+  - all_even fails (count_odd == 1) AND all_odd fails (count_odd == 0), which is impossible.
+  So the answer is ALWAYS True. But the explicit logic is stated for clarity.
+
+COMPLEXITY: O(n) time, O(1) space.
+
+LLM Testcase Validation:
+Test 1: nums1=[2,3], count_odd=1
+all_even_possible: count_odd==1 → False (not 0, not >=2)
+all_odd_possible: count_odd>=1 → True
+Return True ✓ (nums2=[-1,3], both odd)
+
+Test 2: nums1=[4,6], count_odd=0
+all_even_possible: count_odd==0 → True
+Return True ✓ (nums2=[4,6], both even)
+
+Extra: nums1=[1,3,5] count_odd=3
+all_even_possible: count_odd>=2 → True (e.g. 1-3=-2, 3-1=2, 5-3=2, all even)
+all_odd_possible: count_odd>=1 → True
+Return True ✓
+
+Extra: nums1=[2] n=1, count_odd=0
+all_even_possible: True. Return True ✓ (nums2=[2], one even element)
+
+Extra: nums1=[3] n=1, count_odd=1
+all_even_possible: False. all_odd_possible: True. Return True ✓
