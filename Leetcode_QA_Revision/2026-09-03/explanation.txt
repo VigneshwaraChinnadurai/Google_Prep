@@ -1,0 +1,72 @@
+Date: 2026-09-03
+Title: Construct Uniform Parity Array II
+URL: https://leetcode.com/problems/construct-uniform-parity-array-ii/
+
+LLM Explanation:
+APPROACH: Parity analysis with sorting — O(n log n).
+
+KEY DIFFERENCE FROM PART I: nums1[i] - nums1[j] >= 1 (strictly positive), meaning j must
+be an element strictly SMALLER than nums1[i]. Subtracting an ODD j flips parity; subtracting
+an EVEN j preserves parity.
+
+For element nums1[i]:
+  - Option A: keep nums1[i] (same parity).
+  - Option B: flip parity by subtracting an odd element strictly smaller than nums1[i].
+
+ALL-EVEN target:
+  Every odd element must be flippable to even → needs a smaller odd element.
+  The globally smallest odd element has NO smaller odd → can never become even.
+  Therefore: ALL-EVEN is possible iff there are NO odd elements (count_odd == 0).
+
+ALL-ODD target:
+  Every even element must be flippable to odd → needs a smaller odd element.
+  Sort nums1. Process left to right tracking whether any odd has been seen.
+  For each even element, if no odd element has appeared before it (in sorted order),
+  it cannot be made odd → ALL-ODD fails.
+
+ALGORITHM:
+1. If count_odd == 0: return True (all-even trivially possible).
+2. Sort nums1. Scan left to right: maintain seen_odd flag. For each even, check seen_odd.
+   If any even has no preceding odd → return False. Else → return True.
+
+COMPLEXITY: O(n log n) time (sorting), O(1) extra space.
+
+EDGE CASES:
+  n=1: single element. If odd → all_odd_ok=True (no even elements). Return True.
+        If even → seen_odd=False when processing it → all_odd_ok=False, but count_odd=0 → True.
+  All odds: count_odd=n>0; no even elements in sorted scan → all_odd_ok=True. Return True.
+  All evens: count_odd=0 → return True immediately.
+
+LLM Testcase Validation:
+Test 1: nums1=[1,4,7]
+count_odd=2 (1,7). Not 0, skip all-even.
+sorted=[1,4,7]. 
+x=1: odd, seen_odd=True.
+x=4: even, seen_odd=True → ok.
+x=7: odd, skip.
+all_odd_ok=True. Return True ✓
+
+Test 2: nums1=[2,3]
+count_odd=1. Not 0, skip all-even.
+sorted=[2,3].
+x=2: even, seen_odd=False → fail. all_odd_ok=False.
+Return False ✓
+(Verify: can't make all-even (odd 3 can't become even: no smaller odd exists since 1 not in nums1).
+Can't make all-odd: even 2 needs smaller odd, none exists.)
+
+Test 3: nums1=[4,6]
+count_odd=0. Return True ✓ (both even, keep them)
+
+Extra: nums1=[3,4,6]
+count_odd=1. sorted=[3,4,6].
+x=3: odd, seen_odd=True.
+x=4: even, seen_odd=True → ok.
+x=6: even, seen_odd=True → ok.
+Return True ✓ (all-odd: 3 stays 3, 4-3=1 odd, 6-3=3 odd)
+
+Extra: nums1=[2,4,1]
+count_odd=1. sorted=[1,2,4].
+x=1: odd, seen_odd=True.
+x=2: even, seen_odd=True → ok.
+x=4: even, seen_odd=True → ok.
+Return True ✓ (all-odd: 1 stays, 2-1=1, 4-1=3)
