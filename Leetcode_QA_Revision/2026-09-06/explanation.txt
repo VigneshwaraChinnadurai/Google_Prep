@@ -1,0 +1,58 @@
+Date: 2026-09-06
+Title: Distinct Subsequences
+URL: https://leetcode.com/problems/distinct-subsequences/
+
+LLM Explanation:
+APPROACH: 1D DP (space-optimised 2D DP) — O(m*n) time, O(n) space.
+
+dp[j] = number of ways to form t[0..j-1] as a subsequence of s[0..i-1] (after processing i chars of s).
+
+RECURRENCE: When processing s[i]:
+  For each j from n down to 1:
+    If s[i] == t[j-1]: dp[j] += dp[j-1]
+    (We can either use s[i] as the j-th character of t, adding dp[j-1] new ways,
+     or skip s[i], keeping existing dp[j].)
+
+  Right-to-left traversal prevents using s[i] multiple times in the same match
+  (same trick as 0/1 knapsack).
+
+BASE CASE: dp[0] = 1 (empty t is a subsequence of any string in exactly 1 way).
+
+FULL 2D DP EQUIVALENCE:
+  dp2[i][j] = numDistinct(s[:i], t[:j])
+  dp2[i][j] = dp2[i-1][j] + (dp2[i-1][j-1] if s[i-1]==t[j-1] else 0)
+  Space-optimised to 1D by processing j right-to-left.
+
+COMPLEXITY:
+  Time:  O(m * n) where m=len(s), n=len(t), up to 10^6
+  Space: O(n)
+
+EDGE CASES:
+  n > m: impossible, return 0.
+  t is empty (n=0): dp[0]=1, answer=1 (empty subsequence).
+  No matching chars: dp stays 0, answer=0.
+  Result fits in 32-bit signed int per problem guarantee.
+
+LLM Testcase Validation:
+Test 1: s="rabbbit", t="rabbit" (m=7, n=6)
+Track dp after each char of s:
+Initial: dp=[1,0,0,0,0,0,0]
+i=0 'r': j=1 s[0]=='r'==t[0] → dp[1]+=dp[0]=1 → [1,1,0,0,0,0,0]
+i=1 'a': j=2 'a'==t[1] → dp[2]+=dp[1]=1 → [1,1,1,0,0,0,0]
+i=2 'b': j=3 'b'==t[2] → dp[3]+=dp[2]=1 → [1,1,1,1,0,0,0]
+i=3 'b': j=4 'b'==t[3] → dp[4]+=dp[3]=1; j=3 'b'==t[2] → dp[3]+=dp[2]=1 → [1,1,1,2,1,0,0]
+i=4 'b': j=4 'b'==t[3] → dp[4]+=dp[3]=2 → dp[4]=3; j=3 → dp[3]+=dp[2]=1 → dp[3]=3 → [1,1,1,3,3,0,0]
+i=5 'i': j=5 'i'==t[4] → dp[5]+=dp[4]=3 → [1,1,1,3,3,3,0]
+i=6 't': j=6 't'==t[5] → dp[6]+=dp[5]=3 → [1,1,1,3,3,3,3]
+Return dp[6]=3 ✓
+
+Test 2: s="babgbag", t="bag" (m=7, n=3)
+Initial: dp=[1,0,0,0]
+i=0 'b': j=1 'b'==t[0] → dp[1]+=1=1 → [1,1,0,0]
+i=1 'a': j=2 'a'==t[1] → dp[2]+=dp[1]=1 → [1,1,1,0]
+i=2 'b': j=1 'b'==t[0] → dp[1]+=1=2 → [1,2,1,0]
+i=3 'g': j=3 'g'==t[2] → dp[3]+=dp[2]=1 → [1,2,1,1]
+i=4 'b': j=1 → dp[1]+=1=3 → [1,3,1,1]
+i=5 'a': j=2 → dp[2]+=dp[1]=3 → dp[2]=4 → [1,3,4,1]
+i=6 'g': j=3 → dp[3]+=dp[2]=4 → dp[3]=5 → [1,3,4,5]
+Return dp[3]=5 ✓
