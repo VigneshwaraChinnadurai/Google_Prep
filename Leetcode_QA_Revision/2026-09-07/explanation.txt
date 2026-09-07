@@ -1,0 +1,54 @@
+Date: 2026-09-07
+Title: Distinct Subsequences II
+URL: https://leetcode.com/problems/distinct-subsequences-ii/
+
+LLM Explanation:
+APPROACH: DP tracking subsequences by last character — O(26n) = O(n).
+
+dp[c] = number of distinct non-empty subsequences ending with character c.
+
+RECURRENCE: When processing character ch at position i:
+  New subsequences ending in ch = (all existing subsequences) + (empty subsequence)
+                                 = sum(dp) + 1
+  We SET dp[ch] = sum(dp) + 1 (replace, not add) to eliminate duplicates.
+
+WHY REPLACE (NOT ADD): If ch appeared before, dp[ch] already counts subsequences
+ending in ch. Setting dp[ch] = sum(dp)+1 replaces the old count with the new one,
+which subsumes the old one (every old subseq ending in ch is already included as
+a prefix, extended by the new ch). This naturally deduplicates.
+
+EXAMPLE with "aba":
+  After 'a': dp[a]=1 → {"a"}
+  After 'b': dp[b]=2 → {"ab","b"}
+  After 'a': new dp[a] = 1+2+1 = 4 → {"aa","ba","aba","a"}
+  (old dp[a]=1 for "a" is replaced; duplicates avoided)
+  Total = 4+2 = 6 ✓
+
+ANSWER: sum(dp) = total distinct non-empty subsequences.
+
+COMPLEXITY: O(26 * n) = O(n) time, O(26) = O(1) space.
+
+EDGE CASES:
+  All same chars "aaa...": dp[a] grows as 1,2,3,...,n → answer=n.
+  Single char: answer=1.
+  All distinct chars: answer = 2^n - 1.
+  Modular arithmetic applied at each step to prevent overflow.
+
+LLM Testcase Validation:
+Test 1: s="abc"
+ch='a': dp[0] = 0+1 = 1. dp=[1,0,...] sum=1
+ch='b': dp[1] = 1+1 = 2. dp=[1,2,...] sum=3
+ch='c': dp[2] = 3+1 = 4. dp=[1,2,4,...] sum=7
+Return 7 ✓
+
+Test 2: s="aba"
+ch='a': dp[0]=1. sum=1
+ch='b': dp[1]=2. sum=3
+ch='a': dp[0]=3+1=4. sum=4+2=6
+Return 6 ✓
+
+Test 3: s="aaa"
+ch='a': dp[0]=1. sum=1
+ch='a': dp[0]=1+1=2. sum=2
+ch='a': dp[0]=2+1=3. sum=3
+Return 3 ✓
