@@ -1,0 +1,19 @@
+Date: 2026-09-08
+Title: Count Commas in Range
+URL: https://leetcode.com/problems/count-commas-in-range/
+
+LLM Explanation:
+Within the constraint 1 <= n <= 10^5, every number with 4 or more digits (1000 to 99999)
+has exactly ONE comma (inserted after the first 2 or 3 leading digits). Numbers with 2
+commas start at 1,000,000 which exceeds the constraint.
+
+So total commas = count of numbers in [1000, n] = max(0, n - 999).
+
+O(1) time and space.
+
+LLM Testcase Validation:
+Test 1: n=1002 → 1002-999=3 ✓
+Test 2: n=998  → return 0 ✓
+
+Edge: n=1000 → 1000-999=1 ✓ (only "1,000")
+Edge: n=100000 → 100000-999=99001 ✓ (all 4-6 digit numbers have exactly 1 comma)
