@@ -1,0 +1,42 @@
+Date: 2026-09-09
+Question ID: 3871
+Title: Count Commas in Range II
+Difficulty: Medium
+Tags: Math
+URL: https://leetcode.com/problems/count-commas-in-range-ii/
+
+Question:
+You are given an integer n . Return the total number of commas used when writing all integers from [1, n] (inclusive) in standard number formatting. In standard formatting: A comma is inserted after every three digits from the right. Numbers with fewer than 4 digits contain no commas. Example 1: Input: n = 1002 Output: 3 Explanation: The numbers &quot;1,000&quot; , &quot;1,001&quot; , and &quot;1,002&quot; each contain one comma, giving a total of 3. Example 2: Input: n = 998 Output: 0 Explanation: ​​​​​​​ All numbers from 1 to 998 have fewer than four digits. Therefore, no commas are used. Constraints: 1 &lt;= n &lt;= 10 15
+
+Starter Code (Python3):
+class Solution:
+    def countCommas(self, n: int) -> int:
+        
+
+Testcases:
+1002
+998
+
+Expected Output / Validation:
+Test 1: n=1002
+threshold=1000: 1002>=1000 → total+=1002-1000+1=3. threshold=10^6>1002. Stop.
+Return 3 ✓
+
+Test 2: n=998
+threshold=1000>998. Stop immediately.
+Return 0 ✓
+
+Extra: n=1000000 (10^6)
+threshold=1000: total+=10^6-999=999001 (1-comma numbers: 1000..10^6)
+threshold=10^6: total+=10^6-10^6+1=1 (2-comma number: 1,000,000)
+threshold=10^9>10^6. Stop.
+Total=999002.
+Verify: 1000-999999 each have 1 comma → 999000 numbers.
+1000000 has 2 commas → 2.
+Total = 999000 + 2 = 999002. ✓
+
+Extra: n=10^15 (max constraint)
+Thresholds: 10^3,10^6,10^9,10^12,10^15.
+total = (10^15-999) + (10^15-10^6+1) + (10^15-10^9+1) + (10^15-10^12+1) + (10^15-10^15+1)
+      = 5*10^15 - 999 - 10^6 + 1 - 10^9 + 1 - 10^12 + 1 + 1 - 1
+      ≈ 5*10^15 (fits in Python int). ✓
