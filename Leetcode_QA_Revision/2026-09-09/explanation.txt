@@ -1,0 +1,49 @@
+Date: 2026-09-09
+Title: Count Commas in Range II
+URL: https://leetcode.com/problems/count-commas-in-range-ii/
+
+LLM Explanation:
+APPROACH: Inclusion counting via per-comma-level contributions — O(log n / log 1000).
+
+KEY INSIGHT: Total commas = Σ_{k=1}^∞ (count of numbers in [1,n] with >= k commas).
+A number has >= k commas iff it has >= 3k+1 digits, i.e., it is >= 10^(3k).
+So: total = Σ_{k=1}^∞ max(0, n - 10^(3k) + 1).
+
+Thresholds: 10^3, 10^6, 10^9, 10^12, 10^15 (stops when threshold > n).
+For n <= 10^15: at most 5 iterations.
+
+WHY THIS WORKS: Each number x contributes exactly floor((digits(x)-1)/3) commas.
+The Σ counts how many thresholds x exceeds, which equals the number of commas.
+For example, x=1,234,567 (7 digits) exceeds 10^3 and 10^6 but not 10^9 → 2 commas. ✓
+
+COMPLEXITY: O(log_1000(n)) = O(1) for bounded n ≤ 10^15 (5 iterations).
+Values fit in Python's arbitrary precision integers.
+
+EDGE CASES:
+  n < 1000: loop never executes, return 0.
+  n = 10^15: 5 iterations, each computing n - threshold + 1.
+  n exactly at a threshold: contributes 1 to the count for that level.
+
+LLM Testcase Validation:
+Test 1: n=1002
+threshold=1000: 1002>=1000 → total+=1002-1000+1=3. threshold=10^6>1002. Stop.
+Return 3 ✓
+
+Test 2: n=998
+threshold=1000>998. Stop immediately.
+Return 0 ✓
+
+Extra: n=1000000 (10^6)
+threshold=1000: total+=10^6-999=999001 (1-comma numbers: 1000..10^6)
+threshold=10^6: total+=10^6-10^6+1=1 (2-comma number: 1,000,000)
+threshold=10^9>10^6. Stop.
+Total=999002.
+Verify: 1000-999999 each have 1 comma → 999000 numbers.
+1000000 has 2 commas → 2.
+Total = 999000 + 2 = 999002. ✓
+
+Extra: n=10^15 (max constraint)
+Thresholds: 10^3,10^6,10^9,10^12,10^15.
+total = (10^15-999) + (10^15-10^6+1) + (10^15-10^9+1) + (10^15-10^12+1) + (10^15-10^15+1)
+      = 5*10^15 - 999 - 10^6 + 1 - 10^9 + 1 - 10^12 + 1 + 1 - 1
+      ≈ 5*10^15 (fits in Python int). ✓
