@@ -1,0 +1,38 @@
+Date: 2026-09-11
+Question ID: 3483
+Title: Unique 3-Digit Even Numbers
+Difficulty: Easy
+Tags: Array, Hash Table, Recursion, Enumeration
+URL: https://leetcode.com/problems/unique-3-digit-even-numbers/
+
+Question:
+You are given an array of digits called digits . Your task is to determine the number of distinct three-digit even numbers that can be formed using these digits. Note : Each copy of a digit can only be used once per number , and there may not be leading zeros. Example 1: Input: digits = [1,2,3,4] Output: 12 Explanation: The 12 distinct 3-digit even numbers that can be formed are 124, 132, 134, 142, 214, 234, 312, 314, 324, 342, 412, and 432. Note that 222 cannot be formed because there is only 1 copy of the digit 2. Example 2: Input: digits = [0,2,2] Output: 2 Explanation: The only 3-digit even numbers that can be formed are 202 and 220. Note that the digit 2 can be used twice because it appears twice in the array. Example 3: Input: digits = [6,6,6] Output: 1 Explanation: Only 666 can be formed. Example 4: Input: digits = [1,3,5] Output: 0 Explanation: No even 3-digit numbers can be formed. Constraints: 3 &lt;= digits.length &lt;= 10 0 &lt;= digits[i] &lt;= 9
+
+Starter Code (Python3):
+class Solution:
+    def totalNumbers(self, digits: List[int]) -> int:
+        
+
+Testcases:
+[1,2,3,4]
+[0,2,2]
+[6,6,6]
+[1,3,5]
+
+Expected Output / Validation:
+Test 1: digits=[1,2,3,4], freq={1:1,2:1,3:1,4:1}
+Iterates 100,102,...,998. Counts valid ones.
+Expected 12. The 12 numbers listed all use distinct digits from {1,2,3,4}. ✓
+
+Test 2: digits=[0,2,2], freq={0:1,2:2}
+Check 202: needed={2:1,0:1} → freq[2]=2>=1✓,freq[0]=1>=1✓ → valid
+Check 220: needed={2:2,0:1} → freq[2]=2>=2✓,freq[0]=1>=1✓ → valid
+Check 200: needed={2:1,0:2} → freq[0]=1<2 → invalid
+Others like 222: needed={2:3} → freq[2]=2<3 → invalid
+Output=2 ✓
+
+Test 3: digits=[6,6,6], freq={6:3}
+Only 666: needed={6:3} → freq[6]=3>=3✓ → 1 number. ✓
+
+Test 4: digits=[1,3,5], freq={1:1,3:1,5:1}
+No even digits → all even numbers need an even last digit → 0 valid. ✓
