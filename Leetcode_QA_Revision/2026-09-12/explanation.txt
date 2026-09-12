@@ -1,0 +1,45 @@
+Date: 2026-09-12
+Title: Maximum Score of Non-overlapping Intervals
+URL: https://leetcode.com/problems/maximum-score-of-non-overlapping-intervals/
+
+LLM Explanation:
+APPROACH: DP with binary search — O(K * n log n).
+
+Sort intervals by right endpoint (tie-break: left endpoint, then original index).
+dp[k][i] = (max_weight, lex_smallest_index_tuple) picking exactly k non-overlapping
+intervals from the first i intervals (in sorted order).
+
+TRANSITION for interval i (original index idx, endpoints l_i, r_i, weight w_i):
+1. Skip: dp[k][i] = dp[k][i-1]
+2. Take: binary search for the last interval j with r_j < l_i (strictly non-overlapping).
+   dp[k][i] = combine dp[k-1][j] with current interval.
+
+TIE-BREAKING for lexicographically smallest: when weights are equal, compare sorted
+index tuples lexicographically (smaller tuple wins).
+
+ANSWER: Iterate k=1..4, pick the (weight, indices) with maximum weight (lex smallest on tie).
+
+COMPLEXITY:
+  Sorting: O(n log n)
+  DP: O(K * n) states, O(log n) binary search per state → O(K * n log n)
+  With K=4, n=5*10^4: ~2*10^6 operations.
+
+EDGE CASES:
+  Single interval: k=1 always valid.
+  No valid k-interval combination for some k: dp[k][n] stays (-1, ()).
+  Intervals sharing boundary are overlapping (use strict l > r check via bisect_left).
+
+LLM Testcase Validation:
+Test 1: intervals=[[1,3,2],[4,5,2],[1,5,5],[6,9,3],[6,7,1],[8,9,1]]
+Sort by right: idx2(r=5),idx0(r=3)... let me re-sort:
+idx0: [1,3,2], idx1:[4,5,2], idx2:[1,5,5], idx3:[6,9,3], idx4:[6,7,1], idx5:[8,9,1]
+Sort by r: r=3→idx0, r=5→idx1,idx2(same r=5: l=4<l=1? sort by l then idx → idx2(l=1) before idx1(l=4)), r=7→idx4, r=9→idx3,idx5(same r=9: l=6<l=8 → idx3,idx5)
+Order: [0, 2, 1, 4, 3, 5] (sorted_r=[3,5,5,7,9,9])
+
+Best single: idx2 weight=5. Best pair: idx2(w=5,r=5) + non-overlapping (l>5): idx3(l=6,w=3). Sum=8.
+dp should yield (8, (2,3)). Output [2,3] ✓
+
+Test 2: intervals=[[5,8,1],[6,7,7],[4,7,3],[9,10,6],[7,8,2],[11,14,3],[3,5,5]]
+Best 4: indices 1(w=7),3(w=6),5(w=3),6(w=5). Sum=21.
+Check non-overlapping: idx6=[3,5],idx1=[6,7],idx3=[9,10],idx5=[11,14]. All non-overlapping. ✓
+Output [1,3,5,6] ✓
