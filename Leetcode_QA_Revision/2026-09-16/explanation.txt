@@ -1,0 +1,46 @@
+Date: 2026-09-16
+Title: Number of Sets of K Non-Overlapping Line Segments
+URL: https://leetcode.com/problems/number-of-sets-of-k-non-overlapping-line-segments/
+
+LLM Explanation:
+APPROACH: Combinatorics — O(k) time.
+
+FORMULA: The answer is C(n + k - 1, 2k).
+
+DERIVATION:
+We have k ordered segments [l1,r1], [l2,r2], ..., [lk,rk] with:
+  0 <= l1 <= r1 <= l2 <= r2 <= ... <= lk <= rk <= n-1
+  Each segment has length >= 1: ri > li.
+
+To handle the "sharing endpoints" condition, transform variables:
+  Let l'i = li and r'i = ri - 1 for each i (subtract 1 from each right endpoint).
+  This makes all 2k endpoints strictly ordered (since ri > li means r'i >= li).
+
+  
+After transformation: choose 2k values from {0, ..., n-1+k-1} = {0, ..., n+k-2}
+in non-decreasing order... 
+
+Actually a cleaner bijection: the number of ways to choose k non-overlapping
+segments with shared endpoints allowed on n points equals C(n+k-1, 2k).
+
+This is a well-known combinatorial identity. The key insight is adding k-1 "phantom"
+points to separate the k segments, then choosing 2k endpoints from n+k-1 total points.
+
+IMPLEMENTATION: Direct computation of C(n+k-1, 2k) mod 10^9+7 using Fermat's
+little theorem for modular inverse (since 10^9+7 is prime).
+
+COMPLEXITY: O(k) for the binomial computation, k <= n <= 1000.
+
+EDGE CASES:
+  k=1: C(n, 2) = n*(n-1)/2 line segments between any 2 of n points.
+  k=n-1: C(2n-2, 2n-2) = 1 (only one way: all consecutive segments).
+  2k > n+k-1 (impossible): handled by returning 0.
+
+LLM Testcase Validation:
+Test 1: n=4, k=2 → C(4+2-1, 4) = C(5,4) = 5 ✓
+Test 2: n=3, k=1 → C(3+1-1, 2) = C(3,2) = 3 ✓
+Test 3: n=30, k=7 → C(36,14) mod (10^9+7) = 796297179 ✓
+
+Verify C(36,14):
+C(36,14) = 3796297200. 3796297200 mod (10^9+7) = 3796297200 - 3*(10^9+7) = 
+3796297200 - 3000000021 = 796297179 ✓
