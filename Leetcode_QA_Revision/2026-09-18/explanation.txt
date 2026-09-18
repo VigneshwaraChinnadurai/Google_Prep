@@ -1,0 +1,93 @@
+Date: 2026-09-18
+Title: Maximum Number of Non-Overlapping Substrings
+URL: https://leetcode.com/problems/maximum-number-of-non-overlapping-substrings/
+
+LLM Explanation:
+APPROACH: Greedy interval selection — O(n * 26) = O(n).
+
+KEY INSIGHT: A valid substring starting at i must contain ALL occurrences of every
+character it contains. So we expand the right boundary greedily: starting from
+last[s[i]], include every character encountered, extending right as needed.
+
+A starting position i is only valid if first[s[i]] == i (i must be the first
+occurrence of its character, otherwise any valid substring covering s[i] must
+start earlier).
+
+ALGORITHM:
+1. For each valid starting i (first occurrence of s[i]), compute the minimal
+   right boundary r via get_right(i). If any enclosed character has its first
+   occurrence before i, the substring is invalid (return -1).
+
+2. Greedy scan left to right:
+   - If i > last_end: start a new substring [i, r], update last_end = r.
+   - Else (i overlaps with current last substring): if r < last_end, this
+     shorter substring replaces the current one (same count, smaller length).
+
+WHY GREEDY WORKS: We want maximum count with minimum total length. The greedy
+approach processes potential substrings in order of their start, always trying
+to shrink the current rightmost endpoint (to leave room for more substrings).
+
+COMPLEXITY:
+  get_right(i): O(n) per call worst case, but amortised O(1) since each char
+  is visited at most twice across all calls → O(n) total.
+  Overall: O(n) time, O(26) = O(1) space (ignoring output).
+
+LLM Testcase Validation:
+Test 1: s="adefaddaccc"
+first: a=0,d=1,e=2,f=3,c=8
+last:  a=7,d=6,e=2,f=3,c=10
+
+i=0 (s[0]='a'): get_right(0): r=last['a']=7. Expand: check chars in s[0..7]="adefadda".
+  j=0:'a'→first=0=i✓,r=max(7,7)=7
+  j=1:'d'→first=1>=0✓,r=max(7,6)=7
+  j=2:'e'→first=2>=0✓,r=max(7,2)=7
+  j=3:'f'→first=3>=0✓,r=max(7,3)=7
+  j=4:'a'→first=0=i✓,r=7; j=5:'d'→r=7; j=6:'d'→r=7; j=7:'a'→r=7.
+  r=7. Valid. i=0>last_end=-1 → result=["adefadda"], last_end=7.
+
+i=1: first['d']=1=i. get_right(1): r=last['d']=6.
+  j=1:'d'✓; j=2:'e'→first=2>=1✓,r=max(6,2)=6; j=3:'f'→first=3>=1✓,r=max(6,3)=6;
+  j=4:'a'→first=0<1 → return -1. Invalid.
+
+i=2: first['e']=2=i. get_right(2): r=last['e']=2.
+  j=2:'e'→first=2=i✓,r=2. r=2.
+  i=2 <= last_end=7. r=2 < last_end=7 → replace: result=["e"], last_end=2.
+
+i=3: first['f']=3=i. get_right(3): r=last['f']=3. j=3:'f'✓. r=3.
+  i=3>last_end=2 → result=["e","f"], last_end=3.
+
+i=4: s[4]='a', first['a']=0≠4. Skip.
+i=5,6: 'd', first=1≠5,6. Skip.
+i=7: 'a', first=0≠7. Skip.
+
+i=8: first['c']=8=i. get_right(8): r=last['c']=10.
+  j=8,9,10: all 'c', first=8=i✓. r=10.
+  i=8>last_end=3 → result=["e","f","ccc"], last_end=10.
+
+Return ["e","f","ccc"] ✓
+
+Test 2: s="abbaccd"
+first: a=0,b=1,c=4,d=6
+last:  a=3,b=2,c=5,d=6
+
+i=0: 'a', first=0=i. get_right(0): r=last['a']=3.
+  j=0:'a'✓; j=1:'b'→first=1>=0✓,r=max(3,2)=3; j=2:'b'✓; j=3:'a'✓. r=3.
+  i=0>-1 → result=["abba"], last_end=3.
+
+i=1: 'b', first=1=i. get_right(1): r=last['b']=2.
+  j=1:'b'✓; j=2:'b'✓. r=2.
+  i=1<=last_end=3. r=2<3 → replace: result=["bb"], last_end=2.
+
+i=2: 'b', first=1≠2. Skip.
+i=3: 'a', first=0≠3. Skip.
+
+i=4: 'c', first=4=i. get_right(4): r=last['c']=5.
+  j=4:'c'✓; j=5:'c'✓. r=5.
+  i=4>last_end=2 → result=["bb","cc"], last_end=5.
+
+i=5: 'c', first=4≠5. Skip.
+
+i=6: 'd', first=6=i. get_right(6): r=last['d']=6. j=6:'d'✓. r=6.
+  i=6>last_end=5 → result=["bb","cc","d"], last_end=6.
+
+Return ["bb","cc","d"] which is same set as ["d","bb","cc"] ✓
