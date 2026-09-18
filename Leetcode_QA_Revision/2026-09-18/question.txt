@@ -1,0 +1,78 @@
+Date: 2026-09-18
+Question ID: 1520
+Title: Maximum Number of Non-Overlapping Substrings
+Difficulty: Hard
+Tags: Hash Table, String, Greedy, Sorting
+URL: https://leetcode.com/problems/maximum-number-of-non-overlapping-substrings/
+
+Question:
+Given a string s of lowercase letters, you need to find the maximum number of non-empty substrings of s that meet the following conditions: The substrings do not overlap, that is for any two substrings s[i..j] and s[x..y] , either j &lt; x or i &gt; y is true. A substring that contains a certain character c must also contain all occurrences of c . Find the maximum number of substrings that meet the above conditions . If there are multiple solutions with the same number of substrings, return the one with minimum total length. It can be shown that there exists a unique solution of minimum total length. Notice that you can return the substrings in any order. Example 1: Input: s = &quot;adefaddaccc&quot; Output: [&quot;e&quot;,&quot;f&quot;,&quot;ccc&quot;] Explanation: The following are all the possible substrings that meet the conditions: [ &quot;adefaddaccc&quot; &quot;adefadda&quot;, &quot;ef&quot;, &quot;e&quot;, &quot;f&quot;, &quot;ccc&quot;, ] If we choose the first string, we cannot choose anything else and we&#39;d get only 1. If we choose &quot;adefadda&quot;, we are left with &quot;ccc&quot; which is the only one that doesn&#39;t overlap, thus obtaining 2 substrings. Notice also, that it&#39;s not optimal to choose &quot;ef&quot; since it can be split into two. Therefore, the optimal way is to choose [&quot;e&quot;,&quot;f&quot;,&quot;ccc&quot;] which gives us 3 substrings. No other solution of the same number of substrings exist. Example 2: Input: s = &quot;abbaccd&quot; Output: [&quot;d&quot;,&quot;bb&quot;,&quot;cc&quot;] Explanation: Notice that while the set of substrings [&quot;d&quot;,&quot;abba&quot;,&quot;cc&quot;] also has length 3, it&#39;s considered incorrect since it has larger total length. Constraints: 1 &lt;= s.length &lt;= 10 5 s contains only lowercase English letters.
+
+Starter Code (Python3):
+class Solution:
+    def maxNumOfSubstrings(self, s: str) -> list[str]:
+        
+
+Testcases:
+"adefaddaccc"
+"abbaccd"
+
+Expected Output / Validation:
+Test 1: s="adefaddaccc"
+first: a=0,d=1,e=2,f=3,c=8
+last:  a=7,d=6,e=2,f=3,c=10
+
+i=0 (s[0]='a'): get_right(0): r=last['a']=7. Expand: check chars in s[0..7]="adefadda".
+  j=0:'a'→first=0=i✓,r=max(7,7)=7
+  j=1:'d'→first=1>=0✓,r=max(7,6)=7
+  j=2:'e'→first=2>=0✓,r=max(7,2)=7
+  j=3:'f'→first=3>=0✓,r=max(7,3)=7
+  j=4:'a'→first=0=i✓,r=7; j=5:'d'→r=7; j=6:'d'→r=7; j=7:'a'→r=7.
+  r=7. Valid. i=0>last_end=-1 → result=["adefadda"], last_end=7.
+
+i=1: first['d']=1=i. get_right(1): r=last['d']=6.
+  j=1:'d'✓; j=2:'e'→first=2>=1✓,r=max(6,2)=6; j=3:'f'→first=3>=1✓,r=max(6,3)=6;
+  j=4:'a'→first=0<1 → return -1. Invalid.
+
+i=2: first['e']=2=i. get_right(2): r=last['e']=2.
+  j=2:'e'→first=2=i✓,r=2. r=2.
+  i=2 <= last_end=7. r=2 < last_end=7 → replace: result=["e"], last_end=2.
+
+i=3: first['f']=3=i. get_right(3): r=last['f']=3. j=3:'f'✓. r=3.
+  i=3>last_end=2 → result=["e","f"], last_end=3.
+
+i=4: s[4]='a', first['a']=0≠4. Skip.
+i=5,6: 'd', first=1≠5,6. Skip.
+i=7: 'a', first=0≠7. Skip.
+
+i=8: first['c']=8=i. get_right(8): r=last['c']=10.
+  j=8,9,10: all 'c', first=8=i✓. r=10.
+  i=8>last_end=3 → result=["e","f","ccc"], last_end=10.
+
+Return ["e","f","ccc"] ✓
+
+Test 2: s="abbaccd"
+first: a=0,b=1,c=4,d=6
+last:  a=3,b=2,c=5,d=6
+
+i=0: 'a', first=0=i. get_right(0): r=last['a']=3.
+  j=0:'a'✓; j=1:'b'→first=1>=0✓,r=max(3,2)=3; j=2:'b'✓; j=3:'a'✓. r=3.
+  i=0>-1 → result=["abba"], last_end=3.
+
+i=1: 'b', first=1=i. get_right(1): r=last['b']=2.
+  j=1:'b'✓; j=2:'b'✓. r=2.
+  i=1<=last_end=3. r=2<3 → replace: result=["bb"], last_end=2.
+
+i=2: 'b', first=1≠2. Skip.
+i=3: 'a', first=0≠3. Skip.
+
+i=4: 'c', first=4=i. get_right(4): r=last['c']=5.
+  j=4:'c'✓; j=5:'c'✓. r=5.
+  i=4>last_end=2 → result=["bb","cc"], last_end=5.
+
+i=5: 'c', first=4≠5. Skip.
+
+i=6: 'd', first=6=i. get_right(6): r=last['d']=6. j=6:'d'✓. r=6.
+  i=6>last_end=5 → result=["bb","cc","d"], last_end=6.
+
+Return ["bb","cc","d"] which is same set as ["d","bb","cc"] ✓
