@@ -1,0 +1,20 @@
+Date: 2026-09-20
+Title: Reverse Degree of a String
+URL: https://leetcode.com/problems/reverse-degree-of-a-string/
+
+LLM Explanation:
+Direct simulation. Reverse alphabet value of char c = 26 - (ord(c) - ord('a')). Multiply by 1-indexed position and sum. O(n) time, O(1) space.
+
+LLM Testcase Validation:
+Test 1: s="abc"
+i=0,'a': (26-0)*1=26
+i=1,'b': (26-1)*2=50
+i=2,'c': (26-2)*3=72
+Total=148 ✓
+
+Test 2: s="zaza"
+i=0,'z': (26-25)*1=1
+i=1,'a': (26-0)*2=52
+i=2,'z': (26-25)*3=3
+i=3,'a': (26-0)*4=104
+Total=160 ✓
