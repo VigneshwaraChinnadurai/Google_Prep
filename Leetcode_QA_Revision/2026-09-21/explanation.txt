@@ -1,0 +1,58 @@
+Date: 2026-09-21
+Title: Find X Value of Array I
+URL: https://leetcode.com/problems/find-x-value-of-array-i/
+
+LLM Explanation:
+APPROACH: Sliding DP on subarrays — O(n * k) time, O(k) space.
+
+For each right endpoint j, maintain cnt[r] = number of subarrays ending at j
+with product ≡ r (mod k).
+
+TRANSITION: When processing nums[j]:
+  For each existing subarray ending at j-1 with remainder r:
+    It extends to a subarray ending at j with remainder (r * nums[j]) % k.
+  Plus the new single-element subarray [nums[j]] with remainder nums[j] % k.
+
+Accumulate cnt into result[r] after each j.
+
+CORRECTNESS: Every contiguous subarray nums[i..j] is counted exactly once,
+when j is processed.
+
+COMPLEXITY:
+  Time: O(n * k), with n up to 10^5 and k up to 5 → at most 5*10^5 ops.
+  Space: O(k) = O(5).
+
+EDGE CASES:
+  k=1: all products ≡ 0 mod 1, result[0] = n*(n+1)/2.
+  Large nums[i]: only nums[i] % k matters for the transition.
+  Single element: one subarray contributing nums[0] % k.
+
+LLM Testcase Validation:
+Test 1: nums=[1,2,3,4,5], k=3
+j=0, v=1: new_cnt[1]=1. cnt=[0,1,0]. result=[0,1,0]
+j=1, v=2: extend: r=1→(1*2)%3=2, new_cnt[2]+=1; new: new_cnt[2]+=1→new_cnt[2]=2.
+  cnt=[0,0,2]. result=[0,1,2]
+j=2, v=0: extend: r=2→(2*0)%3=0, new_cnt[0]+=2; new: new_cnt[0]+=1.
+  cnt=[3,0,0]. result=[3,1,2]
+j=3, v=1: extend: r=0→0, new_cnt[0]+=3; new: new_cnt[1]+=1.
+  cnt=[3,1,0]. result=[6,2,2]
+j=4, v=2: extend: r=0→0, new_cnt[0]+=3; r=1→2, new_cnt[2]+=1; new: new_cnt[2]+=1.
+  cnt=[3,0,2]. result=[9,2,4]
+Return [9,2,4] ✓
+
+Test 2: nums=[1,2,4,8,16,32], k=4
+j=0,v=1: cnt=[0,1,0,0]. result=[0,1,0,0]
+j=1,v=2: r=1→2: new_cnt[2]+=1; new: new_cnt[2]+=1. cnt=[0,0,2,0]. result=[0,1,2,0]
+j=2,v=0: r=2→0: new_cnt[0]+=2; new: new_cnt[0]+=1. cnt=[3,0,0,0]. result=[3,1,2,0]
+j=3,v=0: r=0→0: new_cnt[0]+=3; new: new_cnt[0]+=1. cnt=[4,0,0,0]. result=[7,1,2,0]
+j=4,v=0: r=0→0: new_cnt[0]+=4; new: new_cnt[0]+=1. cnt=[5,0,0,0]. result=[12,1,2,0]
+j=5,v=0: r=0→0: new_cnt[0]+=5; new: new_cnt[0]+=1. cnt=[6,0,0,0]. result=[18,1,2,0]
+Return [18,1,2,0] ✓
+
+Test 3: nums=[1,1,2,1,1], k=2
+j=0,v=1: cnt=[0,1]. result=[0,1]
+j=1,v=1: r=1→1: new_cnt[1]+=1; new: new_cnt[1]+=1. cnt=[0,2]. result=[0,3]
+j=2,v=0: r=1→0: new_cnt[0]+=2; new: new_cnt[0]+=1. cnt=[3,0]. result=[3,3]
+j=3,v=1: r=0→0: new_cnt[0]+=3; new: new_cnt[1]+=1. cnt=[3,1]. result=[6,4]
+j=4,v=1: r=0→0: new_cnt[0]+=3; r=1→1: new_cnt[1]+=1; new: new_cnt[1]+=1. cnt=[3,2]. result=[9,6]
+Return [9,6] ✓
