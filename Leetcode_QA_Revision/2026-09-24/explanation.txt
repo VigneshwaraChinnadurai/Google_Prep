@@ -1,0 +1,11 @@
+Date: 2026-09-24
+Title: Smallest Index With Digit Sum Equal to Index
+URL: https://leetcode.com/problems/smallest-index-with-digit-sum-equal-to-index/
+
+LLM Explanation:
+Linear scan. Digit sum via string conversion. O(n * d) where d = max digits ≤ 4. O(1) space.
+
+LLM Testcase Validation:
+Test 1: [1,3,2] → i=2: digits(2)=2==2 → return 2 ✓
+Test 2: [1,10,11] → i=1: digits(10)=1==1 → return 1 ✓
+Test 3: [1,2,3] → no match → return -1 ✓
