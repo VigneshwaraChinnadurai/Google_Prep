@@ -1,0 +1,57 @@
+Date: 2026-09-25
+Question ID: 1096
+Title: Brace Expansion II
+Difficulty: Hard
+Tags: Hash Table, String, Backtracking, Stack, Breadth-First Search, Sorting
+URL: https://leetcode.com/problems/brace-expansion-ii/
+
+Question:
+Under the grammar given below, strings can represent a set of lowercase words. Let R(expr) denote the set of words the expression represents. The grammar can best be understood through simple examples: Single letters represent a singleton set containing that word. R(&quot;a&quot;) = {&quot;a&quot;} R(&quot;w&quot;) = {&quot;w&quot;} When we take a comma-delimited list of two or more expressions, we take the union of possibilities. R(&quot;{a,b,c}&quot;) = {&quot;a&quot;,&quot;b&quot;,&quot;c&quot;} R(&quot;{{a,b},{b,c}}&quot;) = {&quot;a&quot;,&quot;b&quot;,&quot;c&quot;} (notice the final set only contains each word at most once) When we concatenate two expressions, we take the set of possible concatenations between two words where the first word comes from the first expression and the second word comes from the second expression. R(&quot;{a,b}{c,d}&quot;) = {&quot;ac&quot;,&quot;ad&quot;,&quot;bc&quot;,&quot;bd&quot;} R(&quot;a{b,c}{d,e}f{g,h}&quot;) = {&quot;abdfg&quot;, &quot;abdfh&quot;, &quot;abefg&quot;, &quot;abefh&quot;, &quot;acdfg&quot;, &quot;acdfh&quot;, &quot;acefg&quot;, &quot;acefh&quot;} Formally, the three rules for our grammar: For every lowercase letter x , we have R(x) = {x} . For expressions e 1 , e 2 , ... , e k with k &gt;= 2 , we have R({e 1 , e 2 , ...}) = R(e 1 ) &cup; R(e 2 ) &cup; ... For expressions e 1 and e 2 , we have R(e 1 + e 2 ) = {a + b for (a, b) in R(e 1 ) &times; R(e 2 )} , where + denotes concatenation, and &times; denotes the cartesian product. Given an expression representing a set of words under the given grammar, return the sorted list of words that the expression represents . Example 1: Input: expression = &quot;{a,b}{c,{d,e}}&quot; Output: [&quot;ac&quot;,&quot;ad&quot;,&quot;ae&quot;,&quot;bc&quot;,&quot;bd&quot;,&quot;be&quot;] Example 2: Input: expression = &quot;{{a,z},a{b,c},{ab,z}}&quot; Output: [&quot;a&quot;,&quot;ab&quot;,&quot;ac&quot;,&quot;z&quot;] Explanation: Each distinct word is written only once in the final answer. Constraints: 1 &lt;= expression.length &lt;= 60 expression[i] consists of &#39;{&#39; , &#39;}&#39; , &#39;,&#39; or lowercase English letters. The given expression represents a set of words based on the grammar given in the description.
+
+Starter Code (Python3):
+class Solution:
+    def braceExpansionII(self, expression: str) -> list[str]:
+        
+
+Testcases:
+"{a,b}{c,{d,e}}"
+"{{a,z},a{b,c},{ab,z}}"
+
+Expected Output / Validation:
+Test 1: expression="{a,b}{c,{d,e}}"
+parse(s, 0):
+  i=0: '{' → parse(s,1):
+    i=1: 'a' → current={"a"}, i=2
+    i=2: ',' → result={"a"}, current={""}, i=3
+    i=3: 'b' → current={"b"}, i=4
+    i=4: '}' → return ({"a","b"}, 4)
+  i=5 (after skip '}'): '{' → parse(s,6):
+    i=6: 'c' → current={"c"}, i=7
+    i=7: ',' → result={"c"}, current={""}, i=8
+    i=8: '{' → parse(s,9):
+      i=9: 'd' → current={"d"}, i=10
+      i=10: ',' → result={"d"}, current={""}, i=11
+      i=11: 'e' → current={"e"}, i=12
+      i=12: '}' → return ({"d","e"}, 12)
+    i=13 (skip '}'): current={""} × {"d","e"} = {"d","e"}
+    result={"c"}, current={"d","e"}
+    i=13: '}' → return ({"c","d","e"}, 13)
+  i=14: current={"a","b"} × {"c","d","e"} = {"ac","ad","ae","bc","bd","be"}
+  i=14: end → result={"ac","ad","ae","bc","bd","be"}
+sorted: ["ac","ad","ae","bc","bd","be"] ✓
+
+Test 2: expression="{{a,z},a{b,c},{ab,z}}"
+parse(s,0):
+  i=0: '{' → parse inner from i=1:
+    i=1: '{' → parse(s,2): returns ({"a","z"},4), i=5
+    current={"a","z"}
+    i=5: ',' → result={"a","z"}, current={""}
+    i=6: 'a' → current={"a"}
+    i=7: '{' → parse(s,8): 'b',',','c' → ({"b","c"},10), i=11(skip '}')
+    current={"a"}×{"b","c"}={"ab","ac"}
+    i=11: ',' → result={"a","z","ab","ac"}, current={""}
+    i=12: '{' → parse(s,13): 'a','b',',','z' → ({"ab","z"},16), i=17(skip '}')
+    current={""}×{"ab","z"}={"ab","z"}
+    i=17: '}' → result={"a","z","ab","ac"}|{"ab","z"}={"a","z","ab","ac"}, return ({"a","z","ab","ac"},17)
+  i=18: end
+sorted: ["a","ab","ac","z"] ✓
