@@ -56,7 +56,8 @@ enum class FeatureScreen {
     OLLAMA,
     CHATBOT,
     GITHUB_PROFILE,
-    BOOK_READER
+    BOOK_READER,
+    REMINDERS
 }
 
 /**
@@ -171,6 +172,7 @@ fun TabbedMainScreen(
                         FeatureScreen.HUB -> FeaturesHubScreen(
                             onNavigate = { destination ->
                                 featureScreen = when (destination) {
+                                    FeatureDestination.REMINDERS -> FeatureScreen.REMINDERS
                                     FeatureDestination.ANALYTICS -> FeatureScreen.ANALYTICS
                                     FeatureDestination.GOALS -> FeatureScreen.GOALS
                                     FeatureDestination.ACHIEVEMENTS -> FeatureScreen.ACHIEVEMENTS
@@ -247,6 +249,9 @@ fun TabbedMainScreen(
                             onBackClick = { featureScreen = FeatureScreen.HUB }
                         )
                         FeatureScreen.WHATS_NEW -> WhatsNewScreen(
+                            onBackClick = { featureScreen = FeatureScreen.HUB }
+                        )
+                        FeatureScreen.REMINDERS -> com.vignesh.leetcodechecker.reminders.RemindersScreen(
                             onBackClick = { featureScreen = FeatureScreen.HUB }
                         )
                         FeatureScreen.OLLAMA -> Scaffold(

@@ -73,6 +73,9 @@ class MainActivity : FragmentActivity() {
         ConsistencyReminderScheduler.scheduleDailyProofFilingFetch(this)
         // Ensure weekly backup is scheduled (no-op until a backup folder is chosen)
         BackupWorker.ensureScheduled(this)
+        // Re-arm all pending reminder alarms -- idempotent, and a cheap safety net beyond
+        // BootRescheduleReceiver alone (also covers app updates, which can clear alarms too)
+        com.vignesh.leetcodechecker.reminders.ReminderScheduler.rescheduleAll(this)
         setContent {
             val darkTheme = isSystemInDarkTheme()
             MaterialTheme(colorScheme = if (darkTheme) AppDarkColors else AppLightColors) {

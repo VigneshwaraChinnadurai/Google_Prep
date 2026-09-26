@@ -109,6 +109,7 @@ fun FeaturesHubScreen(
         Spacer(modifier = Modifier.height(12.dp))
         
         val features = listOf(
+            FeatureItem("Reminders", "⏰", Color(0xFFFFB86B), FeatureDestination.REMINDERS),
             FeatureItem("Ollama", "🔧", Color(0xFF6E7681), FeatureDestination.OLLAMA),
             FeatureItem("Global Settings", "⚙", Color(0xFFA3A3A3), FeatureDestination.GLOBAL_SETTINGS),
             FeatureItem("AI Hub", "🧠", Color(0xFFFF6B6B), FeatureDestination.AI_LEARNING_HUB),
@@ -281,6 +282,7 @@ data class FeatureItem(
 )
 
 enum class FeatureDestination {
+    REMINDERS,
     ANALYTICS,
     GOALS,
     ACHIEVEMENTS,
