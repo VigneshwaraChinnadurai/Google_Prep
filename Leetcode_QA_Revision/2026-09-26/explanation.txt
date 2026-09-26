@@ -1,0 +1,18 @@
+Date: 2026-09-26
+Title: Evaluate the Bracket Pairs of a String
+URL: https://leetcode.com/problems/evaluate-the-bracket-pairs-of-a-string/
+
+LLM Explanation:
+Build a dict from knowledge for O(1) lookups. Use regex to find all (key) patterns
+and replace each with its mapped value or '?'. O(n + K) time where n=len(s), K=len(knowledge).
+
+LLM Testcase Validation:
+Test 1: s="(name)is(age)yearsold", knowledge=[["name","bob"],["age","two"]]
+kmap={"name":"bob","age":"two"}
+Replace (name)→"bob", (age)→"two" → "bobistwoyearsold" ✓
+
+Test 2: s="hi(name)", knowledge=[["a","b"]]
+kmap={"a":"b"}. (name) not in kmap → "?" → "hi?" ✓
+
+Test 3: s="(a)(a)(a)aaa", knowledge=[["a","yes"]]
+Each (a)→"yes", bare "aaa" unchanged → "yesyesyesaaa" ✓
