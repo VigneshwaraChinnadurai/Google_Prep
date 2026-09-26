@@ -1,0 +1,33 @@
+Date: 2026-09-26
+Question ID: 1807
+Title: Evaluate the Bracket Pairs of a String
+Difficulty: Medium
+Tags: Array, Hash Table, String
+URL: https://leetcode.com/problems/evaluate-the-bracket-pairs-of-a-string/
+
+Question:
+You are given a string s that contains some bracket pairs, with each pair containing a non-empty key. For example, in the string &quot;(name)is(age)yearsold&quot; , there are two bracket pairs that contain the keys &quot;name&quot; and &quot;age&quot; . You know the values of a wide range of keys. This is represented by a 2D string array knowledge where each knowledge[i] = [key i , value i ] indicates that key key i has a value of value i . You are tasked to evaluate all of the bracket pairs. When you evaluate a bracket pair that contains some key key i , you will: Replace key i and the bracket pair with the key&#39;s corresponding value i . If you do not know the value of the key, you will replace key i and the bracket pair with a question mark &quot;?&quot; (without the quotation marks). Each key will appear at most once in your knowledge . There will not be any nested brackets in s . Return the resulting string after evaluating all of the bracket pairs. Example 1: Input: s = &quot;(name)is(age)yearsold&quot;, knowledge = [[&quot;name&quot;,&quot;bob&quot;],[&quot;age&quot;,&quot;two&quot;]] Output: &quot;bobistwoyearsold&quot; Explanation: The key &quot;name&quot; has a value of &quot;bob&quot;, so replace &quot;(name)&quot; with &quot;bob&quot;. The key &quot;age&quot; has a value of &quot;two&quot;, so replace &quot;(age)&quot; with &quot;two&quot;. Example 2: Input: s = &quot;hi(name)&quot;, knowledge = [[&quot;a&quot;,&quot;b&quot;]] Output: &quot;hi?&quot; Explanation: As you do not know the value of the key &quot;name&quot;, replace &quot;(name)&quot; with &quot;?&quot;. Example 3: Input: s = &quot;(a)(a)(a)aaa&quot;, knowledge = [[&quot;a&quot;,&quot;yes&quot;]] Output: &quot;yesyesyesaaa&quot; Explanation: The same key can appear multiple times. The key &quot;a&quot; has a value of &quot;yes&quot;, so replace all occurrences of &quot;(a)&quot; with &quot;yes&quot;. Notice that the &quot;a&quot;s not in a bracket pair are not evaluated. Constraints: 1 &lt;= s.length &lt;= 10 5 0 &lt;= knowledge.length &lt;= 10 5 knowledge[i].length == 2 1 &lt;= key i .length, value i .length &lt;= 10 s consists of lowercase English letters and round brackets &#39;(&#39; and &#39;)&#39; . Every open bracket &#39;(&#39; in s will have a corresponding close bracket &#39;)&#39; . The key in each bracket pair of s will be non-empty. There will not be any nested bracket pairs in s . key i and value i consist of lowercase English letters. Each key i in knowledge is unique.
+
+Starter Code (Python3):
+class Solution:
+    def evaluate(self, s: str, knowledge: list[list[str]]) -> str:
+        
+
+Testcases:
+"(name)is(age)yearsold"
+[["name","bob"],["age","two"]]
+"hi(name)"
+[["a","b"]]
+"(a)(a)(a)aaa"
+[["a","yes"]]
+
+Expected Output / Validation:
+Test 1: s="(name)is(age)yearsold", knowledge=[["name","bob"],["age","two"]]
+kmap={"name":"bob","age":"two"}
+Replace (name)→"bob", (age)→"two" → "bobistwoyearsold" ✓
+
+Test 2: s="hi(name)", knowledge=[["a","b"]]
+kmap={"a":"b"}. (name) not in kmap → "?" → "hi?" ✓
+
+Test 3: s="(a)(a)(a)aaa", knowledge=[["a","yes"]]
+Each (a)→"yes", bare "aaa" unchanged → "yesyesyesaaa" ✓
