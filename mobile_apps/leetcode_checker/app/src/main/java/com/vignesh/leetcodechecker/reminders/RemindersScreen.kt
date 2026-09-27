@@ -9,6 +9,7 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
@@ -35,6 +36,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import coil.compose.AsyncImage
 import kotlinx.coroutines.Dispatchers
@@ -46,6 +48,23 @@ import java.util.Locale
 
 private enum class SortMode(val label: String) {
     DUE_DATE("Due date"), CREATED_DATE("Date created"), ALPHABETICAL("Alphabetical")
+}
+
+/** Dark palette modeled on Samsung Reminder's own near-black theme, kept local to this
+ *  screen (matching how BookLibraryScreen scopes its own BookColors) rather than changing
+ *  the app-wide MaterialTheme. */
+private object ReminderColors {
+    val background = Color(0xFF000000)
+    val surface = Color(0xFF1C1C1E)
+    val onSurface = Color(0xFFF2F2F7)
+    val onSurfaceVariant = Color(0xFF9A9A9E)
+    val today = Color(0xFFFF5C5C)
+    val scheduled = Color(0xFF4DA8FF)
+    val important = Color(0xFFFFD166)
+    val categoriesAccent = Color(0xFFB388FF)
+    val overdue = Color(0xFFFF5C5C)
+    val completed = Color(0xFF8E8E93)
+    val dueDate = Color(0xFFFF8A5B)
 }
 
 /**
@@ -76,6 +95,8 @@ fun RemindersScreen(onBackClick: (() -> Unit)? = null) {
     var sortMode by remember { mutableStateOf(SortMode.DUE_DATE) }
     var showSortMenu by remember { mutableStateOf(false) }
     var categoryFilter by remember { mutableStateOf<String?>(null) }
+    var importantOnly by remember { mutableStateOf(false) }
+    val listState = androidx.compose.foundation.lazy.rememberLazyListState()
 
     fun persist(updated: List<Reminder>) {
         ReminderStorage.saveReminders(context, updated)
@@ -128,29 +149,48 @@ fun RemindersScreen(onBackClick: (() -> Unit)? = null) {
         SortMode.ALPHABETICAL -> list.sortedWith(compareByDescending<Reminder> { it.isImportant }.thenBy { it.title.lowercase() })
     }
 
-    val filtered = reminders.filter { categoryFilter == null || it.category == categoryFilter }
+    val filtered = reminders
+        .filter { categoryFilter == null || it.category == categoryFilter }
+        .filter { !importantOnly || it.isImportant }
     val active = filtered.filter { !it.isCompleted }
     val overdue = sortList(active.filter { it.dueAtMillis < now })
     val today = sortList(active.filter { it.dueAtMillis in now..todayEnd })
     val upcoming = sortList(active.filter { it.dueAtMillis > todayEnd })
     val completed = filtered.filter { it.isCompleted }.sortedByDescending { it.dueAtMillis }
 
+    // Item indices of each section's header in the LazyColumn below, for the stat tiles'
+    // tap-to-scroll behavior -- must mirror the section order actually rendered.
+    val sectionIndex = remember(overdue.size, today.size, upcoming.size, completed.size) {
+        val map = mutableMapOf<String, Int>()
+        var idx = 0
+        if (overdue.isNotEmpty()) { map["Overdue"] = idx; idx += 1 + overdue.size }
+        if (today.isNotEmpty()) { map["Today"] = idx; idx += 1 + today.size }
+        if (upcoming.isNotEmpty()) { map["Upcoming"] = idx; idx += 1 + upcoming.size }
+        if (completed.isNotEmpty()) { map["Completed"] = idx; idx += 1 + completed.size }
+        map
+    }
+    fun scrollToSection(name: String) {
+        sectionIndex[name]?.let { index -> scope.launch { listState.animateScrollToItem(index) } }
+    }
+
     Scaffold(
+        containerColor = ReminderColors.background,
         topBar = {
-            Column {
+            Column(modifier = Modifier.background(ReminderColors.background)) {
                 TopAppBar(
-                    title = { Text("⏰ Reminders") },
+                    title = { Text("Reminder", color = ReminderColors.onSurface, fontWeight = FontWeight.Bold) },
                     navigationIcon = {
                         if (onBackClick != null) {
                             IconButton(onClick = onBackClick) {
-                                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = ReminderColors.onSurface)
                             }
                         }
                     },
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = ReminderColors.background),
                     actions = {
                         Box {
                             IconButton(onClick = { showSortMenu = true }) {
-                                Text("⇅", style = MaterialTheme.typography.titleMedium)
+                                Text("⇅", style = MaterialTheme.typography.titleMedium, color = ReminderColors.onSurface)
                             }
                             DropdownMenu(expanded = showSortMenu, onDismissRequest = { showSortMenu = false }) {
                                 SortMode.entries.forEach { mode ->
@@ -163,7 +203,7 @@ fun RemindersScreen(onBackClick: (() -> Unit)? = null) {
                         }
                         Box {
                             IconButton(onClick = { showImportMenu = true }) {
-                                Icon(Icons.Filled.MoreVert, contentDescription = "Import")
+                                Icon(Icons.Filled.MoreVert, contentDescription = "Import", tint = ReminderColors.onSurface)
                             }
                             DropdownMenu(expanded = showImportMenu, onDismissRequest = { showImportMenu = false }) {
                                 DropdownMenuItem(
@@ -185,9 +225,25 @@ fun RemindersScreen(onBackClick: (() -> Unit)? = null) {
                         }
                     }
                 )
+
+                // ── Stat tile grid (Samsung Reminder's 2x3 layout) ──
+                Column(modifier = Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        StatTile("📅", "Today", today.size, ReminderColors.today, modifier = Modifier.weight(1f)) { scrollToSection("Today") }
+                        StatTile("🕐", "Scheduled", active.size, ReminderColors.scheduled, modifier = Modifier.weight(1f)) { scrollToSection("Upcoming") }
+                        StatTile("⭐", "Important", filtered.count { it.isImportant && !it.isCompleted }, ReminderColors.important, selected = importantOnly, modifier = Modifier.weight(1f)) { importantOnly = !importantOnly }
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        StatTile("🏷", "Categories", categories.size, ReminderColors.categoriesAccent, modifier = Modifier.weight(1f)) { }
+                        StatTile("⚠", "Overdue", overdue.size, ReminderColors.overdue, modifier = Modifier.weight(1f)) { scrollToSection("Overdue") }
+                        StatTile("✔", "Completed", completed.size, ReminderColors.completed, modifier = Modifier.weight(1f)) { scrollToSection("Completed") }
+                    }
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+
                 if (categories.isNotEmpty()) {
                     Row(
-                        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 12.dp, vertical = 8.dp),
+                        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 4.dp),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         FilterChip(selected = categoryFilter == null, onClick = { categoryFilter = null }, label = { Text("All") })
@@ -205,12 +261,26 @@ fun RemindersScreen(onBackClick: (() -> Unit)? = null) {
                             )
                         }
                     }
+                    Spacer(modifier = Modifier.height(8.dp))
                 }
             }
         },
-        floatingActionButton = {
-            FloatingActionButton(onClick = { editingReminder = null; showAddDialog = true }) {
-                Icon(Icons.Filled.Add, contentDescription = "Add reminder")
+        bottomBar = {
+            Surface(color = ReminderColors.background) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 10.dp)
+                        .clip(RoundedCornerShape(28.dp))
+                        .background(ReminderColors.surface)
+                        .clickable { editingReminder = null; showAddDialog = true }
+                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Filled.Add, contentDescription = "Add reminder", tint = ReminderColors.onSurfaceVariant)
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text("Add reminder", color = ReminderColors.onSurfaceVariant)
+                }
             }
         }
     ) { padding ->
@@ -219,26 +289,25 @@ fun RemindersScreen(onBackClick: (() -> Unit)? = null) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("⏰", style = MaterialTheme.typography.displayMedium)
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text("No reminders yet", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("No reminders yet", color = ReminderColors.onSurfaceVariant)
                 }
             }
         } else {
-            val errorColor = MaterialTheme.colorScheme.error
-            val primaryColor = MaterialTheme.colorScheme.primary
             LazyColumn(
+                state = listState,
                 modifier = Modifier.padding(padding).fillMaxSize(),
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 reminderSection(
-                    title = "Overdue", items = overdue, categories = categories, titleColor = errorColor,
+                    title = "Overdue", items = overdue, categories = categories, titleColor = ReminderColors.overdue,
                     onToggleComplete = { r -> persist(reminders.map { if (it.id == r.id) it.copy(isCompleted = true) else it }); ReminderScheduler.cancel(context, r.id) },
                     onToggleImportant = { r -> persist(reminders.map { if (it.id == r.id) it.copy(isImportant = !it.isImportant) else it }) },
                     onEdit = { editingReminder = it; showAddDialog = true },
                     onDelete = { deleteReminder(it) }
                 )
                 reminderSection(
-                    title = "Today", items = today, categories = categories, titleColor = primaryColor,
+                    title = "Today", items = today, categories = categories, titleColor = ReminderColors.today,
                     onToggleComplete = { r -> persist(reminders.map { if (it.id == r.id) it.copy(isCompleted = true) else it }); ReminderScheduler.cancel(context, r.id) },
                     onToggleImportant = { r -> persist(reminders.map { if (it.id == r.id) it.copy(isImportant = !it.isImportant) else it }) },
                     onEdit = { editingReminder = it; showAddDialog = true },
@@ -331,7 +400,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.reminderSection(
             text = "$title (${items.size})",
             style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.Bold,
-            color = titleColor ?: MaterialTheme.colorScheme.onSurfaceVariant
+            color = titleColor ?: ReminderColors.onSurface
         )
     }
     items(items, key = { it.id }) { reminder ->
@@ -357,12 +426,17 @@ private fun ReminderRow(
     onDelete: () -> Unit
 ) {
     val dateFormat = remember { SimpleDateFormat("MMM d, h:mm a", Locale.US) }
-    Card(onClick = onEdit) {
+    Card(
+        onClick = onEdit,
+        colors = CardDefaults.cardColors(containerColor = ReminderColors.surface),
+        shape = RoundedCornerShape(16.dp)
+    ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Checkbox(checked = reminder.isCompleted, onCheckedChange = { onToggleComplete() })
+            CircularCheckbox(checked = reminder.isCompleted, onCheckedChange = { onToggleComplete() })
+            Spacer(modifier = Modifier.width(8.dp))
             reminder.photoUri?.let { uri ->
                 AsyncImage(
                     model = Uri.parse(uri),
@@ -372,7 +446,7 @@ private fun ReminderRow(
                 Spacer(modifier = Modifier.width(8.dp))
             }
             Column(modifier = Modifier.weight(1f)) {
-                Text(reminder.title, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+                Text(reminder.title, color = ReminderColors.onSurface, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     categoryColorHex?.let { hex ->
                         Box(
@@ -384,9 +458,14 @@ private fun ReminderRow(
                     val repeatSuffix = if (reminder.repeatRule.unit != RepeatUnit.NONE) " · ${RepeatEngine.describe(reminder.repeatRule)}" else ""
                     val voiceSuffix = if (reminder.voiceMemoPath != null) " · 🎙" else ""
                     Text(
-                        "${dateFormat.format(reminder.dueAtMillis)} · ${reminder.category}$repeatSuffix$voiceSuffix",
+                        dateFormat.format(reminder.dueAtMillis),
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = ReminderColors.dueDate
+                    )
+                    Text(
+                        " · ${reminder.category}$repeatSuffix$voiceSuffix",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = ReminderColors.onSurfaceVariant
                     )
                 }
             }
@@ -394,12 +473,59 @@ private fun ReminderRow(
                 Icon(
                     if (reminder.isImportant) Icons.Filled.Star else Icons.Outlined.Star,
                     contentDescription = "Important",
-                    tint = if (reminder.isImportant) Color(0xFFFFD700) else MaterialTheme.colorScheme.onSurfaceVariant
+                    tint = if (reminder.isImportant) ReminderColors.important else ReminderColors.onSurfaceVariant
                 )
             }
             IconButton(onClick = onDelete) {
-                Icon(Icons.Filled.Delete, contentDescription = "Delete")
+                Icon(Icons.Filled.Delete, contentDescription = "Delete", tint = ReminderColors.onSurfaceVariant)
             }
+        }
+    }
+}
+
+@Composable
+private fun StatTile(
+    emoji: String,
+    label: String,
+    count: Int,
+    tint: Color,
+    selected: Boolean = false,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    Card(
+        onClick = onClick,
+        modifier = modifier,
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = if (selected) tint.copy(alpha = 0.22f) else ReminderColors.surface)
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Box(
+                modifier = Modifier.size(32.dp).clip(CircleShape).background(tint.copy(alpha = 0.18f)),
+                contentAlignment = Alignment.Center
+            ) { Text(emoji, fontSize = 14.sp) }
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(label, color = ReminderColors.onSurfaceVariant, fontSize = 11.sp, maxLines = 1)
+            Text("$count", color = ReminderColors.onSurface, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+        }
+    }
+}
+
+/** Samsung Reminder uses circular (not squircle) checkboxes -- Material3's own Checkbox is
+ *  square, so this is a small custom control instead. */
+@Composable
+private fun CircularCheckbox(checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+    Box(
+        modifier = Modifier
+            .size(24.dp)
+            .clip(CircleShape)
+            .background(if (checked) ReminderColors.scheduled else Color.Transparent)
+            .border(width = 2.dp, color = if (checked) ReminderColors.scheduled else ReminderColors.onSurfaceVariant, shape = CircleShape)
+            .clickable { onCheckedChange(!checked) },
+        contentAlignment = Alignment.Center
+    ) {
+        if (checked) {
+            Text("✓", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
         }
     }
 }
