@@ -10,6 +10,7 @@
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
     <application
         android:allowBackup="true"
@@ -79,7 +80,21 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/widget_leetcode_info" />
         </receiver>
-        
+
+        <!-- Reminders Widget -->
+        <receiver
+            android:name=".widget.ReminderWidgetProvider"
+            android:exported="true"
+            android:label="Reminders">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="com.vignesh.leetcodechecker.REMINDERS_WIDGET_REFRESH" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_reminders_info" />
+        </receiver>
+
         <!-- Device Admin for Uninstall Protection -->
         <receiver
             android:name=".security.LeetCodeDeviceAdmin"

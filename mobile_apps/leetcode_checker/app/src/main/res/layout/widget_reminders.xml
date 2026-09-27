@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/reminders_widget_container"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_background"
+    android:orientation="vertical"
+    android:padding="12dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="⏰ Reminders"
+            android:textColor="#E6EDF3"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <!-- android:tint is correct here, not app:tint: RemoteViews inflate via the
+             platform LayoutInflater only, so AppCompat's app: namespace is ignored. -->
+        <ImageButton
+            android:id="@+id/reminders_widget_refresh_button"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:background="@android:color/transparent"
+            android:contentDescription="Refresh"
+            android:src="@android:drawable/ic_popup_sync"
+            android:tint="#58A6FF"
+            tools:ignore="UseAppTint" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/reminders_widget_row1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:text="No reminders"
+        android:textColor="#E6EDF3"
+        android:textSize="13sp" />
+
+    <TextView
+        android:id="@+id/reminders_widget_row2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:text=""
+        android:textColor="#E6EDF3"
+        android:textSize="13sp" />
+
+    <TextView
+        android:id="@+id/reminders_widget_row3"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:text=""
+        android:textColor="#E6EDF3"
+        android:textSize="13sp" />
+
+</LinearLayout>
