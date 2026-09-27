@@ -1,0 +1,36 @@
+Date: 2026-09-27
+Title: Reverse Substrings Between Each Pair of Parentheses
+URL: https://leetcode.com/problems/reverse-substrings-between-each-pair-of-parentheses/
+
+LLM Explanation:
+Stack-based simulation. Each '(' pushes a new list; each ')' pops and appends reversed to the parent. O(n²) worst case (deeply nested), O(n) for balanced. With n≤2000 always fast.
+
+LLM Testcase Validation:
+Test 1: s="(abcd)"
+'(' → stack=[[],[]]
+'a','b','c','d' → stack=[[],['a','b','c','d']]
+')' → pop ['a','b','c','d'], extend reversed → stack=[['d','c','b','a']]
+Return "dcba" ✓
+
+Test 2: s="(u(love)i)"
+'(' → [[],[]]
+'u' → [[],['u']]
+'(' → [[],['u'],[]]
+'l','o','v','e' → [[],['u'],['l','o','v','e']]
+')' → pop, reversed=['e','v','o','l'], stack=[[],['u','e','v','o','l']]
+'i' → [[],['u','e','v','o','l','i']]
+')' → pop, reversed=['i','l','o','v','e','u'], stack=[['i','l','o','v','e','u']]
+Return "iloveu" ✓
+
+Test 3: s="(ed(et(oc))el)"
+'(' → [[],[]]
+'e','d' → [[],['e','d']]
+'(' → [[],['e','d'],[]]
+'e','t' → [[],['e','d'],['e','t']]
+'(' → [[],['e','d'],['e','t'],[]]
+'o','c' → [[],['e','d'],['e','t'],['o','c']]
+')' → pop→reversed=['c','o'], stack=[[],['e','d'],['e','t','c','o']]
+')' → pop→reversed=['o','c','t','e'], stack=[[],['e','d','o','c','t','e']]
+'e','l' → [[],['e','d','o','c','t','e','e','l']]
+')' → pop→reversed=['l','e','e','t','c','o','d','e'], stack=[['l','e','e','t','c','o','d','e']]
+Return "leetcode" ✓
