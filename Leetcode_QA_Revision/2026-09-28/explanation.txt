@@ -1,0 +1,11 @@
+Date: 2026-09-28
+Title: Maximum Nesting Depth of the Parentheses
+URL: https://leetcode.com/problems/maximum-nesting-depth-of-the-parentheses/
+
+LLM Explanation:
+Track current depth with a counter; record the maximum seen. O(n) time, O(1) space.
+
+LLM Testcase Validation:
+Test 1: "(1+(2*3)+((8)/4))+1" → max depth 3 (at '(((' before '8') ✓
+Test 2: "(1)+((2))+(((3)))" → max depth 3 ✓
+Test 3: "()(())((()()))" → max depth 3 ✓
