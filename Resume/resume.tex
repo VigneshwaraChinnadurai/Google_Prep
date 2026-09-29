@@ -113,14 +113,25 @@
       {AI/ML Computational Science Associate Manager}{June 2026 -- Present}
       {Accenture Solutions}{Bangalore, India}
 
-      \vspace{4pt}
-      \small{Recently joined; onboarding to a new AI/ML engagement.}
+      \vspace{12pt}
+      \vspace{12pt}
+      \textit{\small\textbf{Aon Human Capital -- Claims Audit Modernization (Agentic Platform)} | Google ADK, Azure OpenAI, LiteLLM, Azure Container Apps, PostgreSQL/Databricks, Zero-Trust JWT}
+      \resumeItemListStart
+        \resumeItem{Co-authored the \textbf{end-to-end enterprise solution architecture blueprint} (C4 Context/Container/Component views + Azure hub-and-spoke deployment) for a \textbf{24-agent agentic platform} (1 Orchestration + 12 Super + 11 Utility agents) automating the full claims-audit lifecycle -- \textbf{100\% automated claim-vs-plan-provision comparison}, configurable stratified sampling, and discrepancy reporting -- replacing a manual, spreadsheet-driven audit process.}
+        \resumeItem{Architected a \textbf{deterministic three-tier agent hierarchy} (Orchestrator $\rightarrow$ Super Agents $\rightarrow$ Utility Agents) on \textbf{Google ADK} with zero LLM routing discretion, routing all model traffic through a \textbf{LiteLLM $\rightarrow$ Aon GenAI Wrapper $\rightarrow$ Azure OpenAI (gpt-5.1 / gpt-5-mini)} path so no agent ever calls the model provider directly -- defended the framework's cloud-agnostic design (via the LiteLLM abstraction) to the review board as future-proofing against a potential GCP shift.}
+        \resumeItem{Designed the \textbf{shared Postgres blackboard data plane} (agents exchange row/file references, never bulk data) with a planned store-swap to \textbf{Databricks (Delta / Unity Catalog)}, and a \textbf{three-plane runtime model} (Control / Data / Memory) that isolates containerized inter-agent invocation from persisted state, enabling horizontal scaling with zero state migration.}
+        \resumeItem{Defined the \textbf{zero-trust JWT security model} -- 5-minute TTL, per-call Okta-issued tokens validated at APIM, RBAC propagated across the full agent call tree -- and \textbf{mechanically-enforced Human-in-the-Loop gates} (Supervisory Control, Approval, Findings Review, Exception Escalation) that hard-stop the pipeline via a \texttt{PAUSED} sentinel independent of LLM behavior.}
+        \resumeItem{Established the \textbf{MCP (Model Context Protocol) integration pattern} behind APIM for 6 line-of-business systems (SharePoint, MOVEit, Outlook, Rules Engine, Claims Datastore, DocuSign) eliminating point-to-point integrations, plus the \textbf{Agent Catalog governance model} (Agent Signature metadata schema, semantic versioning, lifecycle states, automated stewardship for idle/orphaned agents) across Aon's Human Capital Azure subscription.}
+      \resumeItemListEnd
 
+      \vspace{12pt}
+      \vspace{12pt}
     \vspace{8pt}
     \resumeSubheading
-      {Senior AI Architect (Senior Consultant)}{January 2022 -- May 2026}
+      {Senior AI Architect (AI and Data Science Engineer III)}{January 2022 -- June 2026}
       {Deloitte Consulting USI}{Bangalore, India}
 
+      \vspace{12pt}
       \vspace{12pt}
       \textit{\small\textbf{Disney TVA Schema Intelligence Chatbot} | AWS Bedrock, Claude 3.7 Sonnet, Agent Forge SDK}
       \resumeItemListStart
@@ -180,10 +191,12 @@
 
       \vspace{12pt}
       \vspace{12pt}
+      \vspace{12pt}
     \resumeSubheading
       {Senior Software Engineer (Machine Learning)}{February 2018 -- January 2022}
       {WIPRO Technologies}{Bangalore, India}
       
+      \vspace{12pt}
       \vspace{12pt}
       \textit{\small\textbf{WIPRO Holmes (R\&D)} | LSTM, Reg-exp, Deep Learning}
       \resumeItemListStart
@@ -223,8 +236,7 @@
       \vspace{12pt}
       \resumeProjectHeading
       \vspace{12pt}
-          {\textbf{Quantum Portfolio Optimization Engine} \(MBA Project
-          \vspace{12pt}\) $|$ \emph{D-Wave Quantum Annealing, QUBO, Simulated Annealing}}{}
+          {\textbf{Quantum Portfolio Optimization Engine (MBA Project)} $|$ \emph{D-Wave Quantum Annealing, QUBO, Simulated Annealing}}{}
           \resumeItemListStart
             \resumeItem{\textbf{QUBO Formulation from First Principles}: Quadratic Unconstrained Binary Optimization with risk terms (covariance), return rewards (mean returns), and cardinality constraints via penalty functions.}
             \resumeItem{\textbf{Classical-Quantum Benchmark}: Side-by-side scipy max-Sharpe vs. quantum annealing with hyperparameter sweep over \emph{risk \& return}, penalty coefficients.}
@@ -284,11 +296,11 @@
 \section{Technical Skills}
  \begin{itemize}[leftmargin=0.15in, label={}]
     \small{\item{
-     \textbf{Agentic AI \& RAG}{: Agent Forge SDK (AWS AgentCore), Strands Agents SDK, Multi-Agent Orchestration, LLM Planning \& Critique, Self-Refinement Loops, Deterministic Pipeline Orchestration, Hybrid Retrieval (BM25 + Dense + RRF), LLM Reranking, S3 Vectors, pgvector, Token-aware Trimming} \\
+     \textbf{Agentic AI \& RAG}{: Agent Forge SDK (AWS AgentCore), Google ADK, Strands Agents SDK, Multi-Agent Orchestration, LLM Planning \& Critique, Self-Refinement Loops, Deterministic Pipeline Orchestration, Hybrid Retrieval (BM25 + Dense + RRF), LLM Reranking, S3 Vectors, pgvector, Token-aware Trimming, LiteLLM, Model Context Protocol (MCP), Zero-Trust JWT, Human-in-the-Loop Gate Design, Agent Catalog \& Lifecycle Governance} \\
      \textbf{LLMs \& Foundation Models}{: Claude 3.7 Sonnet, GPT-4/4o-mini, AWS Nova Premier, Gemini 2.5 Flash, Llama 3, Amazon Titan Embed v2} \\
      \textbf{Quantum Computing}{: D-Wave Quantum Annealing, QUBO Formulation, Simulated Annealing, D-Wave Leap, Binary Quadratic Models} \\
      \textbf{Deep Learning}{: Transformers (BERT, DiT), CNN (VGG19, ResNet), LSTM, Bi-LSTM, Deep Interest Network (DIN), N-BEATS, Prophet} \\
-     \textbf{Cloud \& MLOps}{: AWS (Bedrock, SageMaker, Lambda, S3, MediaLive, Kinesis, SQS, Identity Manager, Media Package, Media Convert), Azure (OpenAI), GCP (Vertex AI), Docker, Kubernetes, Airflow, DataBricks} \\
+     \textbf{Cloud \& MLOps}{: AWS (Bedrock, SageMaker, Lambda, S3, MediaLive, Kinesis, SQS, Identity Manager, Media Package, Media Convert), Azure (OpenAI, Container Apps), GCP (Vertex AI), Docker, Kubernetes, Airflow, DataBricks, Okta} \\
      \textbf{Languages \& Data}{: Python, PySpark, SQL, Kotlin (Android), Pandas, NumPy, TensorFlow, PyTorch}
     }}
  \end{itemize}
