@@ -1,0 +1,44 @@
+Date: 2026-09-30
+Title: Maximum Nesting Depth of Two Valid Parentheses Strings
+URL: https://leetcode.com/problems/maximum-nesting-depth-of-two-valid-parentheses-strings/
+
+LLM Explanation:
+APPROACH: Assign by depth parity — O(n) time, O(n) space.
+
+KEY INSIGHT: To minimise max(depth(A), depth(B)), assign parentheses at even depths
+to group 0 and odd depths to group 1 (or vice versa). This splits the nesting evenly.
+
+For a '(' at depth d (after incrementing): assign to d % 2.
+For a ')' at depth d (before decrementing): assign to d % 2.
+
+CORRECTNESS: Each opening paren at depth d is matched with its closing paren at the
+same depth. By alternating assignments, no group has consecutive nesting more than
+half the original depth → max depth = ceil(original_depth / 2).
+
+Both A and B remain valid VPS since each assigned '(' is paired with its corresponding
+')' (same depth assignment for matching pairs).
+
+COMPLEXITY: O(n) time, O(n) space for output.
+
+LLM Testcase Validation:
+Test 1: seq="(()())"
+'(': depth=1, ans=[1]
+'(': depth=2, ans=[1,0]
+')': ans=[1,0,0], depth=1
+'(': depth=2, ans=[1,0,0,0]
+')': ans=[1,0,0,0,0], depth=1
+')': ans=[1,0,0,0,0,1], depth=0
+Output: [1,0,0,0,0,1]
+Expected: [0,1,1,1,1,0] — different but both valid (any split minimizing max depth is acceptable). 
+Verify: A={seq[0],seq[5]}="()" depth=1, B={seq[1..4]}="(())" depth=2? No wait:
+A gets indices where ans=0: positions 1,2,3,4 → chars '(',')',',','(' = '()()'? seq="(()())", positions 1,2,3,4 = '(',')','(',')'→ "()()" depth=1. B gets 0,5 → '(',')'→"()" depth=1. max=1 ✓
+Expected [0,1,1,1,1,0]: A=positions 0,5="()" depth=1, B=1,2,3,4="(())" depth=2. max=2.
+Hmm, my output gives max depth 1 which is better! Both are valid as long as it's minimal.
+Actually the optimal is 1 (ceil(original_depth/2)=ceil(2/2)=1). My output achieves 1. ✓
+
+Test 2: seq="()(())()"
+'(':d=1,ans=[1]; ')':ans=[1,1],d=0; '(':d=1,ans=[1,1,1]; '(':d=2,ans=[1,1,1,0]
+')':ans=[1,1,1,0,0],d=1; ')':ans=[1,1,1,0,0,1],d=0; '(':d=1,ans=[1,1,1,0,0,1,1]
+')':ans=[1,1,1,0,0,1,1,1],d=0
+Output: [1,1,1,0,0,1,1,1]
+A=positions 3,4→"()" depth=1. B=rest→"()()()" depth=1. max=1 ✓
