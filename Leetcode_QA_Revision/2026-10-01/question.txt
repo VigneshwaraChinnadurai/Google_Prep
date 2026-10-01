@@ -1,0 +1,28 @@
+Date: 2026-10-01
+Question ID: 20
+Title: Valid Parentheses
+Difficulty: Easy
+Tags: String, Stack, Bracket Sequences
+URL: https://leetcode.com/problems/valid-parentheses/
+
+Question:
+Given a string s containing just the characters &#39;(&#39; , &#39;)&#39; , &#39;{&#39; , &#39;}&#39; , &#39;[&#39; and &#39;]&#39; , determine if the input string is valid. An input string is valid if: Open brackets must be closed by the same type of brackets. Open brackets must be closed in the correct order. Every close bracket has a corresponding open bracket of the same type. Example 1: Input: s = &quot;()&quot; Output: true Example 2: Input: s = &quot;()[]{}&quot; Output: true Example 3: Input: s = &quot;(]&quot; Output: false Example 4: Input: s = &quot;([])&quot; Output: true Example 5: Input: s = &quot;([)]&quot; Output: false Constraints: 1 &lt;= s.length &lt;= 10 4 s consists of parentheses only &#39;()[]{}&#39; .
+
+Starter Code (Python3):
+class Solution:
+    def isValid(self, s: str) -> bool:
+        
+
+Testcases:
+"()"
+"()[]{}"
+"(]"
+"([])"
+"([)]"
+
+Expected Output / Validation:
+"()" → push '(', pop on ')' → empty → True ✓
+"()[]{}" → all matched and emptied → True ✓
+"(]" → push '(', ']' expects '[' but top is '(' → False ✓
+"([])" → push '(','[', pop '[' on ']', pop '(' on ')' → True ✓
+"([)]" → push '(','[', ')' expects '(' but top is '[' → False ✓
