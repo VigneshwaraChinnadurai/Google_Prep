@@ -1,0 +1,13 @@
+Date: 2026-10-01
+Title: Valid Parentheses
+URL: https://leetcode.com/problems/valid-parentheses/
+
+LLM Explanation:
+Stack-based matching. Push open brackets, pop and verify on close brackets. O(n) time, O(n) space.
+
+LLM Testcase Validation:
+"()" → push '(', pop on ')' → empty → True ✓
+"()[]{}" → all matched and emptied → True ✓
+"(]" → push '(', ']' expects '[' but top is '(' → False ✓
+"([])" → push '(','[', pop '[' on ']', pop '(' on ')' → True ✓
+"([)]" → push '(','[', ')' expects '(' but top is '[' → False ✓
