@@ -1,0 +1,10 @@
+Date: 2026-10-02
+Title: Generate Parentheses
+URL: https://leetcode.com/problems/generate-parentheses/
+
+LLM Explanation:
+Backtracking with two constraints: add '(' if open < n, add ')' if close < open. Generates all valid combinations without duplicates. O(4^n / sqrt(n)) time (nth Catalan number of results), O(n) recursion depth.
+
+LLM Testcase Validation:
+Test 1: n=3 → ["((()))","(()())","(())()","()(())","()()()"] ✓ (5 = C(6,3)/4 = Catalan(3))
+Test 2: n=1 → ["()"] ✓
