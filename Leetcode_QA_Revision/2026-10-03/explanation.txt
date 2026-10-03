@@ -1,0 +1,24 @@
+Date: 2026-10-03
+Title: Longest Valid Parentheses
+URL: https://leetcode.com/problems/longest-valid-parentheses/
+
+LLM Explanation:
+Stack stores indices of unmatched characters. Sentinel -1 (or the last unmatched ')') anchors length calculations. On '(': push index. On ')': pop; if stack empty push current as new base, else length = i - stack[-1]. O(n) time, O(n) space.
+
+LLM Testcase Validation:
+Test 1: s="(()"
+i=0 '(': stack=[-1,0]
+i=1 '(': stack=[-1,0,1]
+i=2 ')': pop→stack=[-1,0]. best=max(0,2-0)=2
+Return 2 ✓
+
+Test 2: s=")()())"
+i=0 ')': pop→stack=[]. Empty→push 0. stack=[0]
+i=1 '(': stack=[0,1]
+i=2 ')': pop→stack=[0]. best=max(0,2-0)=2
+i=3 '(': stack=[0,3]
+i=4 ')': pop→stack=[0]. best=max(2,4-0)=4
+i=5 ')': pop→stack=[]. Empty→push 5. stack=[5]
+Return 4 ✓
+
+Test 3: s="" → loop never runs → return 0 ✓
