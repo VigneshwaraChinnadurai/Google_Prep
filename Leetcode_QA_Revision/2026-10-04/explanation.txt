@@ -1,0 +1,12 @@
+Date: 2026-10-04
+Title: Valid Parenthesis String
+URL: https://leetcode.com/problems/valid-parenthesis-string/
+
+LLM Explanation:
+Greedy range tracking. `lo`/`hi` track the min/max possible unmatched open-paren count. '*' expands the range by ±1. If hi < 0 at any point, too many ')' — impossible. Clamp lo ≥ 0 (we can always use '*' as empty). Valid iff lo == 0 at end. O(n) time, O(1) space.
+
+LLM Testcase Validation:
+Test 1: "()" → lo=hi=0 after '(' (+1,+1)=1,1 then ')' (-1,-1)=0,0. lo==0 → True ✓
+Test 2: "(*)" → '(':1,1 → '*':0,2 → ')': -1,1 → lo=max(-1,0)=0. lo==0 → True ✓
+Test 3: "(*))": '(':1,1→'*':0,2→')': -1,1→lo=0,hi=1→')': -1,0→lo=0. lo==0 → True ✓
+Test 4: "(": '(':1,1. lo=1≠0 → False ✓
