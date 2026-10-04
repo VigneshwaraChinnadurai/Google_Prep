@@ -1,0 +1,26 @@
+Date: 2026-10-04
+Question ID: 678
+Title: Valid Parenthesis String
+Difficulty: Medium
+Tags: String, Dynamic Programming, Stack, Greedy, Bracket Sequences
+URL: https://leetcode.com/problems/valid-parenthesis-string/
+
+Question:
+Given a string s containing only three types of characters: &#39;(&#39; , &#39;)&#39; and &#39;*&#39; , return true if s is valid . The following rules define a valid string: Any left parenthesis &#39;(&#39; must have a corresponding right parenthesis &#39;)&#39; . Any right parenthesis &#39;)&#39; must have a corresponding left parenthesis &#39;(&#39; . Left parenthesis &#39;(&#39; must go before the corresponding right parenthesis &#39;)&#39; . &#39;*&#39; could be treated as a single right parenthesis &#39;)&#39; or a single left parenthesis &#39;(&#39; or an empty string &quot;&quot; . Example 1: Input: s = &quot;()&quot; Output: true Example 2: Input: s = &quot;(*)&quot; Output: true Example 3: Input: s = &quot;(*))&quot; Output: true Example 4: Input: s = &quot;(&quot; Output: false Constraints: 1 &lt;= s.length &lt;= 100 s[i] is &#39;(&#39; , &#39;)&#39; or &#39;*&#39; .
+
+Starter Code (Python3):
+class Solution:
+    def checkValidString(self, s: str) -> bool:
+        
+
+Testcases:
+"()"
+"(*)"
+"(*))"
+"("
+
+Expected Output / Validation:
+Test 1: "()" → lo=hi=0 after '(' (+1,+1)=1,1 then ')' (-1,-1)=0,0. lo==0 → True ✓
+Test 2: "(*)" → '(':1,1 → '*':0,2 → ')': -1,1 → lo=max(-1,0)=0. lo==0 → True ✓
+Test 3: "(*))": '(':1,1→'*':0,2→')': -1,1→lo=0,hi=1→')': -1,0→lo=0. lo==0 → True ✓
+Test 4: "(": '(':1,1. lo=1≠0 → False ✓
