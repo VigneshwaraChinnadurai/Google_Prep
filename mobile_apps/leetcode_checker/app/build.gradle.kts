@@ -223,6 +223,13 @@ dependencies {
     implementation("androidx.biometric:biometric:1.1.0")
     implementation("androidx.fragment:fragment-ktx:1.8.4")
 
+    // HTML parsing for importing exported Chrome bookmarks (Netscape Bookmark File Format
+    // -- old-style unclosed-tag HTML, not well-formed XML). Chrome has no API for
+    // third-party apps to read bookmarks directly, so export/import is the only real path;
+    // Jsoup is the standard, lightweight parser for this rather than a hand-rolled regex
+    // walker over malformed nested <DL>/<DT> tag soup.
+    implementation("org.jsoup:jsoup:1.17.2")
+
     // Backports java.time.* and List#removeFirst/removeLast (Java 21) to minSdk 24
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 
