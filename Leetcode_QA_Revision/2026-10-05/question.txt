@@ -1,0 +1,24 @@
+Date: 2026-10-05
+Question ID: 856
+Title: Score of Parentheses
+Difficulty: Medium
+Tags: String, Stack, Bracket Sequences
+URL: https://leetcode.com/problems/score-of-parentheses/
+
+Question:
+Given a balanced parentheses string s , return the score of the string . The score of a balanced parentheses string is based on the following rule: &quot;()&quot; has score 1 . AB has score A + B , where A and B are balanced parentheses strings. (A) has score 2 * A , where A is a balanced parentheses string. Example 1: Input: s = &quot;()&quot; Output: 1 Example 2: Input: s = &quot;(())&quot; Output: 2 Example 3: Input: s = &quot;()()&quot; Output: 2 Constraints: 2 &lt;= s.length &lt;= 50 s consists of only &#39;(&#39; and &#39;)&#39; . s is a balanced parentheses string.
+
+Starter Code (Python3):
+class Solution:
+    def scoreOfParentheses(self, s: str) -> int:
+        
+
+Testcases:
+"()"
+"(())"
+"()()"
+
+Expected Output / Validation:
+Test 1: "()" → push 0→stack=[0,0]; ')' pop 0, max(0,1)=1, stack=[1]. Return 1 ✓
+Test 2: "(())" → '(':[ 0,0]; '(':[ 0,0,0]; ')': pop 0→max(0,1)=1, [0,1]; ')': pop 1→max(2,1)=2, [2]. Return 2 ✓
+Test 3: "()()" → '(':[0,0]; ')':[1]; '(':[1,0]; ')':[1+1]=[2]. Return 2 ✓
