@@ -1,0 +1,11 @@
+Date: 2026-10-05
+Title: Score of Parentheses
+URL: https://leetcode.com/problems/score-of-parentheses/
+
+LLM Explanation:
+Stack tracks score at each nesting level. '(' pushes a new 0. ')' pops: if inner score is 0 it was "()" scoring 1, otherwise double it (2*v). O(n) time, O(n) space.
+
+LLM Testcase Validation:
+Test 1: "()" → push 0→stack=[0,0]; ')' pop 0, max(0,1)=1, stack=[1]. Return 1 ✓
+Test 2: "(())" → '(':[ 0,0]; '(':[ 0,0,0]; ')': pop 0→max(0,1)=1, [0,1]; ')': pop 1→max(2,1)=2, [2]. Return 2 ✓
+Test 3: "()()" → '(':[0,0]; ')':[1]; '(':[1,0]; ')':[1+1]=[2]. Return 2 ✓
