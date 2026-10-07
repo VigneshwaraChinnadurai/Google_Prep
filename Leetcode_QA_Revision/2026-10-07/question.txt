@@ -1,0 +1,26 @@
+Date: 2026-10-07
+Question ID: 301
+Title: Remove Invalid Parentheses
+Difficulty: Hard
+Tags: String, Backtracking, Breadth-First Search
+URL: https://leetcode.com/problems/remove-invalid-parentheses/
+
+Question:
+Given a string s that contains parentheses and letters, remove the minimum number of invalid parentheses to make the input string valid. Return a list of unique strings that are valid with the minimum number of removals . You may return the answer in any order . Example 1: Input: s = &quot;()())()&quot; Output: [&quot;(())()&quot;,&quot;()()()&quot;] Example 2: Input: s = &quot;(a)())()&quot; Output: [&quot;(a())()&quot;,&quot;(a)()()&quot;] Example 3: Input: s = &quot;)(&quot; Output: [&quot;&quot;] Constraints: 1 &lt;= s.length &lt;= 25 s consists of lowercase English letters and parentheses &#39;(&#39; and &#39;)&#39; . There will be at most 20 parentheses in s .
+
+Starter Code (Python3):
+class Solution:
+    def removeInvalidParentheses(self, s: str) -> list[str]:
+        
+
+Testcases:
+"()())()"
+"(a)())()"
+")("
+
+Expected Output / Validation:
+Test 1: "()())()" — BFS level 0: not valid. Level 1: try removing each '(' or ')'. Among all 1-removal strings, "(())()" and "()()()" are valid. Return ["(())()", "()()()"] ✓
+
+Test 2: "(a)())()" — Level 0: invalid. Level 1: "(a())()" and "(a)()()" are valid. Return ["(a())()", "(a)()()"] ✓
+
+Test 3: ")(" — Level 0: invalid. Level 1: "(", ")" — neither valid. Level 2: "" — valid. Return [""] ✓
