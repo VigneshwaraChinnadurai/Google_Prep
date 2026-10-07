@@ -1,0 +1,13 @@
+Date: 2026-10-07
+Title: Remove Invalid Parentheses
+URL: https://leetcode.com/problems/remove-invalid-parentheses/
+
+LLM Explanation:
+BFS by removal count. Each level tries all strings with one more parenthesis removed. Stop at the first level where valid strings are found — this guarantees minimum removals. Use sets to deduplicate. O(2^n * n) worst case with n≤20 parentheses (bounded by problem constraints). is_valid checks are O(n).
+
+LLM Testcase Validation:
+Test 1: "()())()" — BFS level 0: not valid. Level 1: try removing each '(' or ')'. Among all 1-removal strings, "(())()" and "()()()" are valid. Return ["(())()", "()()()"] ✓
+
+Test 2: "(a)())()" — Level 0: invalid. Level 1: "(a())()" and "(a)()()" are valid. Return ["(a())()", "(a)()()"] ✓
+
+Test 3: ")(" — Level 0: invalid. Level 1: "(", ")" — neither valid. Level 2: "" — valid. Return [""] ✓
