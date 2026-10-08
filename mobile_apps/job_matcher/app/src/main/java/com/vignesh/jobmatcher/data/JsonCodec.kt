@@ -4,6 +4,8 @@ import com.vignesh.jobmatcher.model.AppSettings
 import com.vignesh.jobmatcher.model.CandidateProfile
 import com.vignesh.jobmatcher.model.Company
 import com.vignesh.jobmatcher.model.Job
+import com.vignesh.jobmatcher.model.Contact
+import com.vignesh.jobmatcher.model.ContactType
 import com.vignesh.jobmatcher.model.EventType
 import com.vignesh.jobmatcher.model.JobEvent
 import com.vignesh.jobmatcher.model.JobOrigin
@@ -106,6 +108,14 @@ object JsonCodec {
         .put("shortlistedAt", j.shortlistedAt)
         .put("appliedAt", j.appliedAt)
         .put("events", JSONArray().also { arr -> j.events.forEach { arr.put(eventToJson(it)) } })
+        .put("contacts", JSONArray().also { arr ->
+            j.contacts.forEach { c ->
+                arr.put(
+                    JSONObject().put("name", c.name).put("title", c.title).put("type", c.type.name)
+                        .put("profileUrl", c.profileUrl).put("why", c.why).put("contactedAt", c.contactedAt)
+                )
+            }
+        })
         .put("history", JSONArray().also { arr ->
             j.history.forEach { arr.put(JSONObject().put("status", it.status.name).put("at", it.at)) }
         })
@@ -140,6 +150,16 @@ object JsonCodec {
         appliedAt = o.optLong("appliedAt"),
         events = o.optJSONArray("events")?.let { arr -> (0 until arr.length()).mapNotNull { arr.optJSONObject(it)?.let(::eventFromJson) } }
             .orEmpty(),
+        contacts = o.optJSONArray("contacts")?.let { arr ->
+            (0 until arr.length()).mapNotNull { i ->
+                arr.optJSONObject(i)?.let {
+                    Contact(
+                        name = it.str("name"), title = it.str("title"), type = ContactType.parse(it.str("type")),
+                        profileUrl = it.str("profileUrl"), why = it.str("why"), contactedAt = it.optLong("contactedAt")
+                    )
+                }
+            }
+        }.orEmpty(),
         history = o.optJSONArray("history")?.let { arr ->
             (0 until arr.length()).mapNotNull { i ->
                 arr.optJSONObject(i)?.let { StatusChange(JobStatus.parse(it.str("status")), it.optLong("at")) }

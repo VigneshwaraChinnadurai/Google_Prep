@@ -4,6 +4,8 @@ import com.vignesh.jobmatcher.data.JsonCodec
 import com.vignesh.jobmatcher.data.JsonCodec.str
 import com.vignesh.jobmatcher.data.JsonCodec.strings
 import com.vignesh.jobmatcher.model.CandidateProfile
+import com.vignesh.jobmatcher.model.Contact
+import com.vignesh.jobmatcher.model.ContactType
 import com.vignesh.jobmatcher.model.Tailoring
 import org.json.JSONArray
 import org.json.JSONObject
@@ -129,6 +131,23 @@ object ClaudeResponseParser {
             description = description,
             score = if (o.isNull("score")) null else scoreFrom(o, id = "")
         )
+    }
+
+    private val LINKEDIN_PROFILE = Regex("""^(?:https?://)?([a-z]{2,3}\.)?linkedin\.com/in/[^/?#\s]+/?""", RegexOption.IGNORE_CASE)
+
+    /** Reply to PromptBuilder.findContactsPrompt; keeps only real LinkedIn profile URLs. */
+    fun parseContacts(raw: String): Result<List<Contact>> = runCatching {
+        checkNotPrompt(raw)
+        val arr = JSONArray(jsonPayload(raw, PromptBuilder.Kind.CONTACTS.tag, '[', ']'))
+        (0 until arr.length()).mapNotNull { i ->
+            val o = arr.optJSONObject(i) ?: return@mapNotNull null
+            val url = LINKEDIN_PROFILE.find(o.str("profile_url").trim())?.value?.trimEnd('/') ?: return@mapNotNull null
+            val name = o.str("name").takeIf { it.isNotBlank() } ?: return@mapNotNull null
+            Contact(
+                name = name, title = o.str("title"), type = ContactType.parse(o.str("type")),
+                profileUrl = if (url.startsWith("http")) url else "https://$url", why = o.str("why")
+            )
+        }
     }
 
     fun parseProfile(raw: String): Result<CandidateProfile> = runCatching {

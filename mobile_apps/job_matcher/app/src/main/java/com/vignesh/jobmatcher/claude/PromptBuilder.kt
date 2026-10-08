@@ -23,7 +23,8 @@ object PromptBuilder {
         SCORING("job_scores"),
         SEARCH("jobs_json"),
         TAILORING("match_summary"),
-        READ_JOB("job_details")
+        READ_JOB("job_details"),
+        CONTACTS("contacts")
     }
 
     private fun header(kind: Kind) = "$PROMPT_MARKER [${kind.name}] ###"
@@ -241,6 +242,43 @@ Reply with ONLY this block, valid JSON inside, nothing before or after:
 """.trim()
         )
     }
+
+    // ---- 6. Find people to contact on LinkedIn -------------------------------------
+
+    fun findContactsPrompt(job: Job, locations: List<String>): String = """
+${header(Kind.CONTACTS)}
+Use web search to find people on LinkedIn whom a candidate applying to this job could
+professionally contact about it:
+
+<job>
+Company: ${job.companyName}
+Title: ${job.title}
+Location: ${job.location}
+Posting: ${job.url}
+</job>
+
+Look for, in this order:
+1. Recruiters / talent-acquisition partners at ${job.companyName} who recruit for engineering,
+   machine-learning, AI or data roles, preferably based in ${locations.take(4).joinToString()}.
+2. The likely hiring manager or team lead for this team, if the posting or public information
+   identifies the team.
+3. One to three employees in similar roles in that team or org who could give a referral.
+
+Strict rules:
+- Only people you actually found, each with their public LinkedIn profile URL
+  (https://www.linkedin.com/in/...). Never guess, construct or shorten a URL; if you can't find
+  the profile URL, leave the person out.
+- Prefer people whose CURRENT employer is ${job.companyName}; skip anyone who has left.
+- No personal email addresses or phone numbers -- LinkedIn profile URLs only.
+- Up to 8 people, most useful first, with one short line on why each is relevant.
+- If you find nobody suitable, return an empty list.
+
+Reply with ONLY this block, valid JSON inside, nothing before or after:
+<contacts>
+[{"name": "...", "title": "their current title", "type": "recruiter | hiring_manager | employee",
+  "profile_url": "https://www.linkedin.com/in/...", "why": "one line"}]
+</contacts>
+""".trim()
 
     // ---- 5. Per-job tailoring ------------------------------------------------------
 

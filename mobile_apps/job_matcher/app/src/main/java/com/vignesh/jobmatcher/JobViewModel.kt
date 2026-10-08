@@ -273,6 +273,24 @@ class JobViewModel(app: Application) : AndroidViewModel(app) {
             "Run Profile Analysis to refresh the skill profile."
     }
 
+    fun contactsPrompt(jobId: String): String? = repo.contactsPrompt(jobId)
+
+    fun applyContacts(jobId: String, raw: String) = runBusy {
+        repo.applyContacts(jobId, raw).map { n ->
+            if (n == 0) "No new LinkedIn contacts in that reply." else "Added $n contacts -- open a profile, then copy the message."
+        }.getOrThrow()
+    }
+
+    fun saveContact(jobId: String, contact: com.vignesh.jobmatcher.model.Contact) = runBusy {
+        repo.saveContact(jobId, contact)
+        if (contact.contactedAt > 0) "Marked ${contact.firstName} as contacted." else "Saved ${contact.name}."
+    }
+
+    fun removeContact(jobId: String, profileUrl: String) = runBusy {
+        repo.removeContact(jobId, profileUrl)
+        "Contact removed."
+    }
+
     fun setCoverLetter(jobId: String, text: String) = runBusy {
         repo.setCoverLetter(jobId, text)
         "Cover letter saved."

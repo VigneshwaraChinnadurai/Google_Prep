@@ -116,6 +116,37 @@ data class JobEvent(
 
 data class StatusChange(val status: JobStatus, val at: Long)
 
+/** Someone to reach out to about a job (found by Claude on LinkedIn, or added by you). */
+data class Contact(
+    val name: String,
+    val title: String = "",
+    val type: ContactType = ContactType.RECRUITER,
+    /** Public LinkedIn profile URL (linkedin.com/in/...). */
+    val profileUrl: String,
+    val why: String = "",
+    /** When you marked them as messaged; 0 = not yet. */
+    val contactedAt: Long = 0
+) {
+    /** For "Dear {Name}," -- first name without honorifics. */
+    val firstName: String
+        get() = name.split(' ').map { it.trim(',', '.') }
+            .firstOrNull { it.isNotBlank() && it.lowercase() !in setOf("mr", "ms", "mrs", "dr", "prof") } ?: name
+}
+
+enum class ContactType(val label: String, val emoji: String) {
+    RECRUITER("Recruiter", "🧑‍💼"),
+    HIRING_MANAGER("Hiring manager", "👔"),
+    EMPLOYEE("Employee (referral)", "🤝");
+
+    companion object {
+        fun parse(value: String?): ContactType = when (value?.lowercase()?.replace(' ', '_')) {
+            "hiring_manager", "manager" -> HIRING_MANAGER
+            "employee", "referral", "referrer" -> EMPLOYEE
+            else -> RECRUITER
+        }
+    }
+}
+
 /** Claude's tailored application material for one job (see PromptBuilder.tailoringPrompt). */
 data class Tailoring(
     val summary: String = "",
@@ -167,6 +198,8 @@ data class Job(
     val events: List<JobEvent> = emptyList(),
     /** Every status change, oldest first. */
     val history: List<StatusChange> = emptyList(),
+    /** Recruiters / hiring managers / referrers for this job. */
+    val contacts: List<Contact> = emptyList(),
     val notes: String = "",
     val tailoring: Tailoring? = null
 ) {

@@ -521,6 +521,33 @@ class JobRepository(
 
     fun setNotes(jobId: String, notes: String) = updateJob(jobId) { it.copy(notes = notes) }
 
+    // ---- Outreach contacts ---------------------------------------------------------
+
+    fun contactsPrompt(jobId: String): String? =
+        AppStorage.loadJobs(context).firstOrNull { it.id == jobId }
+            ?.let { PromptBuilder.findContactsPrompt(it, AppStorage.loadSettings(context).locationKeywords) }
+
+    /** Merges Claude's contacts by profile URL (keeps your "contacted" marks). Returns how many are new. */
+    fun applyContacts(jobId: String, raw: String): Result<Int> = ClaudeResponseParser.parseContacts(raw).map { found ->
+        var added = 0
+        updateJob(jobId) { j ->
+            val byUrl = j.contacts.associateBy { it.profileUrl.lowercase() }
+            val fresh = found.filter { it.profileUrl.lowercase() !in byUrl }.distinctBy { it.profileUrl.lowercase() }
+            added = fresh.size
+            j.copy(contacts = j.contacts + fresh)
+        }
+        added
+    }
+
+    fun saveContact(jobId: String, contact: com.vignesh.jobmatcher.model.Contact) = updateJob(jobId) { j ->
+        val others = j.contacts.filterNot { it.profileUrl.equals(contact.profileUrl, ignoreCase = true) }
+        j.copy(contacts = others + contact)
+    }
+
+    fun removeContact(jobId: String, profileUrl: String) = updateJob(jobId) { j ->
+        j.copy(contacts = j.contacts.filterNot { it.profileUrl.equals(profileUrl, ignoreCase = true) })
+    }
+
     fun setCoverLetter(jobId: String, text: String) = updateJob(jobId) { j ->
         j.copy(tailoring = (j.tailoring ?: com.vignesh.jobmatcher.model.Tailoring()).copy(coverLetter = text.trim(), coverLetterEdited = true))
     }
