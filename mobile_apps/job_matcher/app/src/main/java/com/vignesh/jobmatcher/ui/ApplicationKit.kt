@@ -75,7 +75,7 @@ fun ApplicationKitSection(job: Job, contact: ContactInfo, busy: Boolean, vm: Job
     val t = job.tailoring
     ClaudeRoundTripCard(
         title = if (t == null) "Prepare the application kit" else "Regenerate the kit",
-        description = "One Claude round-trip writes all five parts below from your resume and this posting." +
+        description = "One Claude round-trip writes everything below (summary, resume bullets, cover letter, gap plan, outreach) from your resume and this posting." +
             if (t?.coverLetterEdited == true) " Regenerating replaces your edited cover letter." else "",
         copyLabel = "✍️ Copy prompt",
         enabled = !busy,

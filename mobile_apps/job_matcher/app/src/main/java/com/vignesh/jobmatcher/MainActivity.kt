@@ -31,8 +31,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.vignesh.jobmatcher.ui.DiscoverScreen
+import com.vignesh.jobmatcher.ui.HelpScreen
 import com.vignesh.jobmatcher.ui.JobDetailScreen
 import com.vignesh.jobmatcher.ui.MatchesScreen
 import com.vignesh.jobmatcher.ui.SetupScreen
@@ -79,7 +81,7 @@ private fun JobMatcherTheme(content: @Composable () -> Unit) {
     MaterialTheme(colorScheme = scheme, content = content)
 }
 
-private val TABS = listOf("🔎" to "Discover", "🎯" to "Matches", "📋" to "Applications", "⚙️" to "Setup")
+private val TABS = listOf("🔎" to "Discover", "🎯" to "Matches", "📋" to "Applications", "⚙️" to "Setup", "❓" to "Help")
 
 @Composable
 private fun JobMatcherApp(vm: JobViewModel) {
@@ -116,7 +118,7 @@ private fun JobMatcherApp(vm: JobViewModel) {
                         selected = tab == i && openJob == null,
                         onClick = { tab = i; openJobId = null },
                         icon = { Text(icon) },
-                        label = { Text(label) }
+                        label = { Text(label, fontSize = 11.sp, maxLines = 1) }
                     )
                 }
             }
@@ -131,7 +133,8 @@ private fun JobMatcherApp(vm: JobViewModel) {
                     0 -> DiscoverScreen(state, vm, open)
                     1 -> MatchesScreen(state, vm, open)
                     2 -> TrackerScreen(state, open)
-                    else -> SetupScreen(state, vm)
+                    3 -> SetupScreen(state, vm)
+                    else -> HelpScreen(state.settings)
                 }
             }
         }
