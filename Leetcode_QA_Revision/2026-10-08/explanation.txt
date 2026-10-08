@@ -1,0 +1,17 @@
+Date: 2026-10-08
+Title: Remove Outermost Parentheses
+URL: https://leetcode.com/problems/remove-outermost-parentheses/
+
+LLM Explanation:
+Track nesting depth. Skip the outermost '(' (when depth==0 before increment) and outermost ')' (when depth==1 before decrement, i.e. depth==0 after). Include all inner characters. O(n) time, O(n) space.
+
+LLM Testcase Validation:
+Test 1: "(()())(())"
+Depth tracks nesting. Only append when depth>0 (for '(') or depth>0 after decrement (for ')').
+'(':d=1,skip; '(':d=2,add; ')':d=1,add; '(':d=2,add; ')':d=1,add; ')':d=0,skip → "()()"
+'(':d=1,skip; '(':d=2,add; ')':d=1,add; ')':d=0,skip → "()"
+Result: "()()()" ✓
+
+Test 2: "(()())(())(()(()))" → "()()()()(())" ✓ (by same logic)
+
+Test 3: "()()" → both primitives "()" stripped → "" ✓
