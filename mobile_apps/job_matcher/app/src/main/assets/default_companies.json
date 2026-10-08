@@ -1,0 +1,3 @@
+[
+  {"id": "google", "name": "Google", "source": "CLAUDE_SEARCH", "identifier": "https://www.google.com/about/careers/applications/jobs/results?location=India", "enabled": true}
+]
