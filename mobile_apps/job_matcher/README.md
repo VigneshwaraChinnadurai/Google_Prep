@@ -1,6 +1,6 @@
 # Job Matcher
 
-**Version 1.3.0** · Android (Kotlin, Jetpack Compose) · package `com.vignesh.jobmatcher`
+**Version 1.3.1** · Android (Kotlin, Jetpack Compose) · package `com.vignesh.jobmatcher`
 
 Job Matcher watches the careers sites of a hand-picked list of companies, finds openings in
 India that fit the resume, and keeps only the ones that match at **≥80%** (configurable).
@@ -131,8 +131,8 @@ The control centre.
   job whose posting couldn't be read).
 - Each card shows title, company, location, the Claude score pill (green ≥ threshold,
   amber within 15 points, red below), the verdict and status.
-- **Show below-threshold** reveals scored jobs under the cutoff, which helps when calibrating
-  the threshold.
+- A **Below threshold** section is always shown under the matches, listing scored jobs under the
+  cutoff, which helps when calibrating the threshold.
 
 ### 📋 Applications
 Your shortlisted jobs and everything after them (see §4C).

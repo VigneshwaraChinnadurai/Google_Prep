@@ -11,7 +11,6 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.FilterChip
 import com.vignesh.jobmatcher.model.JobStatus
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -30,7 +29,6 @@ fun MatchesScreen(state: UiState, vm: com.vignesh.jobmatcher.JobViewModel, onOpe
     val threshold = state.settings.matchThreshold
     val matches = remember(state.jobs, state.settings) { state.matches }
     val below = remember(state.jobs, state.settings) { state.belowThreshold }
-    var showBelow by rememberSaveable { mutableStateOf(false) }
     var filter by rememberSaveable { mutableStateOf("ALL") }
     var statusFilter by rememberSaveable { mutableStateOf<String?>(null) }
     fun statusOk(job: com.vignesh.jobmatcher.model.Job) = statusFilter == null || job.status.name == statusFilter
@@ -82,14 +80,11 @@ fun MatchesScreen(state: UiState, vm: com.vignesh.jobmatcher.JobViewModel, onOpe
         }
         items(shown, key = { it.id }) { job -> JobCard(job, threshold, state.isTopChoice(job), onQuickStatus = quick(job)) { onOpenJob(job.id) } }
 
+        // Always visible: scored jobs under the cutoff, so nothing Claude scored is hidden.
         item {
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                Text("Show below-threshold (${shownBelow.size})", modifier = Modifier.weight(1f))
-                Switch(checked = showBelow, onCheckedChange = { showBelow = it })
-            }
+            SectionHeader("Below threshold <$threshold% (${shownBelow.size})")
+            if (shownBelow.isEmpty()) EmptyHint("None.")
         }
-        if (showBelow) {
-            items(shownBelow, key = { "below-" + it.id }) { job -> JobCard(job, threshold, state.isTopChoice(job), onQuickStatus = quick(job)) { onOpenJob(job.id) } }
-        }
+        items(shownBelow, key = { "below-" + it.id }) { job -> JobCard(job, threshold, state.isTopChoice(job), onQuickStatus = quick(job)) { onOpenJob(job.id) } }
     }
 }
