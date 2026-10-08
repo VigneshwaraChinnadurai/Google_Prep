@@ -1,12 +1,18 @@
 # Job Matcher
 
-**Version 1.2.0** · Android (Kotlin, Jetpack Compose) · package `com.vignesh.jobmatcher`
+**Version 1.3.0** · Android (Kotlin, Jetpack Compose) · package `com.vignesh.jobmatcher`
 
 Job Matcher watches the careers sites of a hand-picked list of companies, finds openings in
 India that fit the resume, and keeps only the ones that match at **≥80%** (configurable).
 Every LLM step goes through **Claude by manual copy-paste**: the app builds the prompt, you
 send it in the Claude app, and paste the reply back. There's no API key and no per-request
 billing; it's the same pattern as LeetCode Checker's "Claude (Manual)" provider.
+
+**Shortlist-first.** The app is built for applying *well*, not widely: you shortlist only the
+few jobs you'll really apply to (a soft limit of 10 active applications), prepare each with
+a tailored kit (resume bullets, honest cover letter in Word/PDF, recruiter outreach), and
+track it to an outcome with dates in Google Calendar. The in-app **❓ Help** tab explains
+every screen.
 
 Jobs reach the app two ways, and every job is tagged with which one:
 - **🤖 Automatic**: found by the app (careers-site fetch or Claude web search), driven by
@@ -24,6 +30,8 @@ Jobs reach the app two ways, and every job is tagged with which one:
 4. [The Claude copy-paste workflow](#4-the-claude-copy-paste-workflow)
 4A. [Search terms](#4a-search-terms)
 4B. [Adding a job from a link (Manual jobs)](#4b-adding-a-job-from-a-link-manual-jobs)
+4C. [Shortlist-first applications: statuses, dates & Google Calendar](#4c-shortlist-first-applications-statuses-dates--google-calendar)
+4D. [The application kit: cover letter export & recruiter outreach](#4d-the-application-kit-cover-letter-export--recruiter-outreach)
 5. [Companies and careers sources](#5-companies-and-careers-sources)
 6. [Matching and scoring](#6-matching-and-scoring)
 7. [Settings reference](#7-settings-reference)
@@ -95,7 +103,7 @@ app, already read and tagged ✋ Manual (see §4B).
 
 ---
 
-## 3. The four tabs
+## 3. The five tabs
 
 ### 🔎 Discover
 The control centre.
@@ -112,7 +120,9 @@ The control centre.
   to open it.
 
 ### 🎯 Matches
-- Filter chips: **All · 🤖 Automatic · ✋ Manual**. *Manual* lists **every** job you added,
+- Filter chips: **All · 🤖 Automatic · ✋ Manual**, and a second row of **status** chips
+  (Any status · 🆕 New · ⭐ Shortlisted · 📨 Applied · …).
+- **New** jobs have one-tap **⭐ Shortlist** and **🚫 Not interested** buttons right on the card. *Manual* lists **every** job you added,
   scored or not and whatever the score, since you chose them yourself. *All* and *Automatic*
   apply the threshold.
 - Jobs Claude scored **≥ the match threshold**. ⭐ **top-choice companies (Google) are
@@ -124,9 +134,20 @@ The control centre.
 - **Show below-threshold** reveals scored jobs under the cutoff, which helps when calibrating
   the threshold.
 
-### 📋 Tracker
-Jobs you've moved out of *New*, grouped as **⭐ Saved → 📨 Applied → 🗣️ Interviewing → 🎉 Offer
-→ ❌ Rejected**, each with the applied/updated date and the first line of your notes.
+### 📋 Applications
+Your shortlisted jobs and everything after them (see §4C).
+- Header: **active applications vs. your shortlist limit** (red when over).
+- Filter chips: **Active** (default) · ⭐ Shortlisted · 📨 Applied · 🗣️ Interviewing · 🎉 Offer ·
+  ❌ Rejected · All, each with a count.
+- Each card shows the **next action** ("Next: prepare the application kit", "Next: follow up on
+  Tue 15 Oct", "Next: Round 2 -- Thu 17 Oct, 10:00"…), plus the shortlisted/applied dates and the
+  nearest upcoming date (📅 = already in Google Calendar). Sorted by soonest upcoming date.
+
+### ❓ Help
+Expandable topics in workflow order: how the app works, a daily routine, why shortlist-first,
+status meanings, dates & calendar, the kit, saving/sharing, recruiter outreach, Claude
+copy-paste, search terms, manual jobs, scores, companies, troubleshooting and your data. Status
+meanings and kit explanations use the same text shown elsewhere in the app.
 
 ### ⚙️ Setup
 Three sub-tabs:
@@ -303,6 +324,100 @@ screen offers:
 
 ---
 
+## 4C. Shortlist-first applications: statuses, dates & Google Calendar
+
+### What each status is for
+
+| Status | Purpose | What the app does |
+|---|---|---|
+| 🆕 New | Found or added; not decided yet | Shows ⭐ Shortlist / 🚫 Not interested on the card |
+| ⭐ Shortlisted | You intend to apply | **Unlocks the application kit**; counts toward the shortlist limit; shortlisted date logged |
+| 📨 Applied | Application submitted | Applied date logged; **follow-up date added automatically** (default +7 days, 10:00) |
+| 🗣️ Interviewing | In the interview loop | Add each round's date/time; each syncs to Google Calendar with a 1-hour reminder |
+| 🎉 Offer | Offer received | Add the decision deadline |
+| ❌ Rejected | Closed by the company | Kept for your records; note what you learned |
+| 🚫 Not interested | You won't pursue it | Hidden from Matches and the scoring queue |
+
+Older "Saved" jobs became **Shortlisted** automatically. Jobs you add from a link now start as
+**New** too, so shortlisting is always a deliberate choice. Every change is recorded in the
+job's **History** line.
+
+**Shortlist limit** (Settings, default 10): the number of *active* applications (Shortlisted +
+Applied + Interviewing + Offer). Going past it is allowed, but the app warns you.
+
+### Dates & Google Calendar
+On a job's detail screen (once it's past *New*), **Dates & Google Calendar** lists its dated
+steps: ⏰ Apply by, 📬 Follow up, 🗣️ Interview, ⏳ Offer decision deadline, 📌 Other.
+- **➕ Add a date**: pick the type, title (e.g. "Round 2 -- System design"), date and time
+  (native pickers), and notes (interviewer, meeting link…).
+- **📅 Add**: one tap writes the event to your **primary Google-account calendar** on the phone,
+  so it syncs to Google Calendar everywhere. The first time, Android asks for calendar access.
+  The event title is `<type> <title> -- <Company>: <Job title>`; the description has the posting
+  link and your notes. Interviews get a 1-hour reminder, other dates alert at the time.
+- Editing a synced date marks it *calendar out of date*; tap **📅 Update** to push the change
+  to the same event. **Delete** removes it from the calendar too.
+
+---
+
+## 4D. The application kit: cover letter export & recruiter outreach
+
+The kit appears on a job's detail screen **only once it's Shortlisted** (a New job shows
+"🔒 Shortlist this job to prepare its kit"). One Claude round-trip writes all of it:
+
+| Section | What it's for |
+|---|---|
+| 🎯 **Match summary** | Your 30-second pitch for this role plus the 1-2 doubts a screener will have. Use it to decide whether to apply and to prep for the recruiter call. |
+| 📝 **Resume bullets** | 6-8 of your real achievements reworded in this job's language, so keyword filters (ATS) and recruiters see the fit. Paste the relevant ones into a copy of your resume for this application. Facts and metrics stay unchanged. |
+| ✉️ **Cover letter** | A formal 250-350-word letter, ready to send (details below). |
+| 🧭 **Gap plan** | Each gap: why it matters, mitigation steps, an honest timeline, and a one-line answer for interviews. |
+| 🤝 **Connection note** | A LinkedIn connection-request note of 280 characters or fewer (limit 300); the live counter shows its length. |
+| 📨 **Formal message** | A 130-180-word formal message/InMail/email: who you are, the exact role + job ID + **posting link**, two key qualifications, a courteous ask, "resume and cover letter attached", signed with your name, email, phone and LinkedIn. |
+
+### Honest gaps in the cover letter
+The prompt makes Claude include one short paragraph naming the 1-2 most material gaps, the
+concrete steps being taken, and a **genuine timeline** judged from your resume:
+
+| Gap kind | Timeline Claude may give |
+|---|---|
+| New tool/library adjacent to what you use | 1-3 weeks |
+| New programming language or cloud platform | 1-3 months |
+| New domain / deep specialisation | 3-6 months |
+| Degree, PhD, years of experience | Not short-term. Said honestly, offering the closest real substitute from your experience |
+
+For a big gap, Claude is told it's fine to say politely that it will take some time while
+making clear you're committed to it and would enjoy working on it. It never claims a gap is
+already closed or invents experience.
+
+### Saving & sharing the cover letter
+- **✏️ Edit**: change anything; your version is kept (marked *edited*). Regenerating the kit
+  replaces it.
+- **⬇️ .docx / .pdf / .txt**: opens the system "save as" picker (e.g. Downloads or Drive), ready
+  to upload on application forms. The document is a proper business letter: **your name**
+  (bold), contact line, date, "Hiring Team / Company / City", **"Re: Application for <title>
+  (Job ID …)"**, then the letter. File name: `Cover_Letter_<You>_<Company>_<Title>.<ext>`.
+  The .docx is valid Office Open XML (checked by opening it with python-docx); the PDF is A4 with
+  2 cm margins and paginates automatically.
+- **📤 Share cover letter (PDF) + resume**: one share sheet with both files attached (email,
+  LinkedIn, WhatsApp…). The resume PDF is the one you imported in **Setup → Profile → Import
+  PDF** (kept since v1.3); until you import one, only the cover letter is attached.
+
+### Finding recruiters and referrers on LinkedIn
+Under **Outreach**, **Find recruiters & referrers on LinkedIn** is a Claude round-trip (web
+search on) that returns up to 8 people: 🧑‍💼 recruiters / talent-acquisition partners for tech/AI
+roles at the company (preferably in your locations), 👔 the likely hiring manager, and 🤝 people
+in similar roles who could refer you.
+- Claude must return **real public profile links only** (`linkedin.com/in/…`). It may not guess
+  or construct URLs, and may not return personal emails or phone numbers. The app also discards
+  anything that isn't a LinkedIn profile URL.
+- For each person: **🔗 Profile**, **Copy note** and **Copy message** (the `{Name}` placeholder
+  filled with their first name, honorifics stripped), **📤 Message + docs** (the message plus
+  cover letter and resume as attachments), **✅ Mark contacted** (dated; undoable), **Remove**.
+- **➕ Add someone you found** adds a person by name, title, LinkedIn URL and type.
+- Suggested flow: send the connection request with the note → once accepted, send the formal
+  message with your documents → mark contacted.
+
+---
+
 ## 5. Companies and careers sources
 
 ### 5.1 Bundled company list (verified against the live sites on 2026-10-08)
@@ -422,6 +537,8 @@ The real decision; see the rubric in §4.1. A job appears in **Matches** when
 | Include full resume in scoring prompts | **On** | | Off = profile summary only (shorter prompts, slightly less accurate) |
 | Location keywords | india, bengaluru, bangalore, hyderabad, chennai, pune, mumbai, gurgaon, gurugram, noida, delhi | comma-separated | Location gate. The first "India" keyword also drives server-side country filters |
 | Exclude titles containing | intern, internship, new grad, graduate, apprentice, junior, account executive, sales, recruiter, marketing, legal, counsel, accountant, payroll, facilities, administrative | comma-separated | Title gate |
+| Shortlist limit | **10** | 3-30 | Active applications before the app warns you (§4C) |
+| Follow up after applying | **7 days** | 3-21 | When the automatic follow-up date lands (§4C) |
 | Daily auto-fetch + notification | **On** | | See §8 |
 | Fetch at | **07:00** | 0–23 h | Time of the daily run |
 
@@ -452,7 +569,9 @@ the careers-site requests and whatever you paste into Claude yourself.
 |---|---|
 | Settings | SharedPreferences `job_matcher_prefs` (one JSON blob) |
 | Companies | `files/companies.json` |
-| Jobs (scores, status, notes, tailoring, 🤖/✋ origin) | `files/jobs.json` |
+| Jobs (scores, status + history, dates, notes, kit, contacts, 🤖/✋ origin) | `files/jobs.json` |
+| Resume PDF (for attaching) | `files/resume.pdf` (saved by Import PDF) |
+| Exported/shared files | system picker location; share copies in `cache/exports/` (cleared each share) |
 | Skill profile | `files/profile.json` (falls back to the bundled default) |
 | Resume text | `files/resume.txt` (falls back to the bundled Sep 2026 resume) |
 
@@ -495,6 +614,10 @@ For a manual copy over ADB:
 | Manual job shows "details missing" | The site needs a login or JavaScript (Naukri, some careers sites). Use **Let Claude read this posting**, or **Paste description** |
 | A manual job's title/company is wrong | **Edit title / company / description** on its detail screen |
 | Too many generic SDE jobs after adding a broad search term | Expected (§4A). Remove the term, or raise the pre-filter |
+| "📅 Add" fails | Allow calendar access when asked (or in Android Settings → Apps → Job Matcher → Permissions), and make sure a Google account is added on the phone |
+| Shared kit has no resume | Import your resume PDF in Setup → Profile |
+| No application kit on a job | Shortlist it first (§4D) |
+| Contacts reply added nobody | Claude found no public LinkedIn profiles, or returned non-profile links (discarded). Try again with web search on, or add people yourself |
 | Claude app doesn't open | The share sheet appears instead; pick Claude. If Claude isn't installed, paste the prompt (already on your clipboard) into claude.ai |
 
 ---
@@ -539,7 +662,9 @@ app/src/main/
     │   ├── AppStorage.kt        prefs + JSON files, single lock, seed migration, pending-search ids
     │   ├── JsonCodec.kt         org.json (de)serialization (also parses Claude's <profile_json>)
     │   ├── DefaultData.kt       asset loaders, SEED_VERSION
-    │   └── JobRepository.kt     the pipeline: fetch → gate → score → merge; Claude apply-*; search batching
+    │   ├── JobRepository.kt     the pipeline: fetch → gate → score → merge; Claude apply-*; search batching;
+    │   │                        status side effects, dates/calendar, contacts
+    │   └── ContactInfo.kt       your name/email/phone/LinkedIn parsed from the resume
     ├── sources/
     │   ├── CareersApi.kt        the one Retrofit/OkHttp client (absolute @Url, String bodies)
     │   ├── JobFetcher.kt        per-source fetch logic, Workday/Eightfold/Oracle targets, JSON-or-retry GET
@@ -548,12 +673,18 @@ app/src/main/
     │   └── HtmlText.kt          JD HTML → readable text (keeps paragraphs and bullets)
     ├── matching/LocalScorer.kt  on-device score, location/title gates
     ├── claude/
-    │   ├── PromptBuilder.kt     the five prompts (profile, scoring, search, read-a-link, tailoring) + PROMPT_MARKER
+    │   ├── PromptBuilder.kt     the six prompts (profile, scoring, search, read-a-link, kit, find contacts) + PROMPT_MARKER
     │   ├── ClaudeResponseParser.kt  tolerant tagged-block parsing
     │   └── ClaudeHandoff.kt     clipboard + share intent (opens com.anthropic.claude directly)
+    ├── calendar/CalendarSync.kt Calendar Provider insert/update/delete on the primary Google calendar
+    ├── export/
+    │   ├── CoverLetterDocument.kt  letter layout + TXT + hand-built DOCX (pure, JVM-tested)
+    │   └── KitFiles.kt          PDF rendering (PdfDocument), SAF save, FileProvider share, resume.pdf
     ├── work/DailyFetchWorker.kt WorkManager daily fetch + notification
-    └── ui/                      Discover, Matches, Tracker, Setup, JobDetail screens + shared Components
-app/src/test/                    JobParsersTest, NewSourcesTest, MatchingAndClaudeTest, ManualJobsTest, LiveApiTest
+    └── ui/                      Discover, Matches, Tracker (Applications), Setup, Help, JobDetail screens;
+                                 ApplicationTracking (status/dates/next action), ApplicationKit (kit/outreach), Components
+app/src/test/                    JobParsersTest, NewSourcesTest, MatchingAndClaudeTest, ManualJobsTest,
+                                 ApplicationTrackingTest, ApplicationKitTest, OutreachTest, LiveApiTest
 ```
 
 ### 11.3 Conventions
