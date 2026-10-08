@@ -433,7 +433,10 @@ class JobRepository(
 
     fun tailoringPrompt(jobId: String): String? =
         AppStorage.loadJobs(context).firstOrNull { it.id == jobId }
-            ?.let { PromptBuilder.tailoringPrompt(AppStorage.loadResume(context), it) }
+            ?.let {
+                val resume = AppStorage.loadResume(context)
+                PromptBuilder.tailoringPrompt(resume, it, ContactInfo.fromResume(resume))
+            }
 
     fun applyTailoring(jobId: String, raw: String): Result<Unit> = ClaudeResponseParser.parseTailoring(raw).map { t ->
         updateJob(jobId) { it.copy(tailoring = t) }
@@ -517,6 +520,10 @@ class JobRepository(
     }
 
     fun setNotes(jobId: String, notes: String) = updateJob(jobId) { it.copy(notes = notes) }
+
+    fun setCoverLetter(jobId: String, text: String) = updateJob(jobId) { j ->
+        j.copy(tailoring = (j.tailoring ?: com.vignesh.jobmatcher.model.Tailoring()).copy(coverLetter = text.trim(), coverLetterEdited = true))
+    }
 
     private fun updateJob(jobId: String, transform: (Job) -> Job) {
         AppStorage.updateJobs(context) { jobs -> jobs.map { if (it.id == jobId) transform(it) else it } }

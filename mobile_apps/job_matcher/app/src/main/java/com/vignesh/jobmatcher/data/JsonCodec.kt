@@ -64,7 +64,9 @@ object JsonCodec {
         .put("coverLetter", t.coverLetter)
         .put("gapPlan", t.gapPlan)
         .put("referralMessage", t.referralMessage)
+        .put("connectionNote", t.connectionNote)
         .put("createdAt", t.createdAt)
+        .put("coverLetterEdited", t.coverLetterEdited)
 
     private fun tailoringFromJson(o: JSONObject) = Tailoring(
         summary = o.str("summary"),
@@ -72,7 +74,9 @@ object JsonCodec {
         coverLetter = o.str("coverLetter"),
         gapPlan = o.str("gapPlan"),
         referralMessage = o.str("referralMessage"),
-        createdAt = o.optLong("createdAt")
+        connectionNote = o.str("connectionNote"),
+        createdAt = o.optLong("createdAt"),
+        coverLetterEdited = o.optBoolean("coverLetterEdited")
     )
 
     fun jobToJson(j: Job): JSONObject = JSONObject()

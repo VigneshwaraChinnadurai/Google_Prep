@@ -42,7 +42,7 @@ import com.vignesh.jobmatcher.model.SourceType
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun JobDetailScreen(job: Job, threshold: Int, busy: Boolean, vm: JobViewModel, onBack: () -> Unit) {
+fun JobDetailScreen(job: Job, threshold: Int, busy: Boolean, vm: JobViewModel, contact: com.vignesh.jobmatcher.data.ContactInfo, onBack: () -> Unit) {
     val context = LocalContext.current
     var notes by remember(job.id) { mutableStateOf(job.notes) }
     var showFullDescription by remember(job.id) { mutableStateOf(false) }
@@ -113,23 +113,8 @@ fun JobDetailScreen(job: Job, threshold: Int, busy: Boolean, vm: JobViewModel, o
             OutlinedButton(onClick = { vm.setNotes(job.id, notes) }, enabled = !busy) { Text("Save notes") }
         }
 
-        // ---- Tailoring ----
-        SectionHeader("Application kit")
-        ClaudeRoundTripCard(
-            title = "Tailor resume & cover letter",
-            description = "Claude writes job-specific resume bullets, a cover letter, a gap plan and a referral message -- using only facts from your resume.",
-            copyLabel = "✍️ Copy prompt",
-            enabled = !busy,
-            buildPrompt = { vm.tailoringPrompt(job.id) },
-            onPaste = { vm.applyTailoring(job.id, it) }
-        )
-        job.tailoring?.let { t ->
-            TailoringSection("Match summary", t.summary)
-            TailoringSection("Resume bullets", t.resumeBullets)
-            TailoringSection("Cover letter", t.coverLetter)
-            TailoringSection("Gap plan", t.gapPlan)
-            TailoringSection("Referral message", t.referralMessage)
-        }
+        // ---- Application kit (shortlisted jobs only) ----
+        ApplicationKitSection(job, contact, busy, vm)
 
         // ---- Description ----
         SectionHeader("Job description")
@@ -206,17 +191,3 @@ private fun ManualJobTools(job: Job, busy: Boolean, vm: JobViewModel) {
     }
 }
 
-@Composable
-private fun TailoringSection(title: String, body: String) {
-    if (body.isBlank()) return
-    val context = LocalContext.current
-    Card(Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(title, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
-                TextButton(onClick = { ClaudeHandoff.copy(context, body, title) }) { Text("Copy") }
-            }
-            SelectionContainer { Text(body, fontSize = 13.sp) }
-        }
-    }
-}

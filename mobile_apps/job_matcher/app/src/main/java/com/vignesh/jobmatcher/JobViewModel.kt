@@ -38,6 +38,10 @@ data class UiState(
     /** One-shot request to open a job's detail screen (e.g. right after adding it from a link). */
     val openJobRequest: String? = null
 ) {
+    /** Your name/contact details, read from the resume (used to sign letters and messages). */
+    val contact: com.vignesh.jobmatcher.data.ContactInfo
+        get() = com.vignesh.jobmatcher.data.ContactInfo.fromResume(resume)
+
     private val priorityById: Map<String, Int> get() = companies.associate { it.id to it.priority }
 
     fun isTopChoice(job: Job): Boolean = priorityById[job.companyId] == 1
@@ -259,12 +263,28 @@ class JobViewModel(app: Application) : AndroidViewModel(app) {
 
     fun importResumePdf(uri: Uri) = runBusy {
         PDFBoxResourceLoader.init(context)
-        val text = context.contentResolver.openInputStream(uri)!!.use { input ->
-            PDDocument.load(input).use { PDFTextStripper().getText(it) }
-        }.trim()
+        val bytes = context.contentResolver.openInputStream(uri)!!.use { it.readBytes() }
+        val text = PDDocument.load(bytes).use { PDFTextStripper().getText(it) }.trim()
         if (text.isBlank()) error("No text found in that PDF (is it a scanned image?).")
         AppStorage.saveResume(context, text)
-        "Imported resume (${text.length} chars). Run Profile Analysis to refresh the skill profile."
+        // Kept so "Share cover letter + resume" can attach the real PDF.
+        com.vignesh.jobmatcher.export.KitFiles.storeResumePdf(context, bytes)
+        "Imported resume (${text.length} chars) -- it will be attached when you share an application kit. " +
+            "Run Profile Analysis to refresh the skill profile."
+    }
+
+    fun setCoverLetter(jobId: String, text: String) = runBusy {
+        repo.setCoverLetter(jobId, text)
+        "Cover letter saved."
+    }
+
+    fun saveCoverLetter(
+        doc: com.vignesh.jobmatcher.export.CoverLetterDocument,
+        format: com.vignesh.jobmatcher.export.CoverLetterDocument.Format,
+        target: Uri
+    ) = runBusy {
+        com.vignesh.jobmatcher.export.KitFiles.save(context, doc, format, target)
+        "Saved ${doc.fileName(format)}."
     }
 
     fun resetProfile() = runBusy {

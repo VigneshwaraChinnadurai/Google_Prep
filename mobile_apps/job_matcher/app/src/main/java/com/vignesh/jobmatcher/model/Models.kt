@@ -122,8 +122,13 @@ data class Tailoring(
     val resumeBullets: String = "",
     val coverLetter: String = "",
     val gapPlan: String = "",
+    /** Formal outreach message; "{Name}" is replaced with each contact's first name. */
     val referralMessage: String = "",
-    val createdAt: Long = 0
+    /** LinkedIn connection-request note (<= 300 chars), same "{Name}" placeholder. */
+    val connectionNote: String = "",
+    val createdAt: Long = 0,
+    /** True once you've edited the cover letter in the app. */
+    val coverLetterEdited: Boolean = false
 )
 
 data class Job(

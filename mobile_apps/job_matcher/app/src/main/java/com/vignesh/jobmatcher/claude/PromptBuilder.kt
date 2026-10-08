@@ -1,5 +1,6 @@
 package com.vignesh.jobmatcher.claude
 
+import com.vignesh.jobmatcher.data.ContactInfo
 import com.vignesh.jobmatcher.model.AppSettings
 import com.vignesh.jobmatcher.model.CandidateProfile
 import com.vignesh.jobmatcher.model.Company
@@ -243,11 +244,16 @@ Reply with ONLY this block, valid JSON inside, nothing before or after:
 
     // ---- 5. Per-job tailoring ------------------------------------------------------
 
-    fun tailoringPrompt(resume: String, job: Job): String = """
+    /**
+     * The application kit for one shortlisted job. Gaps are handled honestly: the cover
+     * letter names the most material ones with concrete steps and a realistic timeline,
+     * using the calibration below so the timeline is believable rather than optimistic.
+     */
+    fun tailoringPrompt(resume: String, job: Job, contact: ContactInfo): String = """
 ${header(Kind.TAILORING)}
-You are an expert career coach for senior AI/ML candidates. Using ONLY facts from the
-resume (never invent experience, numbers, employers or skills), prepare application
-material for the job below.
+You are an expert career coach for senior AI/ML candidates. Using ONLY facts from the resume
+(never invent experience, numbers, employers, skills or certifications), prepare a complete
+application kit for the job below.
 
 ${resumeBlock(resume)}
 
@@ -260,11 +266,81 @@ Description:
 ${job.description.trim()}
 </job>
 
-Reply with ONLY these five tagged sections, in this order:
-<match_summary>3-5 sentences: why this candidate fits, and the 1-2 biggest risks a screener will see.</match_summary>
-<resume_bullets>6-8 rewritten resume bullets that mirror this posting's language and lead with the most relevant achievements (keep every metric truthful).</resume_bullets>
-<cover_letter>A concise cover letter (under 250 words), specific to this company and role.</cover_letter>
-<gap_plan>Each gap vs. the posting, with how to address it in the interview or a 1-2 week prep action.</gap_plan>
-<referral_message>A short LinkedIn message (under 80 words) asking an employee at ${job.companyName} for a referral to this role.</referral_message>
+CANDIDATE CONTACT (for sign-offs): ${contact.name} | ${contact.contactLine}
+
+HOW TO HANDLE GAPS (applies to the gap plan AND the cover letter)
+- Be honest. Name a gap plainly; never claim it is already closed.
+- Give concrete mitigation steps (a specific course, project, reading, or applying an adjacent
+  skill the candidate already has) and a GENUINE, REASONABLE timeline judged from the
+  candidate's actual starting point in the resume:
+    * new tool/library/framework adjacent to what they already use: 1-3 weeks
+    * new programming language or cloud platform: 1-3 months to working proficiency
+    * new domain or deep specialisation (e.g. a research area): 3-6 months
+    * degrees, a PhD, or years of experience cannot be closed quickly -- say so honestly and
+      offer the closest real substitute from the resume (equivalent production work, scale,
+      leadership), not a timeline.
+- If a gap is a big task, it is fine -- and better -- to say politely that it will take some
+  time, while making clear the candidate is committed to it and would genuinely enjoy
+  working on it.
+
+Reply with ONLY these six tagged sections, in this order, plain text inside each (no markdown
+headings, no code fences):
+
+<match_summary>
+3-5 sentences: why this candidate fits this specific role (the 2-3 strongest proof points),
+and the 1-2 biggest doubts a screener will have.
+</match_summary>
+
+<resume_bullets>
+6-8 resume bullets rewritten to mirror this posting's language and priorities, leading with the
+most relevant achievements. Keep every metric, employer and technology truthful. One bullet per
+line, each starting with "• ".
+</resume_bullets>
+
+<cover_letter>
+A formal cover letter of 250-350 words, ready to send:
+- Open with "Dear Hiring Team at ${job.companyName}," (or a named hiring manager if the posting names one).
+- Paragraph 1: the exact role and why this company and role specifically.
+- Paragraphs 2-3: the most relevant achievements, with real metrics from the resume.
+- One short, honest paragraph on the 1-2 most material gaps: acknowledge each, state the
+  concrete steps being taken, and a realistic timeline per the rules above (if it's a big
+  task, say politely that it will take some time but that the candidate is eager to work on it).
+- Close with thanks and availability, then sign off exactly:
+Sincerely,
+${contact.name}
+Do NOT include a letterhead, address block or date (the app adds them), and no placeholders
+like [Company Address].
+</cover_letter>
+
+<gap_plan>
+For each real gap vs. the posting (most important first), four short lines:
+Gap: ...
+Why it matters for this role: ...
+Mitigation: concrete steps (specific courses/projects/resources)
+Timeline: realistic estimate per the rules above (or "not short-term" with the substitute)
+Interview line: one honest sentence to say when asked about it
+</gap_plan>
+
+<connection_note>
+A LinkedIn connection-request note, at most 280 characters (LinkedIn's limit is 300). Formal,
+no emojis. Mention the exact role title and that the candidate has applied or is applying; add
+the job link only if it still fits within 280 characters. Start with "Dear {Name}," -- keep
+{Name} literally, the app fills it per contact.
+</connection_note>
+
+<referral_message>
+A very formal LinkedIn message / InMail / email (130-180 words) to a recruiter or employee:
+- Start with "Dear {Name}," -- keep {Name} literally, the app fills it per contact.
+- One sentence on who the candidate is (current role, years of experience).
+- The exact role title, the job ID if the posting shows one, and the job posting link: ${job.url}
+- The two most relevant qualifications for this role.
+- A courteous ask: consideration for the role, a referral, or a brief 15-minute conversation.
+- State that the resume and cover letter are attached.
+- Thank them, then sign off exactly:
+Best regards,
+${contact.name}
+${contact.contactLine}
+No emojis, no flattery, no pressure.
+</referral_message>
 """.trim()
 }

@@ -146,6 +146,7 @@ object ClaudeResponseParser {
             coverLetter = extractTag(raw, "cover_letter").orEmpty(),
             gapPlan = extractTag(raw, "gap_plan").orEmpty(),
             referralMessage = extractTag(raw, "referral_message").orEmpty(),
+            connectionNote = extractTag(raw, "connection_note").orEmpty(),
             createdAt = System.currentTimeMillis()
         )
         if (listOf(t.summary, t.resumeBullets, t.coverLetter, t.gapPlan, t.referralMessage).all { it.isBlank() }) {

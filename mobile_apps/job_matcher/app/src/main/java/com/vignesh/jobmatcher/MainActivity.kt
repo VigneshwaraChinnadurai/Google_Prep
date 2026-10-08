@@ -124,7 +124,7 @@ private fun JobMatcherApp(vm: JobViewModel) {
     ) { padding ->
         Box(Modifier.padding(padding)) {
             if (openJob != null) {
-                JobDetailScreen(openJob, state.settings.matchThreshold, state.busy, vm) { openJobId = null }
+                JobDetailScreen(openJob, state.settings.matchThreshold, state.busy, vm, state.contact) { openJobId = null }
             } else {
                 val open: (String) -> Unit = { openJobId = it }
                 when (tab) {
