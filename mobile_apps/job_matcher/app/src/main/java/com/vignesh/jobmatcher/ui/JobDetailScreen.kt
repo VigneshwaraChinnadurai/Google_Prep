@@ -100,21 +100,12 @@ fun JobDetailScreen(job: Job, threshold: Int, busy: Boolean, vm: JobViewModel, o
         )
 
         // ---- Tracking ----
-        SectionHeader("Status")
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            JobStatus.entries.forEach { s ->
-                FilterChip(
-                    selected = job.status == s,
-                    onClick = { vm.setStatus(job.id, s) },
-                    enabled = !busy,
-                    label = { Text("${s.emoji} ${s.label}", fontSize = 12.sp) }
-                )
-            }
-        }
+        StatusSection(job, busy, vm)
+        if (job.status != JobStatus.NEW && job.status != JobStatus.DISMISSED) DatesSection(job, busy, vm)
         OutlinedTextField(
             value = notes,
             onValueChange = { notes = it },
-            label = { Text("Notes (referrals, recruiter, interview dates…)") },
+            label = { Text("Notes (referrer, recruiter, what you learned…)") },
             modifier = Modifier.fillMaxWidth(),
             minLines = 2
         )

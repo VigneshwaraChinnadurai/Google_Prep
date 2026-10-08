@@ -273,6 +273,8 @@ private fun SettingsTab(state: UiState, vm: JobViewModel) {
     var prefilter by remember(s) { mutableStateOf(s.prefilterThreshold.toFloat()) }
     var batch by remember(s) { mutableStateOf(s.scoringBatchSize.toFloat()) }
     var searchBatch by remember(s) { mutableStateOf(s.searchBatchSize.toFloat()) }
+    var shortlistLimit by remember(s) { mutableStateOf(s.shortlistLimit.toFloat()) }
+    var followUpDays by remember(s) { mutableStateOf(s.followUpDays.toFloat()) }
     var descChars by remember(s) { mutableStateOf(s.maxDescriptionChars.toFloat()) }
     var includeResume by remember(s) { mutableStateOf(s.includeResumeInScoring) }
     var searchTerms by remember(s) { mutableStateOf(s.searchTerms.joinToString(", ")) }
@@ -300,6 +302,9 @@ private fun SettingsTab(state: UiState, vm: JobViewModel) {
             modifier = Modifier.fillMaxWidth()
         )
         LabeledSlider("Match threshold (Claude score for Matches): ${threshold.roundToInt()}%", threshold, 50f..95f, 8) { threshold = it }
+        LabeledSlider("Shortlist limit (active applications): ${shortlistLimit.roundToInt()}", shortlistLimit, 3f..30f, 26) { shortlistLimit = it }
+        Text("You're warned when shortlisting past this, to keep applications few and well-prepared.", fontSize = 11.sp)
+        LabeledSlider("Follow up after applying: ${followUpDays.roundToInt()} days", followUpDays, 3f..21f, 17) { followUpDays = it }
         LabeledSlider("On-device pre-filter (local score to reach Claude): ${prefilter.roundToInt()}%", prefilter, 0f..80f, 15) { prefilter = it }
         Text("Lower pre-filter = more jobs reach Claude (more copy-paste rounds, fewer missed roles).", fontSize = 11.sp)
         LabeledSlider("Jobs per Claude scoring prompt: ${batch.roundToInt()}", batch, 3f..20f, 16) { batch = it }
@@ -331,6 +336,8 @@ private fun SettingsTab(state: UiState, vm: JobViewModel) {
                         prefilterThreshold = prefilter.roundToInt(),
                         scoringBatchSize = batch.roundToInt(),
                         searchBatchSize = searchBatch.roundToInt(),
+                        shortlistLimit = shortlistLimit.roundToInt(),
+                        followUpDays = followUpDays.roundToInt(),
                         maxDescriptionChars = (descChars / 500).roundToInt() * 500,
                         includeResumeInScoring = includeResume,
                         locationKeywords = csv(locations),

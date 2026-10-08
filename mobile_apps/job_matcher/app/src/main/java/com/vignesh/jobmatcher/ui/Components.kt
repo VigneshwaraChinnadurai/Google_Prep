@@ -16,6 +16,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -84,7 +85,15 @@ fun ScorePill(label: String, score: Int, color: Color) {
 }
 
 @Composable
-fun JobCard(job: Job, threshold: Int, topChoice: Boolean = false, onClick: () -> Unit) {
+fun JobCard(
+    job: Job,
+    threshold: Int,
+    topChoice: Boolean = false,
+    footer: String? = null,
+    /** When set, NEW jobs get one-tap ⭐ Shortlist / 🚫 Not interested buttons. */
+    onQuickStatus: ((JobStatus) -> Unit)? = null,
+    onClick: () -> Unit
+) {
     Card(
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
         colors = if (job.closed) CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
@@ -122,6 +131,15 @@ fun JobCard(job: Job, threshold: Int, topChoice: Boolean = false, onClick: () ->
                     ).joinToString(" · "),
                     fontSize = 12.sp
                 )
+            }
+            if (footer != null) {
+                Text(footer, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary)
+            }
+            if (onQuickStatus != null && job.status == JobStatus.NEW) {
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    TextButton(onClick = { onQuickStatus(JobStatus.SHORTLISTED) }) { Text("⭐ Shortlist", fontSize = 12.sp) }
+                    TextButton(onClick = { onQuickStatus(JobStatus.DISMISSED) }) { Text("🚫 Not interested", fontSize = 12.sp) }
+                }
             }
         }
     }

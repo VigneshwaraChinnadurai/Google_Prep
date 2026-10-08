@@ -7,7 +7,12 @@ import com.vignesh.jobmatcher.claude.ScoreUpdate
 import com.vignesh.jobmatcher.matching.LocalScorer
 import com.vignesh.jobmatcher.model.Company
 import com.vignesh.jobmatcher.model.Job
+import com.vignesh.jobmatcher.calendar.CalendarSync
+import com.vignesh.jobmatcher.model.EventType
+import com.vignesh.jobmatcher.model.JobEvent
 import com.vignesh.jobmatcher.model.JobOrigin
+import com.vignesh.jobmatcher.model.StatusChange
+import java.util.Calendar
 import com.vignesh.jobmatcher.model.JobStatus
 import com.vignesh.jobmatcher.model.SourceType
 import com.vignesh.jobmatcher.sources.ImportedJob
@@ -302,7 +307,7 @@ class JobRepository(
                     id = id, companyId = slug(hostOf(url)), companyName = companyGuess(hostOf(url)),
                     title = "Job from ${hostOf(url)}", location = "", url = url, description = "",
                     source = SourceType.MANUAL_LINK, origin = JobOrigin.MANUAL, firstSeenAt = now, lastSeenAt = now,
-                    status = JobStatus.SAVED, statusUpdatedAt = now
+                    statusUpdatedAt = now
                 )
             }
         )
@@ -346,8 +351,7 @@ class JobRepository(
             description = p.description, postedAt = p.postedAt,
             source = SourceType.MANUAL_LINK, origin = JobOrigin.MANUAL, firstSeenAt = now, lastSeenAt = now,
             localScore = local.score, localMatchedSkills = local.matchedSkills,
-            // You picked it yourself, so it starts on the tracker as Saved.
-            status = JobStatus.SAVED, statusUpdatedAt = now
+            statusUpdatedAt = now
         )
     }
 
@@ -435,13 +439,80 @@ class JobRepository(
         updateJob(jobId) { it.copy(tailoring = t) }
     }
 
-    fun setStatus(jobId: String, status: JobStatus) {
+    /**
+     * Changes a job's status and applies its side effects: history entry, shortlist date,
+     * applied date + an automatic follow-up date. Returns a user-facing note (incl. a warning
+     * when the shortlist goes past your limit).
+     */
+    fun setStatus(jobId: String, status: JobStatus): String {
         val now = System.currentTimeMillis()
-        updateJob(jobId) {
-            it.copy(
-                status = status, statusUpdatedAt = now,
-                appliedAt = if (status == JobStatus.APPLIED && it.appliedAt == 0L) now else it.appliedAt
-            )
+        val settings = AppStorage.loadSettings(context)
+        var note = "Marked ${status.label}."
+        AppStorage.updateJobs(context) { jobs ->
+            jobs.map { j ->
+                if (j.id != jobId || j.status == status) return@map j
+                var events = j.events
+                if (status == JobStatus.APPLIED && events.none { it.type == EventType.FOLLOW_UP }) {
+                    val followUp = Calendar.getInstance().apply {
+                        timeInMillis = now
+                        add(Calendar.DAY_OF_MONTH, settings.followUpDays)
+                        set(Calendar.HOUR_OF_DAY, 10); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
+                    }.timeInMillis
+                    events = events + JobEvent(
+                        id = newEventId(), type = EventType.FOLLOW_UP,
+                        title = "Follow up on application", startMillis = followUp
+                    )
+                    note = "Marked Applied. Follow-up added for ${DATE_FMT.format(java.util.Date(followUp))} -- tap 📅 to put it in Google Calendar."
+                }
+                j.copy(
+                    status = status, statusUpdatedAt = now,
+                    shortlistedAt = if (status == JobStatus.SHORTLISTED && j.shortlistedAt == 0L) now else j.shortlistedAt,
+                    appliedAt = if (status == JobStatus.APPLIED && j.appliedAt == 0L) now else j.appliedAt,
+                    events = events,
+                    history = j.history + StatusChange(status, now)
+                )
+            }
+        }
+        if (status == JobStatus.SHORTLISTED) {
+            val active = AppStorage.loadJobs(context).count { it.status in JobStatus.ACTIVE }
+            note = if (active > settings.shortlistLimit) {
+                "Shortlisted -- you now have $active active applications (limit ${settings.shortlistLimit}). " +
+                    "Consider finishing or dropping some before adding more."
+            } else "Shortlisted ($active of ${settings.shortlistLimit}). Prepare the application kit next."
+        }
+        return note
+    }
+
+    // ---- Dates & Google Calendar ---------------------------------------------------
+
+    fun saveEvent(jobId: String, event: JobEvent) {
+        updateJob(jobId) { j ->
+            val exists = j.events.any { it.id == event.id }
+            val updated = if (exists) j.events.map {
+                if (it.id == event.id) event.copy(calendarEventId = it.calendarEventId, calendarStale = it.calendarEventId != null) else it
+            } else j.events + event
+            j.copy(events = updated.sortedBy { it.startMillis })
+        }
+    }
+
+    fun deleteEvent(jobId: String, eventId: String) {
+        val job = AppStorage.loadJobs(context).firstOrNull { it.id == jobId } ?: return
+        job.events.firstOrNull { it.id == eventId }?.calendarEventId?.let { CalendarSync.delete(context, it) }
+        updateJob(jobId) { j -> j.copy(events = j.events.filterNot { it.id == eventId }) }
+    }
+
+    /** Pushes one date to Google Calendar (insert or update). */
+    fun syncEvent(jobId: String, eventId: String): String {
+        val job = AppStorage.loadJobs(context).firstOrNull { it.id == jobId } ?: error("Job not found.")
+        val event = job.events.firstOrNull { it.id == eventId } ?: error("Date not found.")
+        return when (val result = CalendarSync.upsert(context, job, event)) {
+            is CalendarSync.Result.Synced -> {
+                updateJob(jobId) { j ->
+                    j.copy(events = j.events.map { if (it.id == eventId) it.copy(calendarEventId = result.calendarEventId, calendarStale = false) else it })
+                }
+                "📅 ${event.type.label} on ${DATE_TIME_FMT.format(java.util.Date(event.startMillis))} is in Google Calendar."
+            }
+            is CalendarSync.Result.Failed -> error(result.reason)
         }
     }
 
@@ -476,6 +547,11 @@ class JobRepository(
     }
 
     companion object {
+        private val DATE_FMT = java.text.SimpleDateFormat("EEE d MMM", java.util.Locale.getDefault())
+        private val DATE_TIME_FMT = java.text.SimpleDateFormat("EEE d MMM, HH:mm", java.util.Locale.getDefault())
+
+        fun newEventId(): String = java.util.UUID.randomUUID().toString()
+
         private fun hostOf(url: String): String =
             runCatching { java.net.URI(url.trim()).host.orEmpty().removePrefix("www.") }.getOrDefault("")
 

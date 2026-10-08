@@ -71,6 +71,9 @@ data class UiState(
 
     val tracked: List<Job> get() = jobs.filter { it.status in JobStatus.TRACKED }
 
+    /** Shortlisted -> offer: the applications you're actively working (vs. settings.shortlistLimit). */
+    val activeCount: Int get() = jobs.count { it.status in JobStatus.ACTIVE }
+
     /** Every job you added from a link, scored or not, best score first. */
     val manualJobs: List<Job>
         get() = jobs.filter { it.isManual && it.status != JobStatus.DISMISSED }
@@ -206,10 +209,19 @@ class JobViewModel(app: Application) : AndroidViewModel(app) {
 
     // ---- Tracking ------------------------------------------------------------------
 
-    fun setStatus(jobId: String, status: JobStatus) = runBusy {
-        repo.setStatus(jobId, status)
-        "Marked ${status.label}."
+    fun setStatus(jobId: String, status: JobStatus) = runBusy { repo.setStatus(jobId, status) }
+
+    fun saveEvent(jobId: String, event: com.vignesh.jobmatcher.model.JobEvent) = runBusy {
+        repo.saveEvent(jobId, event)
+        if (event.calendarEventId != null) "Date saved -- tap 📅 Update to change it in Google Calendar too." else "Date saved."
     }
+
+    fun deleteEvent(jobId: String, eventId: String) = runBusy {
+        repo.deleteEvent(jobId, eventId)
+        "Date removed (and from Google Calendar, if it was there)."
+    }
+
+    fun syncEvent(jobId: String, eventId: String) = runBusy { repo.syncEvent(jobId, eventId) }
 
     fun setNotes(jobId: String, notes: String) = runBusy {
         repo.setNotes(jobId, notes)

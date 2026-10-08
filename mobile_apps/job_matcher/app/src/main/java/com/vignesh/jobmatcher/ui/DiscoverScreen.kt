@@ -51,7 +51,7 @@ fun DiscoverScreen(state: UiState, vm: JobViewModel, onOpenJob: (String) -> Unit
                 Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text("Pipeline", fontWeight = FontWeight.SemiBold)
                     Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-                        Stat("Tracked jobs", state.jobs.count { !it.closed })
+                        Stat("Shortlist ${state.activeCount}/${state.settings.shortlistLimit}", state.activeCount)
                         Stat("Awaiting Claude", shortlist.size)
                         Stat("Matches ≥${state.settings.matchThreshold}%", matchCount)
                     }

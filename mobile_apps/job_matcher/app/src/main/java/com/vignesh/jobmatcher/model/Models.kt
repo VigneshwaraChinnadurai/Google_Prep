@@ -55,20 +55,66 @@ enum class JobOrigin(val label: String) {
     }
 }
 
-enum class JobStatus(val label: String, val emoji: String) {
-    NEW("New", "🆕"),
-    SAVED("Saved", "⭐"),
-    APPLIED("Applied", "📨"),
-    INTERVIEWING("Interviewing", "🗣️"),
-    OFFER("Offer", "🎉"),
-    REJECTED("Rejected", "❌"),
-    DISMISSED("Dismissed", "🚫");
+/**
+ * Where you are with a job. The app is shortlist-first: you only prepare and send
+ * applications for jobs you SHORTLIST, and track those through to an outcome.
+ */
+enum class JobStatus(val label: String, val emoji: String, val meaning: String) {
+    NEW("New", "🆕", "Found by the app or added by you. Not decided yet -- shortlist it or mark it not interested."),
+    SHORTLISTED(
+        "Shortlisted", "⭐",
+        "You intend to apply. Unlocks the application kit (tailored resume bullets, cover letter, outreach) " +
+            "and counts toward your shortlist limit. Optionally add an \"Apply by\" date."
+    ),
+    APPLIED(
+        "Applied", "📨",
+        "Application submitted. The date is logged and a follow-up date is added automatically -- one tap puts it in Google Calendar."
+    ),
+    INTERVIEWING("Interviewing", "🗣️", "In the interview loop. Add each round's date and time; each one syncs to Google Calendar."),
+    OFFER("Offer", "🎉", "Offer received. Add the decision deadline so it isn't missed."),
+    REJECTED("Rejected", "❌", "Closed by the company. Kept for your records -- note what you learned."),
+    DISMISSED("Not interested", "🚫", "Hidden from Matches and the scoring queue, and never suggested again.");
 
     companion object {
-        fun parse(value: String?): JobStatus = entries.firstOrNull { it.name == value } ?: NEW
-        val TRACKED = listOf(SAVED, APPLIED, INTERVIEWING, OFFER, REJECTED)
+        /** "SAVED" is the pre-1.3 name of SHORTLISTED. */
+        fun parse(value: String?): JobStatus =
+            if (value == "SAVED") SHORTLISTED else entries.firstOrNull { it.name == value } ?: NEW
+
+        /** Statuses that make a job an application you're tracking. */
+        val TRACKED = listOf(SHORTLISTED, APPLIED, INTERVIEWING, OFFER, REJECTED)
+
+        /** Still in progress (counts as active work). */
+        val ACTIVE = listOf(SHORTLISTED, APPLIED, INTERVIEWING, OFFER)
     }
 }
+
+/** Kinds of dated step on an application; each can be pushed to Google Calendar. */
+enum class EventType(val label: String, val emoji: String, val defaultMinutes: Int) {
+    APPLY_BY("Apply by", "⏰", 30),
+    FOLLOW_UP("Follow up", "📬", 15),
+    INTERVIEW("Interview", "🗣️", 60),
+    OFFER_DEADLINE("Offer decision deadline", "⏳", 30),
+    OTHER("Other", "📌", 30);
+
+    companion object {
+        fun parse(value: String?): EventType = entries.firstOrNull { it.name == value } ?: OTHER
+    }
+}
+
+data class JobEvent(
+    val id: String,
+    val type: EventType,
+    val title: String,
+    val startMillis: Long,
+    val durationMinutes: Int = type.defaultMinutes,
+    val notes: String = "",
+    /** Google Calendar event id once synced; null = not in the calendar yet. */
+    val calendarEventId: Long? = null,
+    /** True when edited after the last calendar sync. */
+    val calendarStale: Boolean = false
+)
+
+data class StatusChange(val status: JobStatus, val at: Long)
 
 /** Claude's tailored application material for one job (see PromptBuilder.tailoringPrompt). */
 data class Tailoring(
@@ -110,7 +156,12 @@ data class Job(
 
     val status: JobStatus = JobStatus.NEW,
     val statusUpdatedAt: Long = 0,
+    val shortlistedAt: Long = 0,
     val appliedAt: Long = 0,
+    /** Dated steps (apply-by, follow-up, interviews, offer deadline). */
+    val events: List<JobEvent> = emptyList(),
+    /** Every status change, oldest first. */
+    val history: List<StatusChange> = emptyList(),
     val notes: String = "",
     val tailoring: Tailoring? = null
 ) {
@@ -170,7 +221,11 @@ data class AppSettings(
     /** Titles containing any of these are dropped before scoring. */
     val excludeTitleKeywords: List<String> = DEFAULT_EXCLUDES,
     val autoFetchEnabled: Boolean = true,
-    val autoFetchHour: Int = 7
+    val autoFetchHour: Int = 7,
+    /** Soft cap on active applications (shortlisted -> offer); the app warns past it. */
+    val shortlistLimit: Int = 10,
+    /** Days after applying to schedule the follow-up date. */
+    val followUpDays: Int = 7
 ) {
     companion object {
         val DEFAULT_SEARCH_TERMS = listOf(

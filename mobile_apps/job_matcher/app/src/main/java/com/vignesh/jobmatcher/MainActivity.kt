@@ -79,7 +79,7 @@ private fun JobMatcherTheme(content: @Composable () -> Unit) {
     MaterialTheme(colorScheme = scheme, content = content)
 }
 
-private val TABS = listOf("🔎" to "Discover", "🎯" to "Matches", "📋" to "Tracker", "⚙️" to "Setup")
+private val TABS = listOf("🔎" to "Discover", "🎯" to "Matches", "📋" to "Applications", "⚙️" to "Setup")
 
 @Composable
 private fun JobMatcherApp(vm: JobViewModel) {
@@ -129,7 +129,7 @@ private fun JobMatcherApp(vm: JobViewModel) {
                 val open: (String) -> Unit = { openJobId = it }
                 when (tab) {
                     0 -> DiscoverScreen(state, vm, open)
-                    1 -> MatchesScreen(state, open)
+                    1 -> MatchesScreen(state, vm, open)
                     2 -> TrackerScreen(state, open)
                     else -> SetupScreen(state, vm)
                 }

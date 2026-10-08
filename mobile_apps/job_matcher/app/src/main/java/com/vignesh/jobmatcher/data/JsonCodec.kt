@@ -4,7 +4,10 @@ import com.vignesh.jobmatcher.model.AppSettings
 import com.vignesh.jobmatcher.model.CandidateProfile
 import com.vignesh.jobmatcher.model.Company
 import com.vignesh.jobmatcher.model.Job
+import com.vignesh.jobmatcher.model.EventType
+import com.vignesh.jobmatcher.model.JobEvent
 import com.vignesh.jobmatcher.model.JobOrigin
+import com.vignesh.jobmatcher.model.StatusChange
 import com.vignesh.jobmatcher.model.JobStatus
 import com.vignesh.jobmatcher.model.ProfileSkill
 import com.vignesh.jobmatcher.model.SourceType
@@ -96,7 +99,12 @@ object JsonCodec {
         .put("scoredAt", j.scoredAt)
         .put("status", j.status.name)
         .put("statusUpdatedAt", j.statusUpdatedAt)
+        .put("shortlistedAt", j.shortlistedAt)
         .put("appliedAt", j.appliedAt)
+        .put("events", JSONArray().also { arr -> j.events.forEach { arr.put(eventToJson(it)) } })
+        .put("history", JSONArray().also { arr ->
+            j.history.forEach { arr.put(JSONObject().put("status", it.status.name).put("at", it.at)) }
+        })
         .put("notes", j.notes)
         .put("tailoring", j.tailoring?.let { tailoringToJson(it) } ?: JSONObject.NULL)
 
@@ -124,9 +132,38 @@ object JsonCodec {
         scoredAt = o.optLong("scoredAt"),
         status = JobStatus.parse(o.str("status")),
         statusUpdatedAt = o.optLong("statusUpdatedAt"),
+        shortlistedAt = o.optLong("shortlistedAt"),
         appliedAt = o.optLong("appliedAt"),
+        events = o.optJSONArray("events")?.let { arr -> (0 until arr.length()).mapNotNull { arr.optJSONObject(it)?.let(::eventFromJson) } }
+            .orEmpty(),
+        history = o.optJSONArray("history")?.let { arr ->
+            (0 until arr.length()).mapNotNull { i ->
+                arr.optJSONObject(i)?.let { StatusChange(JobStatus.parse(it.str("status")), it.optLong("at")) }
+            }
+        }.orEmpty(),
         notes = o.str("notes"),
         tailoring = o.optJSONObject("tailoring")?.let { tailoringFromJson(it) }
+    )
+
+    private fun eventToJson(e: JobEvent) = JSONObject()
+        .put("id", e.id)
+        .put("type", e.type.name)
+        .put("title", e.title)
+        .put("startMillis", e.startMillis)
+        .put("durationMinutes", e.durationMinutes)
+        .put("notes", e.notes)
+        .put("calendarEventId", e.calendarEventId ?: JSONObject.NULL)
+        .put("calendarStale", e.calendarStale)
+
+    private fun eventFromJson(o: JSONObject) = JobEvent(
+        id = o.str("id"),
+        type = EventType.parse(o.str("type")),
+        title = o.str("title"),
+        startMillis = o.optLong("startMillis"),
+        durationMinutes = o.optInt("durationMinutes", 30),
+        notes = o.str("notes"),
+        calendarEventId = if (o.isNull("calendarEventId")) null else o.optLong("calendarEventId"),
+        calendarStale = o.optBoolean("calendarStale")
     )
 
     // ---- Profile -------------------------------------------------------------------
@@ -190,6 +227,8 @@ object JsonCodec {
         .put("excludeTitleKeywords", s.excludeTitleKeywords.toJsonArray())
         .put("autoFetchEnabled", s.autoFetchEnabled)
         .put("autoFetchHour", s.autoFetchHour)
+        .put("shortlistLimit", s.shortlistLimit)
+        .put("followUpDays", s.followUpDays)
 
     fun settingsFromJson(o: JSONObject): AppSettings {
         val d = AppSettings()
@@ -204,7 +243,9 @@ object JsonCodec {
             locationKeywords = o.optJSONArray("locationKeywords")?.strings() ?: d.locationKeywords,
             excludeTitleKeywords = o.optJSONArray("excludeTitleKeywords")?.strings() ?: d.excludeTitleKeywords,
             autoFetchEnabled = o.optBoolean("autoFetchEnabled", d.autoFetchEnabled),
-            autoFetchHour = o.optInt("autoFetchHour", d.autoFetchHour)
+            autoFetchHour = o.optInt("autoFetchHour", d.autoFetchHour),
+            shortlistLimit = o.optInt("shortlistLimit", d.shortlistLimit),
+            followUpDays = o.optInt("followUpDays", d.followUpDays)
         )
     }
 }
