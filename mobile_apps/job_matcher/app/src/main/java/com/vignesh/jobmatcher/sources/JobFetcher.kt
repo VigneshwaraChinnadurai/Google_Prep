@@ -4,7 +4,6 @@ import com.vignesh.jobmatcher.model.Company
 import com.vignesh.jobmatcher.model.SourceType
 import org.json.JSONObject
 import java.net.URI
-import kotlinx.coroutines.delay
 import java.net.URLEncoder
 
 /** Parsed Workday careers URL -> its CXS JSON endpoints. */
@@ -102,7 +101,7 @@ class JobFetcher(private val api: CareersApi = CareersApi.create()) {
             SourceType.EIGHTFOLD -> fetchEightfold(id, searchTerms, locationKeywords, titleAllowed)
             SourceType.ORACLE_HCM -> fetchOracle(id, searchTerms, locationKeywords, titleAllowed)
             SourceType.SMARTRECRUITERS -> fetchSmartRecruiters(requireId(id), locationKeywords, titleAllowed)
-            SourceType.CLAUDE_SEARCH -> emptyList()
+            SourceType.CLAUDE_SEARCH, SourceType.MANUAL_LINK -> emptyList()
         }
     }
 
@@ -180,20 +179,7 @@ class JobFetcher(private val api: CareersApi = CareersApi.create()) {
     private fun primaryLocation(locationKeywords: List<String>): String =
         if (locationKeywords.any { it.equals("india", true) }) "India" else locationKeywords.firstOrNull().orEmpty()
 
-    /**
-     * GET that insists on a JSON body. Eightfold intermittently serves its HTML app shell
-     * instead of JSON (bot throttling), so non-JSON responses are retried with backoff.
-     */
-    private suspend fun getJson(url: String): String {
-        var lastError: Throwable? = null
-        repeat(3) { attempt ->
-            val body = runCatching { api.get(url) }.onFailure { lastError = it }.getOrNull()
-            val head = body?.trimStart()
-            if (head != null && (head.startsWith("{") || head.startsWith("["))) return body
-            delay(1500L * (attempt + 1))
-        }
-        throw lastError ?: IllegalStateException("Careers site returned a non-JSON page (throttled?) -- try again later.")
-    }
+    private suspend fun getJson(url: String): String = api.getJson(url)
 
     private suspend fun fetchEightfold(
         url: String,

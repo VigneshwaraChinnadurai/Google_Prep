@@ -21,7 +21,8 @@ object PromptBuilder {
         PROFILE("profile_json"),
         SCORING("job_scores"),
         SEARCH("jobs_json"),
-        TAILORING("match_summary")
+        TAILORING("match_summary"),
+        READ_JOB("job_details")
     }
 
     private fun header(kind: Kind) = "$PROMPT_MARKER [${kind.name}] ###"
@@ -140,6 +141,9 @@ Use web search to find CURRENTLY OPEN job postings at the companies below that f
 candidate, located in: ${settings.locationKeywords.joinToString()}.
 """.trim()
         )
+        if (settings.searchTerms.isNotEmpty()) {
+            appendLine("Roles the candidate is targeting (search for each): ${settings.searchTerms.joinToString()}.")
+        }
         if (topChoiceSolo) {
             appendLine(
                 "This is the candidate's #1 target company -- search its careers site thoroughly " +
@@ -191,7 +195,53 @@ Reply with ONLY this block, valid JSON inside, nothing before or after:
         )
     }
 
-    // ---- 4. Per-job tailoring ------------------------------------------------------
+    // ---- 4. Read a job from a link the user added -----------------------------------
+
+    fun readJobPrompt(
+        url: String,
+        resume: String,
+        profile: CandidateProfile,
+        partialText: String
+    ): String = buildString {
+        appendLine(header(Kind.READ_JOB))
+        appendLine(
+            """
+Open this job posting and read it in full: $url
+
+The app could not read the whole posting itself (login wall or JavaScript-only page).
+If you also cannot open it, say so in "description" and set "score" to null -- do NOT guess
+the job's content from its title or URL.
+""".trim()
+        )
+        if (partialText.isNotBlank()) {
+            appendLine()
+            appendLine("What the app could read so far:")
+            appendLine(partialText.take(1500))
+        }
+        appendLine()
+        appendLine("Then score how well the candidate below matches it, 0-100 with this rubric: 40 core skills")
+        appendLine("& domain, 25 seniority & scope, 20 hard requirements (PhD, languages, etc.), 15 career-")
+        appendLine("trajectory fit. Be strict: 80+ means a strong, apply-today match.")
+        appendLine()
+        appendLine("CANDIDATE PROFILE")
+        appendLine(profileBlock(profile))
+        appendLine()
+        appendLine(resumeBlock(resume))
+        appendLine()
+        appendLine(
+            """
+Reply with ONLY this block, valid JSON inside, nothing before or after:
+<job_details>
+{"company": "...", "title": "...", "location": "...", "posted_date": "YYYY-MM-DD or empty",
+ "description": "the full job description: responsibilities, requirements, qualifications (up to ~600 words)",
+ "score": 0, "verdict": "Strong match | Good match | Partial | Poor", "reasons": "2-3 sentences",
+ "matched_skills": ["..."], "gaps": ["..."]}
+</job_details>
+""".trim()
+        )
+    }
+
+    // ---- 5. Per-job tailoring ------------------------------------------------------
 
     fun tailoringPrompt(resume: String, job: Job): String = """
 ${header(Kind.TAILORING)}

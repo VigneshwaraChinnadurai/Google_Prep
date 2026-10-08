@@ -4,6 +4,7 @@ import com.vignesh.jobmatcher.model.AppSettings
 import com.vignesh.jobmatcher.model.CandidateProfile
 import com.vignesh.jobmatcher.model.Company
 import com.vignesh.jobmatcher.model.Job
+import com.vignesh.jobmatcher.model.JobOrigin
 import com.vignesh.jobmatcher.model.JobStatus
 import com.vignesh.jobmatcher.model.ProfileSkill
 import com.vignesh.jobmatcher.model.SourceType
@@ -81,6 +82,7 @@ object JsonCodec {
         .put("description", j.description)
         .put("postedAt", j.postedAt)
         .put("source", j.source.name)
+        .put("origin", j.origin.name)
         .put("firstSeenAt", j.firstSeenAt)
         .put("lastSeenAt", j.lastSeenAt)
         .put("closed", j.closed)
@@ -108,6 +110,7 @@ object JsonCodec {
         description = o.str("description"),
         postedAt = o.str("postedAt"),
         source = SourceType.parse(o.str("source")),
+        origin = JobOrigin.parse(o.str("origin")),
         firstSeenAt = o.optLong("firstSeenAt"),
         lastSeenAt = o.optLong("lastSeenAt"),
         closed = o.optBoolean("closed"),
@@ -176,6 +179,7 @@ object JsonCodec {
     // ---- Settings ------------------------------------------------------------------
 
     fun settingsToJson(s: AppSettings): JSONObject = JSONObject()
+        .put("searchTerms", s.searchTerms.toJsonArray())
         .put("matchThreshold", s.matchThreshold)
         .put("prefilterThreshold", s.prefilterThreshold)
         .put("scoringBatchSize", s.scoringBatchSize)
@@ -190,6 +194,7 @@ object JsonCodec {
     fun settingsFromJson(o: JSONObject): AppSettings {
         val d = AppSettings()
         return AppSettings(
+            searchTerms = o.optJSONArray("searchTerms")?.strings() ?: d.searchTerms,
             matchThreshold = o.optInt("matchThreshold", d.matchThreshold),
             prefilterThreshold = o.optInt("prefilterThreshold", d.prefilterThreshold),
             scoringBatchSize = o.optInt("scoringBatchSize", d.scoringBatchSize),

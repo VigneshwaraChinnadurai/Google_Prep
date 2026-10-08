@@ -1,12 +1,18 @@
 # Job Matcher
 
-**Version 1.1.0** · Android (Kotlin, Jetpack Compose) · package `com.vignesh.jobmatcher`
+**Version 1.2.0** · Android (Kotlin, Jetpack Compose) · package `com.vignesh.jobmatcher`
 
 Job Matcher watches the careers sites of a hand-picked list of companies, finds openings in
 India that fit the resume, and keeps only the ones that match at **≥80%** (configurable).
 Every LLM step goes through **Claude by manual copy-paste**: the app builds the prompt, you
 send it in the Claude app, and paste the reply back. There's no API key and no per-request
 billing; it's the same pattern as LeetCode Checker's "Claude (Manual)" provider.
+
+Jobs reach the app two ways, and every job is tagged with which one:
+- **🤖 Automatic**: found by the app (careers-site fetch or Claude web search), driven by
+  **your search terms** (e.g. *Gen AI Engineer, AI Architect, Software Engineer 3*).
+- **✋ Manual**: a job **you** found anywhere (LinkedIn, Naukri, a careers site) and added
+  by pasting or sharing its link. The app reads the posting and scores it.
 
 ---
 
@@ -16,6 +22,8 @@ billing; it's the same pattern as LeetCode Checker's "Claude (Manual)" provider.
 2. [How it works: the pipeline](#2-how-it-works-the-pipeline)
 3. [The four tabs](#3-the-four-tabs)
 4. [The Claude copy-paste workflow](#4-the-claude-copy-paste-workflow)
+4A. [Search terms](#4a-search-terms)
+4B. [Adding a job from a link (Manual jobs)](#4b-adding-a-job-from-a-link-manual-jobs)
 5. [Companies and careers sources](#5-companies-and-careers-sources)
 6. [Matching and scoring](#6-matching-and-scoring)
 7. [Settings reference](#7-settings-reference)
@@ -33,7 +41,8 @@ billing; it's the same pattern as LeetCode Checker's "Claude (Manual)" provider.
 1. Install the Claude app on the same phone and sign in. In Claude, turn on **web search**;
    the company-search prompts need it.
 2. Open Job Matcher and allow notifications when asked. The daily fetch uses them.
-3. *(Optional)* **Setup → Profile → Import PDF** with your latest resume, then run
+3. **Setup → Settings → Search terms**: set the job titles you want searched (see §4A).
+4. *(Optional)* **Setup → Profile → Import PDF** with your latest resume, then run
    **Profile analysis** (see §4.3). The app ships with the Sep 2026 resume and a skill
    profile built from it, so this step is only needed when the resume changes.
 
@@ -44,6 +53,10 @@ billing; it's the same pattern as LeetCode Checker's "Claude (Manual)" provider.
 3. **③ Claude web search**: *Search Google* (or *Search next 4*) → send → paste the reply.
 4. Open **Matches**, review the new jobs, mark interesting ones **Saved**, and use the
    **Application kit** to tailor your resume before applying.
+
+**Whenever you spot a job elsewhere**: in LinkedIn or Chrome, tap **Share → Job Matcher**
+(or copy the link and use **Discover → ➕ Add a job from a link**). The job opens in the
+app, already read and tagged ✋ Manual (see §4B).
 
 > The first run has a backlog (a few big employers alone shortlist ~150 jobs). After that,
 > each day only adds new postings.
@@ -86,6 +99,7 @@ billing; it's the same pattern as LeetCode Checker's "Claude (Manual)" provider.
 
 ### 🔎 Discover
 The control centre.
+- **➕ Add a job from a link**: paste a job URL (or tap 📋 Paste) and **Add job** (see §4B).
 - **Pipeline** card: *Tracked jobs* (open postings stored), *Awaiting Claude* (the
   shortlist), *Matches ≥80%*.
 - **① Fetch from careers sites**: fetches every enabled automatic-source company and shows
@@ -98,8 +112,13 @@ The control centre.
   to open it.
 
 ### 🎯 Matches
+- Filter chips: **All · 🤖 Automatic · ✋ Manual**. *Manual* lists **every** job you added,
+  scored or not and whatever the score, since you chose them yourself. *All* and *Automatic*
+  apply the threshold.
 - Jobs Claude scored **≥ the match threshold**. ⭐ **top-choice companies (Google) are
   always listed first**, then by score, then newest.
+- Every card carries its tag (**🤖 Auto** / **✋ Manual**, plus "details missing" for a manual
+  job whose posting couldn't be read).
 - Each card shows title, company, location, the Claude score pill (green ≥ threshold,
   amber within 15 points, red below), the verdict and status.
 - **Show below-threshold** reveals scored jobs under the cutoff, which helps when calibrating
@@ -116,14 +135,18 @@ Three sub-tabs:
 - **Companies**: every company with its source, identifier, last-fetch status and
   enable/disable switch; **Test fetch** for automatic sources; **Edit** (name, priority,
   source, identifier, delete); **➕ Add company**.
-- **Settings**: thresholds, batch sizes, keywords and auto-fetch (see §7).
+- **Settings**: your search terms, thresholds, batch sizes, keywords and auto-fetch (see §7).
+- The Profile card also shows search terms suggested by Profile analysis, with **Add to my
+  search terms**.
 
 ### Job detail (tap any job)
-- **🔗 Open posting / apply**, posted date, source, and a warning if the posting is closed
+- The origin tag (🤖 Auto / ✋ Manual · added by you), **🔗 Open posting / apply**, posted date, source, and a warning if the posting is closed
   or was found by Claude search (open the link to confirm it's live).
 - **Scores**: Claude score + verdict + reasons, ✅ matched skills, ⚠️ gaps, and the
   on-device score with its keyword hits.
 - **Score / Re-score this job with Claude**: a single-job scoring round-trip.
+- *Manual jobs only*: **Let Claude read this posting / Re-read with Claude**, **Paste
+  description**, **Retry**, and **Edit title / company / description** (see §4B).
 - **Status** chips and **Notes** (referrals, recruiter name, interview dates…).
 - **Application kit**: a Claude round-trip that returns a match summary, 6–8 tailored resume
   bullets, a cover letter (<250 words), a gap plan and a LinkedIn referral message, each
@@ -198,6 +221,85 @@ job on-device. **Reset to bundled default** restores the profile built from the 
 Sends the full resume and the full job description. The reply returns five tagged sections:
 `<match_summary>`, `<resume_bullets>`, `<cover_letter>`, `<gap_plan>`, `<referral_message>`.
 These are saved on the job and shown with Copy buttons.
+
+### 4.5 Read-a-link prompt (Manual jobs whose page couldn't be read)
+Sends the link, whatever the app could read, your profile and resume. Claude opens the
+page, returns the full details, and scores the match in the same reply:
+`<job_details>{company, title, location, posted_date, description, score, verdict, reasons,
+matched_skills, gaps}</job_details>`. If Claude can't open the page either, it's told to say
+so and return `score: null` rather than guess. In that case, paste the description yourself.
+
+---
+
+## 4A. Search terms
+
+**Setup → Settings → Search terms** (comma-separated). Defaults: *Gen AI Engineer, AI
+Architect, Machine Learning Engineer, Applied Scientist, Data Scientist, Software Engineer 3*.
+
+They're used in three places:
+1. **Careers-site queries**: every search-based source (Workday, Eightfold, Oracle HCM,
+   Amazon) runs one query per term. More terms means more coverage, and a slower fetch.
+2. **Claude web search**: the prompt lists them as the roles to search for.
+3. **On-device score**: a title that contains all the words of a search term counts as a
+   target title (full title-fit credit). Matching tolerates common variants:
+
+   | You type | Also matches titles like |
+   |---|---|
+   | Software Engineer 3 | Software Development Engineer **III** |
+   | Gen AI Engineer | Senior **Generative AI** Engineer |
+   | AI Architect | Principal Architect - **AI** Platform |
+   | ML Engineer | **Machine Learning** Engineer |
+   | Sr Data Scientist | **Senior** Data Scientist |
+
+   It doesn't match a different level: *Software Engineer 3* ≠ *Software Engineer II*.
+
+> A broad term like *Software Engineer 3* pulls in many general SDE roles, and they'll pass
+> the pre-filter because the title now counts as a target. Expect a bigger shortlist; Claude
+> still applies the real ≥80% bar. Remove it or raise the pre-filter if the queue gets long.
+
+Profile analysis still suggests terms from your resume, but it never changes yours; use
+**Add to my search terms** on the Profile card to adopt them.
+
+---
+
+## 4B. Adding a job from a link (Manual jobs)
+
+**Two ways in**
+- **Share**: in the LinkedIn app, Chrome, Naukri, etc., tap **Share → Job Matcher** ("Add to
+  Job Matcher"). The app opens, adds the job and shows it.
+- **Paste**: copy the link, then **Discover → ➕ Add a job from a link → 📋 Paste → Add job**.
+
+Shared text can contain extra words ("Check out this job at…"); the app picks out the URL.
+
+**How the posting is read** (first that works):
+
+| Link type | Read via | Result |
+|---|---|---|
+| Greenhouse, Lever, Ashby, Workday, Eightfold (e.g. Microsoft), SmartRecruiters, Oracle HCM (e.g. JPMorgan) | That system's JSON API, the same as automatic fetching | Full description |
+| LinkedIn (`/jobs/view/…`, or a search page with `currentJobId=`) | LinkedIn's public job page (no login) | Full description + seniority/type criteria |
+| Any page with schema.org `JobPosting` data | The page's structured data | Usually full |
+| Anything else (e.g. Naukri, which serves a bot-check page) | Page title/meta only | Partial, marked "details missing" |
+
+Verified on 2026-10-08 with real links from LinkedIn, Greenhouse, Microsoft, NVIDIA (Workday),
+Freshworks (SmartRecruiters) and JPMorgan (Oracle): all were read in full.
+
+**When the page can't be fully read**, the job is still saved (nothing is lost) and its detail
+screen offers:
+1. **Let Claude read this posting**: Claude opens the link, extracts the details and scores it
+   in one round-trip (§4.5).
+2. **✍️ Paste description**: copy the JD from the page yourself and paste it (title and
+   company are editable too).
+3. **Retry**: re-reads the link, for example after a network error.
+
+**What happens to a manual job**
+- Tagged **✋ Manual**, source "Added from a link", and placed on the Tracker as **Saved**
+  straight away.
+- Matched to one of your companies by name or careers domain where possible (so a Google
+  link counts as Google, ⭐ and all).
+- **Skips the location gate and the pre-filter**, since you chose it yourself, and goes to the
+  **front of the Claude scoring queue** once its description is known.
+- Never auto-closed or auto-deleted.
+- Adding the same link twice just opens the existing job ("Already tracked").
 
 ---
 
@@ -311,6 +413,7 @@ The real decision; see the rubric in §4.1. A job appears in **Matches** when
 
 | Setting | Default | Range | Effect |
 |---|---|---|---|
+| Search terms | Gen AI Engineer, AI Architect, Machine Learning Engineer, Applied Scientist, Data Scientist, Software Engineer 3 | comma-separated, case kept | Queries for every search-based careers site and for Claude search; also count as target titles (§4A) |
 | Match threshold | **80%** | 50–95 | Claude-score cutoff for the Matches tab |
 | On-device pre-filter | **50%** | 0–80 | Local score needed to reach the Claude shortlist. Lower means more Claude rounds and fewer missed roles |
 | Jobs per Claude scoring prompt | **12** | 3–20 | Batch size for ② |
@@ -322,8 +425,8 @@ The real decision; see the rubric in §4.1. A job appears in **Matches** when
 | Daily auto-fetch + notification | **On** | | See §8 |
 | Fetch at | **07:00** | 0–23 h | Time of the daily run |
 
-**Save settings** applies the changes. Changing the location or exclude keywords re-scores
-stored jobs; **Restore defaults** resets everything.
+**Save settings** applies the changes. Changing search terms, location or exclude keywords
+re-scores stored jobs; **Restore defaults** resets everything.
 
 ---
 
@@ -349,7 +452,7 @@ the careers-site requests and whatever you paste into Claude yourself.
 |---|---|
 | Settings | SharedPreferences `job_matcher_prefs` (one JSON blob) |
 | Companies | `files/companies.json` |
-| Jobs (scores, status, notes, tailoring) | `files/jobs.json` |
+| Jobs (scores, status, notes, tailoring, 🤖/✋ origin) | `files/jobs.json` |
 | Skill profile | `files/profile.json` (falls back to the bundled default) |
 | Resume text | `files/resume.txt` (falls back to the bundled Sep 2026 resume) |
 
@@ -359,7 +462,9 @@ the careers-site requests and whatever you paste into Claude yourself.
 - A job that disappears from its company's API is marked **"Posting closed"** (greyed card)
   but kept. Closed jobs still in *New* status are deleted after **45 days**; jobs you're
   tracking are never auto-deleted.
-- Claude-search jobs are de-duplicated by URL.
+- Claude-search and manual jobs are de-duplicated by URL. Manual jobs (`MANUAL_LINK:<host>:<hash>`)
+  are never closed or pruned automatically.
+- Jobs saved before v1.2 have no origin stored and are treated as 🤖 Automatic.
 - Deleting a company removes its *New* jobs and keeps any you're tracking.
 
 **Bundled company-list updates**: when a new app version ships more companies, they're merged
@@ -386,6 +491,10 @@ For a manual copy over ADB:
 | Too many jobs awaiting Claude | Raise the pre-filter (e.g. 55–60), raise the jobs-per-prompt, or add exclude keywords |
 | Good roles never reach Claude | Lower the pre-filter, or re-run Profile analysis so the skill aliases match how postings phrase things |
 | No daily notification | Check the notification permission and that auto-fetch is on. Notifications only fire when *new* jobs clear the pre-filter |
+| Shared a link but nothing was added | Make sure you picked **Job Matcher / Add to Job Matcher** in the share sheet. If the app was busy (e.g. mid-fetch) the share is skipped; share again once it's done |
+| Manual job shows "details missing" | The site needs a login or JavaScript (Naukri, some careers sites). Use **Let Claude read this posting**, or **Paste description** |
+| A manual job's title/company is wrong | **Edit title / company / description** on its detail screen |
+| Too many generic SDE jobs after adding a broad search term | Expected (§4A). Remove the term, or raise the pre-filter |
 | Claude app doesn't open | The share sheet appears instead; pick Claude. If Claude isn't installed, paste the prompt (already on your clipboard) into claude.ai |
 
 ---
@@ -435,15 +544,16 @@ app/src/main/
     │   ├── CareersApi.kt        the one Retrofit/OkHttp client (absolute @Url, String bodies)
     │   ├── JobFetcher.kt        per-source fetch logic, Workday/Eightfold/Oracle targets, JSON-or-retry GET
     │   ├── JobParsers.kt        pure JSON → RawPosting parsers per ATS, Workday facet selection
+    │   ├── ManualJobImporter.kt link detection (JobLink), ATS-API/LinkedIn/JSON-LD/meta reading for Manual jobs
     │   └── HtmlText.kt          JD HTML → readable text (keeps paragraphs and bullets)
     ├── matching/LocalScorer.kt  on-device score, location/title gates
     ├── claude/
-    │   ├── PromptBuilder.kt     the four prompts (profile, scoring, search, tailoring) + PROMPT_MARKER
+    │   ├── PromptBuilder.kt     the five prompts (profile, scoring, search, read-a-link, tailoring) + PROMPT_MARKER
     │   ├── ClaudeResponseParser.kt  tolerant tagged-block parsing
     │   └── ClaudeHandoff.kt     clipboard + share intent (opens com.anthropic.claude directly)
     ├── work/DailyFetchWorker.kt WorkManager daily fetch + notification
     └── ui/                      Discover, Matches, Tracker, Setup, JobDetail screens + shared Components
-app/src/test/                    JobParsersTest, NewSourcesTest, MatchingAndClaudeTest, LiveApiTest
+app/src/test/                    JobParsersTest, NewSourcesTest, MatchingAndClaudeTest, ManualJobsTest, LiveApiTest
 ```
 
 ### 11.3 Conventions
@@ -487,5 +597,7 @@ is described in §6.2.
   capped (3 pages per search term, 60 detail calls per company).
 - **Manual scoring rounds**: a large backlog takes several copy/paste rounds. Tune the
   pre-filter and batch size to taste.
+- **Manual links behind logins** (Naukri, some careers sites) can't be read by the app;
+  Claude can sometimes open them, otherwise paste the description.
 - **India-focused**: country-level server filters assume "India" is a location keyword.
   Other countries work through `loc_query`/keywords but are less precise.

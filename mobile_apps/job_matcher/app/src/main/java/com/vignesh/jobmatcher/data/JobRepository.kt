@@ -7,9 +7,13 @@ import com.vignesh.jobmatcher.claude.ScoreUpdate
 import com.vignesh.jobmatcher.matching.LocalScorer
 import com.vignesh.jobmatcher.model.Company
 import com.vignesh.jobmatcher.model.Job
+import com.vignesh.jobmatcher.model.JobOrigin
 import com.vignesh.jobmatcher.model.JobStatus
 import com.vignesh.jobmatcher.model.SourceType
+import com.vignesh.jobmatcher.sources.ImportedJob
 import com.vignesh.jobmatcher.sources.JobFetcher
+import com.vignesh.jobmatcher.sources.JobLink
+import com.vignesh.jobmatcher.sources.ManualJobImporter
 import com.vignesh.jobmatcher.sources.RawPosting
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -32,7 +36,11 @@ data class FetchReport(val results: List<CompanyFetchResult>) {
  * Matches (claudeScore >= matchThreshold). Companies without an API go through the Claude
  * web-search prompt instead, whose results arrive already scored.
  */
-class JobRepository(private val context: Context, private val fetcher: JobFetcher = JobFetcher()) {
+class JobRepository(
+    private val context: Context,
+    private val fetcher: JobFetcher = JobFetcher(),
+    private val importer: ManualJobImporter = ManualJobImporter()
+) {
 
     private fun scorer() = LocalScorer(AppStorage.loadProfile(context), AppStorage.loadSettings(context))
 
@@ -55,12 +63,11 @@ class JobRepository(private val context: Context, private val fetcher: JobFetche
 
     suspend fun fetchCompany(company: Company): CompanyFetchResult = withContext(Dispatchers.IO) {
         val scorer = scorer()
-        val profile = AppStorage.loadProfile(context)
         val now = System.currentTimeMillis()
         val raw = runCatching {
             fetcher.fetch(
                 company,
-                profile.searchTerms,
+                AppStorage.loadSettings(context).searchTerms,
                 AppStorage.loadSettings(context).locationKeywords,
                 scorer::isTitleAllowed
             )
@@ -136,11 +143,16 @@ class JobRepository(private val context: Context, private val fetcher: JobFetche
 
     // ---- Claude scoring ------------------------------------------------------------
 
+    /**
+     * Unscored jobs worth a Claude round-trip. Jobs you added from a link skip the pre-filter
+     * (you already chose them) and go first, as long as their description has been read.
+     */
     fun pendingScoring(): List<Job> {
         val prefilter = AppStorage.loadSettings(context).prefilterThreshold
         return AppStorage.loadJobs(context)
-            .filter { !it.isScored && !it.closed && it.status != JobStatus.DISMISSED && it.localScore >= prefilter }
-            .sortedByDescending { it.localScore }
+            .filter { !it.isScored && !it.closed && it.status != JobStatus.DISMISSED }
+            .filter { if (it.isManual) !it.needsDetails else it.localScore >= prefilter }
+            .sortedWith(compareByDescending<Job> { it.isManual }.thenByDescending { it.localScore })
     }
 
     /** Next batch of the shortlist, or a specific set of jobs (re-scoring from the detail screen). */
@@ -266,6 +278,143 @@ class JobRepository(private val context: Context, private val fetcher: JobFetche
         added to updated
     }
 
+    // ---- Jobs you add from a link -------------------------------------------------
+
+    data class AddResult(val jobId: String, val alreadyTracked: Boolean, val complete: Boolean, val note: String)
+
+    /**
+     * Adds a job from a pasted/shared link: reads it (careers API, LinkedIn page or page
+     * data), scores it on-device and stores it tagged MANUAL. If the page can't be read, a
+     * placeholder is still saved so you can let Claude read it or paste the description.
+     */
+    suspend fun addJobFromLink(text: String): AddResult = withContext(Dispatchers.IO) {
+        val url = JobLink.extractUrl(text) ?: error("No link found -- copy the job's URL and try again.")
+        AppStorage.loadJobs(context).firstOrNull { normalizeUrl(it.url) == normalizeUrl(url) }?.let {
+            return@withContext AddResult(it.id, alreadyTracked = true, complete = !it.needsDetails, note = "Already tracked: ${it.title}")
+        }
+        val now = System.currentTimeMillis()
+        val id = "${SourceType.MANUAL_LINK.name}:${slug(hostOf(url))}:${normalizeUrl(url).hashCode().toUInt().toString(16)}"
+        val imported = runCatching { importer.import(url) }
+        val job = imported.fold(
+            onSuccess = { buildManualJob(id, url, it, now) },
+            onFailure = {
+                Job(
+                    id = id, companyId = slug(hostOf(url)), companyName = companyGuess(hostOf(url)),
+                    title = "Job from ${hostOf(url)}", location = "", url = url, description = "",
+                    source = SourceType.MANUAL_LINK, origin = JobOrigin.MANUAL, firstSeenAt = now, lastSeenAt = now,
+                    status = JobStatus.SAVED, statusUpdatedAt = now
+                )
+            }
+        )
+        AppStorage.updateJobs(context) { it + job }
+        val note = imported.fold(
+            onSuccess = { r ->
+                if (r.complete) "Added \"${job.title}\" (read via ${r.via})."
+                else "Added, but only part of the posting could be read -- let Claude read it or paste the description."
+            },
+            onFailure = { "Saved the link, but couldn't read the page (${it.message}). Let Claude read it, or paste the description." }
+        )
+        AddResult(id, alreadyTracked = false, complete = !job.needsDetails, note = note)
+    }
+
+    /** Re-reads a manual job's link (e.g. after a network error). */
+    suspend fun retryImport(jobId: String): String = withContext(Dispatchers.IO) {
+        val job = AppStorage.loadJobs(context).firstOrNull { it.id == jobId } ?: error("Job not found.")
+        val imported = importer.import(job.url)
+        val fresh = buildManualJob(job.id, job.url, imported, job.firstSeenAt)
+        updateJob(jobId) {
+            it.copy(
+                title = fresh.title, companyId = fresh.companyId, companyName = fresh.companyName,
+                location = fresh.location, description = fresh.description, postedAt = fresh.postedAt,
+                localScore = fresh.localScore, localMatchedSkills = fresh.localMatchedSkills,
+                lastSeenAt = System.currentTimeMillis()
+            )
+        }
+        if (imported.complete) "Read the full posting via ${imported.via}." else "Still only part of the posting -- try Claude or paste it."
+    }
+
+    private fun buildManualJob(id: String, url: String, imported: ImportedJob, now: Long): Job {
+        val p = imported.posting
+        val companyName = imported.company.ifBlank { companyGuess(hostOf(url)) }
+        val company = matchCompany(companyName, url)
+        val local = scorer().score(p.title, p.description)
+        return Job(
+            id = id,
+            companyId = company?.id ?: slug(companyName),
+            companyName = company?.name ?: companyName,
+            title = p.title.ifBlank { "Job from ${hostOf(url)}" }, location = p.location, url = url,
+            description = p.description, postedAt = p.postedAt,
+            source = SourceType.MANUAL_LINK, origin = JobOrigin.MANUAL, firstSeenAt = now, lastSeenAt = now,
+            localScore = local.score, localMatchedSkills = local.matchedSkills,
+            // You picked it yourself, so it starts on the tracker as Saved.
+            status = JobStatus.SAVED, statusUpdatedAt = now
+        )
+    }
+
+    /** Your configured company with this name, or whose careers URL shares the link's domain. */
+    private fun matchCompany(name: String, url: String): Company? {
+        val companies = AppStorage.loadCompanies(context)
+        val host = hostOf(url)
+        return companies.firstOrNull { it.name.equals(name, ignoreCase = true) }
+            ?: companies.firstOrNull {
+                name.isNotBlank() && (it.name.contains(name, true) || name.contains(it.name.substringBefore(" ("), true))
+            }
+            ?: companies.firstOrNull { c ->
+                host.isNotBlank() && c.identifier.isNotBlank() &&
+                    hostOf(c.identifier).let { it.isNotBlank() && rootDomain(it) == rootDomain(host) }
+            }
+    }
+
+    fun readJobPrompt(jobId: String): String? {
+        val job = AppStorage.loadJobs(context).firstOrNull { it.id == jobId } ?: return null
+        return PromptBuilder.readJobPrompt(
+            job.url, AppStorage.loadResume(context), AppStorage.loadProfile(context),
+            listOf(job.title, job.companyName, job.location, job.description).filter { it.isNotBlank() }.joinToString("\n")
+        )
+    }
+
+    /** Applies Claude's read of a manual job: fills in the details and (usually) its score. Returns whether it was scored. */
+    fun applyJobDetails(jobId: String, raw: String): Result<Boolean> = ClaudeResponseParser.parseJobDetails(raw).map { f ->
+        val now = System.currentTimeMillis()
+        val company = if (f.company.isBlank()) null else matchCompany(f.company, "")
+        val scorer = scorer()
+        updateJob(jobId) { j ->
+            val title = f.title.ifBlank { j.title }
+            val description = f.description.ifBlank { j.description }
+            val local = scorer.score(title, description)
+            val s = f.score
+            j.copy(
+                title = title,
+                companyId = company?.id ?: if (f.company.isNotBlank()) slug(f.company) else j.companyId,
+                companyName = company?.name ?: f.company.ifBlank { j.companyName },
+                location = f.location.ifBlank { j.location }, description = description,
+                postedAt = f.postedAt.ifBlank { j.postedAt },
+                localScore = local.score, localMatchedSkills = local.matchedSkills,
+                claudeScore = s?.score ?: j.claudeScore, claudeVerdict = s?.verdict ?: j.claudeVerdict,
+                claudeReasons = s?.reasons ?: j.claudeReasons, matchedSkills = s?.matchedSkills ?: j.matchedSkills,
+                gaps = s?.gaps ?: j.gaps, scoredAt = if (s != null) now else j.scoredAt
+            )
+        }
+        f.score != null
+    }
+
+    /** For pages nobody can read automatically: you paste the job description (and fix title/company). */
+    fun setManualDetails(jobId: String, title: String, company: String, description: String) {
+        val match = if (company.isBlank()) null else matchCompany(company, "")
+        val scorer = scorer()
+        updateJob(jobId) { j ->
+            val t = title.trim().ifBlank { j.title }
+            val d = description.trim()
+            val local = scorer.score(t, d)
+            j.copy(
+                title = t,
+                companyName = match?.name ?: company.trim().ifBlank { j.companyName },
+                companyId = match?.id ?: if (company.isNotBlank()) slug(company) else j.companyId,
+                description = d, localScore = local.score, localMatchedSkills = local.matchedSkills
+            )
+        }
+    }
+
     // ---- Profile -------------------------------------------------------------------
 
     fun profilePrompt(): String = PromptBuilder.profilePrompt(AppStorage.loadResume(context))
@@ -327,6 +476,16 @@ class JobRepository(private val context: Context, private val fetcher: JobFetche
     }
 
     companion object {
+        private fun hostOf(url: String): String =
+            runCatching { java.net.URI(url.trim()).host.orEmpty().removePrefix("www.") }.getOrDefault("")
+
+        /** "careers.qualcomm.com" -> "qualcomm.com" (good enough for company matching). */
+        private fun rootDomain(host: String) = host.split('.').takeLast(2).joinToString(".")
+
+        /** "careers.qualcomm.com" -> "Qualcomm" -- a placeholder until the posting names the company. */
+        private fun companyGuess(host: String) =
+            rootDomain(host).substringBefore('.').replaceFirstChar { it.uppercase() }
+
         private const val DAY_MS = 24L * 3600 * 1000
 
         /**

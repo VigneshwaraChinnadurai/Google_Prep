@@ -112,7 +112,12 @@ private fun ProfileTab(state: UiState, vm: JobViewModel) {
             Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text("Current profile (${if (profile.origin == "claude") "from Claude" else "bundled default"})", fontWeight = FontWeight.SemiBold)
                 Text(profile.headline, fontSize = 13.sp)
-                Text("${profile.yearsExperience} years · searches: ${profile.searchTerms.joinToString()}", fontSize = 12.sp)
+                Text("${profile.yearsExperience} years of experience", fontSize = 12.sp)
+                val suggested = profile.searchTerms.filter { t -> state.settings.searchTerms.none { it.equals(t, true) } }
+                if (suggested.isNotEmpty()) {
+                    Text("Search terms suggested by the profile: ${suggested.joinToString()}", fontSize = 12.sp)
+                    TextButton(onClick = { vm.addSearchTerms(suggested) }, enabled = !state.busy) { Text("Add to my search terms") }
+                }
                 Text("Target titles", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                 Text(profile.targetTitles.joinToString(), fontSize = 12.sp)
                 Text("Skills (★ = weight)", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
@@ -227,7 +232,7 @@ private fun CompanyDialog(initial: Company, onDismiss: () -> Unit, onSave: (Comp
                 }
                 Text("Careers source", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    SourceType.entries.forEach { s ->
+                    SourceType.entries.filter { it.selectableForCompany }.forEach { s ->
                         FilterChip(selected = source == s, onClick = { source = s }, label = { Text(s.label, fontSize = 11.sp) })
                     }
                 }
@@ -270,6 +275,7 @@ private fun SettingsTab(state: UiState, vm: JobViewModel) {
     var searchBatch by remember(s) { mutableStateOf(s.searchBatchSize.toFloat()) }
     var descChars by remember(s) { mutableStateOf(s.maxDescriptionChars.toFloat()) }
     var includeResume by remember(s) { mutableStateOf(s.includeResumeInScoring) }
+    var searchTerms by remember(s) { mutableStateOf(s.searchTerms.joinToString(", ")) }
     var locations by remember(s) { mutableStateOf(s.locationKeywords.joinToString(", ")) }
     var excludes by remember(s) { mutableStateOf(s.excludeTitleKeywords.joinToString(", ")) }
     var autoFetch by remember(s) { mutableStateOf(s.autoFetchEnabled) }
@@ -281,6 +287,18 @@ private fun SettingsTab(state: UiState, vm: JobViewModel) {
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
+        OutlinedTextField(
+            value = searchTerms, onValueChange = { searchTerms = it },
+            label = { Text("Search terms (comma-separated)") },
+            supportingText = {
+                Text(
+                    "Job titles/keywords searched on every careers site and given to Claude search, e.g. " +
+                        "Gen AI Engineer, AI Architect, Software Engineer 3. Also counted as target titles when pre-scoring.",
+                    fontSize = 11.sp
+                )
+            },
+            modifier = Modifier.fillMaxWidth()
+        )
         LabeledSlider("Match threshold (Claude score for Matches): ${threshold.roundToInt()}%", threshold, 50f..95f, 8) { threshold = it }
         LabeledSlider("On-device pre-filter (local score to reach Claude): ${prefilter.roundToInt()}%", prefilter, 0f..80f, 15) { prefilter = it }
         Text("Lower pre-filter = more jobs reach Claude (more copy-paste rounds, fewer missed roles).", fontSize = 11.sp)
@@ -307,6 +325,8 @@ private fun SettingsTab(state: UiState, vm: JobViewModel) {
             onClick = {
                 vm.saveSettings(
                     AppSettings(
+                        searchTerms = searchTerms.split(',').map { it.trim() }.filter { it.isNotBlank() }
+                            .distinctBy { it.lowercase() },
                         matchThreshold = threshold.roundToInt(),
                         prefilterThreshold = prefilter.roundToInt(),
                         scoringBatchSize = batch.roundToInt(),

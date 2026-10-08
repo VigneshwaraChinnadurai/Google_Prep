@@ -13,6 +13,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.FilterChip
@@ -54,6 +56,7 @@ fun JobDetailScreen(job: Job, threshold: Int, busy: Boolean, vm: JobViewModel, o
         Text("${job.companyName} · ${job.location}", color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text(
             listOfNotNull(
+                job.origin.label + if (job.isManual) " · added by you" else "",
                 job.postedAt.takeIf { it.isNotBlank() }?.let { "Posted $it" },
                 "via ${job.source.label}",
                 if (job.closed) "⚠️ No longer listed" else null
@@ -67,6 +70,8 @@ fun JobDetailScreen(job: Job, threshold: Int, busy: Boolean, vm: JobViewModel, o
             onClick = { runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(job.url))) } },
             modifier = Modifier.fillMaxWidth()
         ) { Text("🔗 Open posting / apply") }
+
+        if (job.isManual) ManualJobTools(job, busy, vm)
 
         // ---- Scores ----
         Card(Modifier.fillMaxWidth()) {
@@ -150,6 +155,63 @@ fun JobDetailScreen(job: Job, threshold: Int, busy: Boolean, vm: JobViewModel, o
             }
         }
         OutlinedButton(onClick = { ClaudeHandoff.copy(context, job.url, "Job link") }) { Text("Copy job link") }
+    }
+}
+
+/** Tools for a job you added from a link: re-read it, let Claude read it, or fill it in yourself. */
+@Composable
+private fun ManualJobTools(job: Job, busy: Boolean, vm: JobViewModel) {
+    var editing by remember(job.id) { mutableStateOf(false) }
+    if (job.needsDetails) {
+        Card(Modifier.fillMaxWidth()) {
+            Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text("⚠️ Couldn't read the full posting", fontWeight = FontWeight.SemiBold)
+                Text(
+                    "The page is behind a login or loads with JavaScript. Pick one: let Claude open the link " +
+                        "and read it (also scores it), paste the description yourself, or retry.",
+                    fontSize = 13.sp
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(onClick = { editing = true }, enabled = !busy) { Text("✍️ Paste description", fontSize = 12.sp) }
+                    TextButton(onClick = { vm.retryImport(job.id) }, enabled = !busy) { Text("Retry") }
+                }
+            }
+        }
+    }
+    ClaudeRoundTripCard(
+        title = if (job.needsDetails) "Let Claude read this posting" else "Re-read with Claude",
+        description = "Claude opens the link, extracts the job details and scores your match in one go.",
+        copyLabel = "🔎 Copy prompt",
+        enabled = !busy,
+        buildPrompt = { vm.readJobPrompt(job.id) },
+        onPaste = { vm.applyJobDetails(job.id, it) }
+    )
+    if (!job.needsDetails) {
+        TextButton(onClick = { editing = true }, enabled = !busy) { Text("Edit title / company / description") }
+    }
+    if (editing) {
+        var title by remember { mutableStateOf(job.title) }
+        var company by remember { mutableStateOf(job.companyName) }
+        var description by remember { mutableStateOf(job.description) }
+        AlertDialog(
+            onDismissRequest = { editing = false },
+            title = { Text("Job details") },
+            text = {
+                Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(value = title, onValueChange = { title = it }, label = { Text("Title") }, singleLine = true)
+                    OutlinedTextField(value = company, onValueChange = { company = it }, label = { Text("Company") }, singleLine = true)
+                    OutlinedTextField(
+                        value = description, onValueChange = { description = it },
+                        label = { Text("Job description (paste it from the page)") },
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 160.dp, max = 360.dp)
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { vm.setManualDetails(job.id, title, company, description); editing = false }) { Text("Save") }
+            },
+            dismissButton = { TextButton(onClick = { editing = false }) { Text("Cancel") } }
+        )
     }
 }
 

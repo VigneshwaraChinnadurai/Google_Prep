@@ -34,7 +34,9 @@ data class UiState(
     val pendingCount: Int = 0,
     val busy: Boolean = false,
     val progress: String = "",
-    val message: String? = null
+    val message: String? = null,
+    /** One-shot request to open a job's detail screen (e.g. right after adding it from a link). */
+    val openJobRequest: String? = null
 ) {
     private val priorityById: Map<String, Int> get() = companies.associate { it.id to it.priority }
 
@@ -68,6 +70,11 @@ data class UiState(
             .sortedByDescending { it.localScore }
 
     val tracked: List<Job> get() = jobs.filter { it.status in JobStatus.TRACKED }
+
+    /** Every job you added from a link, scored or not, best score first. */
+    val manualJobs: List<Job>
+        get() = jobs.filter { it.isManual && it.status != JobStatus.DISMISSED }
+            .sortedWith(compareByDescending<Job> { it.claudeScore ?: -1 }.thenByDescending { it.firstSeenAt })
 }
 
 class JobViewModel(app: Application) : AndroidViewModel(app) {
@@ -93,11 +100,13 @@ class JobViewModel(app: Application) : AndroidViewModel(app) {
                     pendingCount = repo.pendingScoring().size
                 )
             }
-            _state.update { s.copy(busy = it.busy, progress = it.progress, message = it.message) }
+            _state.update { s.copy(busy = it.busy, progress = it.progress, message = it.message, openJobRequest = it.openJobRequest) }
         }
     }
 
     fun consumeMessage() = _state.update { it.copy(message = null) }
+
+    fun consumeOpenJobRequest() = _state.update { it.copy(openJobRequest = null) }
 
     private fun say(msg: String) = _state.update { it.copy(message = msg) }
 
@@ -151,6 +160,38 @@ class JobViewModel(app: Application) : AndroidViewModel(app) {
         }.getOrThrow()
     }
 
+    // ---- Jobs you add from a link -----------------------------------------------
+
+    /** Paste box on Discover, or text shared into the app from LinkedIn/Chrome/etc. */
+    fun addJobFromLink(text: String) = runBusy {
+        val result = repo.addJobFromLink(text)
+        _state.update { it.copy(openJobRequest = result.jobId) }
+        result.note
+    }
+
+    fun retryImport(jobId: String) = runBusy { repo.retryImport(jobId) }
+
+    fun readJobPrompt(jobId: String): String? = repo.readJobPrompt(jobId)
+
+    fun applyJobDetails(jobId: String, raw: String) = runBusy {
+        repo.applyJobDetails(jobId, raw).map { scored ->
+            if (scored) "Job details and Claude score saved." else "Job details saved -- score it with Claude next."
+        }.getOrThrow()
+    }
+
+    fun setManualDetails(jobId: String, title: String, company: String, description: String) = runBusy {
+        repo.setManualDetails(jobId, title, company, description)
+        "Saved. You can score it with Claude now."
+    }
+
+    fun addSearchTerms(terms: List<String>) = runBusy {
+        val s = AppStorage.loadSettings(context)
+        val merged = (s.searchTerms + terms).distinctBy { it.lowercase().trim() }
+        AppStorage.saveSettings(context, s.copy(searchTerms = merged))
+        repo.rescoreLocal()
+        "Search terms: ${merged.size} total."
+    }
+
     fun profilePrompt(): String = repo.profilePrompt()
 
     fun applyProfile(raw: String) = runBusy {
@@ -190,7 +231,9 @@ class JobViewModel(app: Application) : AndroidViewModel(app) {
     fun saveSettings(settings: AppSettings) = runBusy {
         val old = AppStorage.loadSettings(context)
         AppStorage.saveSettings(context, settings)
-        if (old.locationKeywords != settings.locationKeywords || old.excludeTitleKeywords != settings.excludeTitleKeywords) {
+        if (old.locationKeywords != settings.locationKeywords || old.excludeTitleKeywords != settings.excludeTitleKeywords ||
+            old.searchTerms != settings.searchTerms
+        ) {
             repo.rescoreLocal()
         }
         DailyFetchWorker.schedule(context)

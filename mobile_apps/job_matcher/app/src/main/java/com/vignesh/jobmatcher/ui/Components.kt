@@ -111,9 +111,11 @@ fun JobCard(job: Job, threshold: Int, topChoice: Boolean = false, onClick: () ->
                 overflow = TextOverflow.Ellipsis,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            if (job.claudeVerdict.isNotBlank() || job.status != JobStatus.NEW || job.closed) {
+            run {
                 Text(
                     listOfNotNull(
+                        job.origin.label,
+                        if (job.needsDetails) "details missing" else null,
                         job.claudeVerdict.takeIf { it.isNotBlank() },
                         if (job.status != JobStatus.NEW) "${job.status.emoji} ${job.status.label}" else null,
                         if (job.closed) "Posting closed" else null

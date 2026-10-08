@@ -23,6 +23,13 @@ class LocalScorer(private val profile: CandidateProfile, private val settings: A
         Triple(skill.name, skill.weight, (listOf(skill.name) + skill.aliases).map { wordRegex(it) })
     }
     private val titlePatterns = profile.targetTitles.map { wordRegex(it) }
+    private val searchTermTokens = settings.searchTerms.map { titleTokens(it) }.filter { it.isNotEmpty() }
+
+    /** True if every token of one of your search terms appears in the title ("Software Engineer 3" ~ "Software Development Engineer III"). */
+    fun matchesSearchTerm(title: String): Boolean {
+        val tokens = titleTokens(title)
+        return searchTermTokens.any { tokens.containsAll(it) }
+    }
 
     fun isLocationAllowed(location: String): Boolean =
         settings.locationKeywords.isEmpty() || settings.locationKeywords.any { location.contains(it, ignoreCase = true) }
@@ -38,7 +45,7 @@ class LocalScorer(private val profile: CandidateProfile, private val settings: A
         val coreHit = matched.any { it.second >= 3 }
 
         val titleScore = when {
-            titlePatterns.any { it.containsMatchIn(title) } -> 1.0
+            titlePatterns.any { it.containsMatchIn(title) } || matchesSearchTerm(title) -> 1.0
             else -> {
                 val hits = TITLE_TOKENS.count { wordRegex(it).containsMatchIn(title) }
                 (hits / 2.0).coerceAtMost(1.0) * 0.7
@@ -80,6 +87,29 @@ class LocalScorer(private val profile: CandidateProfile, private val settings: A
         private val JUNIOR = listOf("intern", "internship", "junior", "jr", "new grad", "graduate", "entry level", "associate engineer")
         private val LEVEL_REGEX = Regex("(?<![A-Za-z])(III|II|I)(?![A-Za-z])")
         private val YEARS_REGEX = Regex("(\\d{1,2})\\s*\\+?\\s*(?:-\\s*\\d{1,2}\\s*)?(?:years|yrs)", RegexOption.IGNORE_CASE)
+
+        private val ROMAN = mapOf("i" to "1", "ii" to "2", "iii" to "3", "iv" to "4", "v" to "5")
+        private val SYNONYMS = listOf(
+            Regex("""\bgenerative\s+ai\b""") to "genai",
+            Regex("""\bgen\s*-?\s*ai\b""") to "genai",
+            Regex("""\bmachine\s+learning\b""") to "ml",
+            Regex("""\bartificial\s+intelligence\b""") to "ai",
+            Regex("""\bsr\.?(?=\s|$)""") to "senior",
+            Regex("""\bswe\b""") to "software engineer"
+        )
+
+        /**
+         * Lower-cased title tokens with common variants unified: roman levels -> digits
+         * (III -> 3), "Generative AI"/"Gen AI" -> genai, "Machine Learning" -> ml, "Sr" -> senior.
+         */
+        fun titleTokens(text: String): Set<String> {
+            var t = text.lowercase()
+            SYNONYMS.forEach { (re, rep) -> t = re.replace(t, rep) }
+            return t.split(Regex("[^a-z0-9]+"))
+                .filter { it.isNotBlank() }
+                .map { ROMAN[it] ?: it }
+                .toSet()
+        }
 
         private val regexCache = HashMap<String, Regex>()
 

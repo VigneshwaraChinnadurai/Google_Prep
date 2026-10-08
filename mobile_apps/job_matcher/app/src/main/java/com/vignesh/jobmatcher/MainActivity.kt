@@ -1,6 +1,7 @@
 package com.vignesh.jobmatcher
 
 import android.Manifest
+import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -47,7 +48,21 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         if (Build.VERSION.SDK_INT >= 33) notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
         DailyFetchWorker.schedule(applicationContext)
+        // Only on a fresh launch -- a recreated activity would re-add the same shared link.
+        if (savedInstanceState == null) handleShare(intent)
         setContent { JobMatcherTheme { JobMatcherApp(vm) } }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        handleShare(intent)
+    }
+
+    /** "Share → Job Matcher" from LinkedIn, Chrome, Naukri… adds the shared link as a Manual job. */
+    private fun handleShare(intent: Intent?) {
+        if (intent?.action != Intent.ACTION_SEND) return
+        val text = intent.getStringExtra(Intent.EXTRA_TEXT).orEmpty()
+        if (text.isNotBlank()) vm.addJobFromLink(text)
     }
 
     override fun onResume() {
@@ -77,6 +92,15 @@ private fun JobMatcherApp(vm: JobViewModel) {
         state.message?.let {
             snackbar.showSnackbar(it)
             vm.consumeMessage()
+        }
+    }
+
+    // A job just added from a link opens straight away (once it's loaded into state).
+    LaunchedEffect(state.openJobRequest, state.jobs) {
+        val id = state.openJobRequest ?: return@LaunchedEffect
+        if (state.jobs.any { it.id == id }) {
+            openJobId = id
+            vm.consumeOpenJobRequest()
         }
     }
 

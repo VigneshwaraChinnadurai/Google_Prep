@@ -43,6 +43,31 @@ class LiveApiTest {
         assertTrue("Failed: $failures", failures.isEmpty())
     }
 
+    /** Real job links of each kind (open on 2026-10-08; replace any that expire). */
+    @Test
+    fun manualLinks_import() {
+        assumeTrue(System.getProperty("liveApiTests") == "1")
+        val importer = com.vignesh.jobmatcher.sources.ManualJobImporter()
+        val links = listOf(
+            "https://www.linkedin.com/jobs/view/4474679765",
+            "https://job-boards.greenhouse.io/anthropic/jobs/4461450008",
+            "https://apply.careers.microsoft.com/careers/job/1970393556991771",
+            "https://nvidia.wd5.myworkdayjobs.com/en-US/NVIDIAExternalCareerSite/job/US-CA-Santa-Clara/Machine-Learning-Engineer_JR2025036",
+            "https://jobs.smartrecruiters.com/Freshworks/744000154351019-staff-engineer-full-stack",
+            "https://jpmc.fa.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1001/job/210767444"
+        )
+        val failures = mutableListOf<String>()
+        links.forEach { url ->
+            runCatching { runBlocking { importer.import(url) } }
+                .onSuccess {
+                    println("OK  ${it.via}: ${it.posting.title} @ ${it.company} | ${it.posting.location} | ${it.posting.description.length} chars | complete=${it.complete}")
+                    if (!it.complete) failures += url
+                }
+                .onFailure { println("ERR $url: ${it.message}"); failures += url }
+        }
+        assertTrue("Not fully read: $failures", failures.isEmpty())
+    }
+
     @Test
     fun liveSources_returnParseablePostings() {
         assumeTrue(System.getProperty("liveApiTests") == "1")

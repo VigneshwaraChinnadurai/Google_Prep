@@ -113,6 +113,24 @@ object ClaudeResponseParser {
         }
     }
 
+    /** Reply to PromptBuilder.readJobPrompt: the posting's details, and usually a score. */
+    fun parseJobDetails(raw: String): Result<FoundJob> = runCatching {
+        checkNotPrompt(raw)
+        val o = JSONObject(jsonPayload(raw, PromptBuilder.Kind.READ_JOB.tag, '{', '}'))
+        val title = o.str("title")
+        val description = o.str("description")
+        if (title.isBlank() && description.isBlank()) error("Claude's reply had no job title or description.")
+        FoundJob(
+            company = o.str("company"),
+            title = title,
+            location = o.str("location"),
+            url = "",
+            postedAt = o.str("posted_date"),
+            description = description,
+            score = if (o.isNull("score")) null else scoreFrom(o, id = "")
+        )
+    }
+
     fun parseProfile(raw: String): Result<CandidateProfile> = runCatching {
         checkNotPrompt(raw)
         val profile = JsonCodec.profileFromJson(JSONObject(jsonPayload(raw, PromptBuilder.Kind.PROFILE.tag, '{', '}')))

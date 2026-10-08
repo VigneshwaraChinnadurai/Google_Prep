@@ -13,7 +13,15 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
+import com.vignesh.jobmatcher.claude.ClaudeHandoff
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -50,6 +58,8 @@ fun DiscoverScreen(state: UiState, vm: JobViewModel, onOpenJob: (String) -> Unit
                 }
             }
         }
+
+        item { AddFromLinkCard(state, vm) }
 
         item {
             Card(Modifier.fillMaxWidth()) {
@@ -104,6 +114,42 @@ fun DiscoverScreen(state: UiState, vm: JobViewModel, onOpenJob: (String) -> Unit
             item { SectionHeader("Awaiting Claude (${shortlist.size}) · highest local score first") }
             items(shortlist, key = { it.id }) { job ->
                 JobCard(job, state.settings.matchThreshold, state.isTopChoice(job)) { onOpenJob(job.id) }
+            }
+        }
+    }
+}
+
+/** Paste a job link from any portal; the app reads, tags (✋ Manual) and scores it. */
+@Composable
+private fun AddFromLinkCard(state: UiState, vm: JobViewModel) {
+    val context = LocalContext.current
+    var link by rememberSaveable { mutableStateOf("") }
+    Card(Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("➕ Add a job from a link", fontWeight = FontWeight.SemiBold)
+            Text(
+                "Found a job on LinkedIn, Naukri or a careers site? Paste its link -- or use Share → Job Matcher " +
+                    "from the browser/LinkedIn app. The app reads the posting and tags it ✋ Manual.",
+                fontSize = 13.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            OutlinedTextField(
+                value = link,
+                onValueChange = { link = it },
+                placeholder = { Text("https://…") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(
+                    onClick = { link = ClaudeHandoff.readClipboard(context).trim() },
+                    modifier = Modifier.weight(1f)
+                ) { Text("📋 Paste", fontSize = 12.sp) }
+                Button(
+                    onClick = { vm.addJobFromLink(link); link = "" },
+                    enabled = !state.busy && link.isNotBlank(),
+                    modifier = Modifier.weight(1f)
+                ) { Text("Add job", fontSize = 12.sp) }
             }
         }
     }

@@ -14,7 +14,12 @@ enum class SourceType(val label: String, val automatic: Boolean, val identifierH
     EIGHTFOLD("Eightfold", true, "Careers host + domain, e.g. https://apply.careers.microsoft.com?domain=microsoft.com"),
     ORACLE_HCM("Oracle HCM", true, "Candidate-experience URL, e.g. https://jpmc.fa.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1001"),
     SMARTRECRUITERS("SmartRecruiters", true, "Company id, e.g. 'Freshworks' from jobs.smartrecruiters.com/Freshworks"),
-    CLAUDE_SEARCH("Claude web search", false, "Careers page URL (optional, helps Claude search)");
+    CLAUDE_SEARCH("Claude web search", false, "Careers page URL (optional, helps Claude search)"),
+    /** Job-level only (never a company source): a posting you added from a link. */
+    MANUAL_LINK("Added from a link", false, "");
+
+    /** Sources a company can be configured with (MANUAL_LINK is per-job only). */
+    val selectableForCompany: Boolean get() = this != MANUAL_LINK
 
     companion object {
         fun parse(value: String?): SourceType =
@@ -37,6 +42,16 @@ data class Company(
 ) {
     companion object {
         val PRIORITY_LABELS = mapOf(1 to "⭐ Top choice", 2 to "🎯 Target", 3 to "Backup")
+    }
+}
+
+/** How a job entered the app: found by the app's own pipeline, or added by you from a link. */
+enum class JobOrigin(val label: String) {
+    AUTOMATIC("🤖 Auto"),
+    MANUAL("✋ Manual");
+
+    companion object {
+        fun parse(value: String?): JobOrigin = entries.firstOrNull { it.name == value } ?: AUTOMATIC
     }
 }
 
@@ -76,6 +91,7 @@ data class Job(
     val description: String,
     val postedAt: String = "",
     val source: SourceType,
+    val origin: JobOrigin = JobOrigin.AUTOMATIC,
     val firstSeenAt: Long = 0,
     val lastSeenAt: Long = 0,
     /** Set when an automatic source stops listing the job. */
@@ -99,6 +115,14 @@ data class Job(
     val tailoring: Tailoring? = null
 ) {
     val isScored: Boolean get() = claudeScore != null
+    val isManual: Boolean get() = origin == JobOrigin.MANUAL
+
+    /** A manual job whose posting couldn't be read in full (login wall, JS-only page). */
+    val needsDetails: Boolean get() = isManual && description.length < MIN_DESCRIPTION_CHARS
+
+    companion object {
+        const val MIN_DESCRIPTION_CHARS = 300
+    }
 }
 
 data class ProfileSkill(
@@ -125,6 +149,11 @@ data class CandidateProfile(
 )
 
 data class AppSettings(
+    /**
+     * Your search terms -- the job titles/keywords queried on every careers site and given
+     * to Claude web search. They also count as target titles in the on-device score.
+     */
+    val searchTerms: List<String> = DEFAULT_SEARCH_TERMS,
     /** Claude-score cutoff for the Matches tab (the "80%"). */
     val matchThreshold: Int = 80,
     /** On-device score a job needs before it's worth sending to Claude. */
@@ -144,6 +173,10 @@ data class AppSettings(
     val autoFetchHour: Int = 7
 ) {
     companion object {
+        val DEFAULT_SEARCH_TERMS = listOf(
+            "Gen AI Engineer", "AI Architect", "Machine Learning Engineer",
+            "Applied Scientist", "Data Scientist", "Software Engineer 3"
+        )
         val DEFAULT_LOCATIONS = listOf(
             "india", "bengaluru", "bangalore", "hyderabad", "chennai", "pune",
             "mumbai", "gurgaon", "gurugram", "noida", "delhi"

@@ -33,7 +33,9 @@ object JobParsers {
     private fun String.capped() = if (length > MAX_DESCRIPTION_CHARS) take(MAX_DESCRIPTION_CHARS) + "…" else this
 
     private fun joinLocations(vararg parts: String?): String =
-        parts.filterNotNull().map { it.trim() }.filter { it.isNotBlank() }.distinct().joinToString("; ")
+        parts.filterNotNull()
+            .map { it.replace(Regex(""",\s*,"""), ",").trim().trim(',').trim() } // "Chennai, , India" from empty region fields
+            .filter { it.isNotBlank() }.distinct().joinToString("; ")
 
     private fun dateOnly(iso: String): String = iso.take(10)
 
