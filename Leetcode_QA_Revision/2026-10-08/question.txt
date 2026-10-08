@@ -1,0 +1,30 @@
+Date: 2026-10-08
+Question ID: 1021
+Title: Remove Outermost Parentheses
+Difficulty: Easy
+Tags: String, Stack, Bracket Sequences
+URL: https://leetcode.com/problems/remove-outermost-parentheses/
+
+Question:
+A valid parentheses string is either empty &quot;&quot; , &quot;(&quot; + A + &quot;)&quot; , or A + B , where A and B are valid parentheses strings, and + represents string concatenation. For example, &quot;&quot; , &quot;()&quot; , &quot;(())()&quot; , and &quot;(()(()))&quot; are all valid parentheses strings. A valid parentheses string s is primitive if it is nonempty, and there does not exist a way to split it into s = A + B , with A and B nonempty valid parentheses strings. Given a valid parentheses string s , consider its primitive decomposition: s = P 1 + P 2 + ... + P k , where P i are primitive valid parentheses strings. Return s after removing the outermost parentheses of every primitive string in the primitive decomposition of s . Example 1: Input: s = &quot;(()())(())&quot; Output: &quot;()()()&quot; Explanation: The input string is &quot;(()())(())&quot;, with primitive decomposition &quot;(()())&quot; + &quot;(())&quot;. After removing outer parentheses of each part, this is &quot;()()&quot; + &quot;()&quot; = &quot;()()()&quot;. Example 2: Input: s = &quot;(()())(())(()(()))&quot; Output: &quot;()()()()(())&quot; Explanation: The input string is &quot;(()())(())(()(()))&quot;, with primitive decomposition &quot;(()())&quot; + &quot;(())&quot; + &quot;(()(()))&quot;. After removing outer parentheses of each part, this is &quot;()()&quot; + &quot;()&quot; + &quot;()(())&quot; = &quot;()()()()(())&quot;. Example 3: Input: s = &quot;()()&quot; Output: &quot;&quot; Explanation: The input string is &quot;()()&quot;, with primitive decomposition &quot;()&quot; + &quot;()&quot;. After removing outer parentheses of each part, this is &quot;&quot; + &quot;&quot; = &quot;&quot;. Constraints: 1 &lt;= s.length &lt;= 10 5 s[i] is either &#39;(&#39; or &#39;)&#39; . s is a valid parentheses string.
+
+Starter Code (Python3):
+class Solution:
+    def removeOuterParentheses(self, s: str) -> str:
+        
+
+Testcases:
+"(()())(())"
+"(()())(())(()(()))"
+"()()"
+
+Expected Output / Validation:
+Test 1: "(()())(())"
+Depth tracks nesting. Only append when depth>0 (for '(') or depth>0 after decrement (for ')').
+'(':d=1,skip; '(':d=2,add; ')':d=1,add; '(':d=2,add; ')':d=1,add; ')':d=0,skip → "()()"
+'(':d=1,skip; '(':d=2,add; ')':d=1,add; ')':d=0,skip → "()"
+Result: "()()()" ✓
+
+Test 2: "(()())(())(()(()))" → "()()()()(())" ✓ (by same logic)
+
+Test 3: "()()" → both primitives "()" stripped → "" ✓
