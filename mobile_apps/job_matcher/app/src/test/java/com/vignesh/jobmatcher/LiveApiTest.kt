@@ -21,6 +21,28 @@ class LiveApiTest {
         fetcher.fetch(Company("t", "Test", source, id), terms, india) { true }
     }
 
+    /** Every automatic-source company in the bundled seed list must fetch without error. */
+    @Test
+    fun seededCompanies_allFetch() {
+        assumeTrue(System.getProperty("liveApiTests") == "1")
+        val arr = org.json.JSONArray(java.io.File("src/main/assets/default_companies.json").readText())
+        val companies = (0 until arr.length())
+            .map { com.vignesh.jobmatcher.data.JsonCodec.companyFromJson(arr.getJSONObject(it)) }
+            .filter { it.source.automatic }
+        val failures = mutableListOf<String>()
+        companies.forEach { c ->
+            val result = runCatching { runBlocking { fetcher.fetch(c, terms, india) { true } } }
+            result.onSuccess { postings ->
+                val inIndia = postings.count { p -> india.any { p.location.contains(it, ignoreCase = true) } }
+                println("${c.name} [${c.source.label}]: ${postings.size} postings, $inIndia in India; e.g. ${postings.firstOrNull()?.title}")
+            }.onFailure {
+                println("${c.name} [${c.source.label}]: FAILED ${it.message}")
+                failures += c.name
+            }
+        }
+        assertTrue("Failed: $failures", failures.isEmpty())
+    }
+
     @Test
     fun liveSources_returnParseablePostings() {
         assumeTrue(System.getProperty("liveApiTests") == "1")

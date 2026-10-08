@@ -15,6 +15,7 @@ import com.vignesh.jobmatcher.model.CandidateProfile
 import com.vignesh.jobmatcher.model.Company
 import com.vignesh.jobmatcher.model.Job
 import com.vignesh.jobmatcher.model.JobStatus
+import com.vignesh.jobmatcher.model.SourceType
 import com.vignesh.jobmatcher.work.DailyFetchWorker
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -35,9 +36,28 @@ data class UiState(
     val progress: String = "",
     val message: String? = null
 ) {
+    private val priorityById: Map<String, Int> get() = companies.associate { it.id to it.priority }
+
+    fun isTopChoice(job: Job): Boolean = priorityById[job.companyId] == 1
+
+    /** Top-choice companies (Google) first, then by Claude score. */
     val matches: List<Job>
-        get() = jobs.filter { it.isScored && it.claudeScore!! >= settings.matchThreshold && it.status != JobStatus.DISMISSED }
-            .sortedWith(compareByDescending<Job> { it.claudeScore }.thenByDescending { it.firstSeenAt })
+        get() {
+            val priority = priorityById
+            return jobs.filter { it.isScored && it.claudeScore!! >= settings.matchThreshold && it.status != JobStatus.DISMISSED }
+                .sortedWith(
+                    compareBy<Job> { priority[it.companyId] ?: 2 }
+                        .thenByDescending { it.claudeScore }
+                        .thenByDescending { it.firstSeenAt }
+                )
+        }
+
+    val nextSearchBatch: List<Company>
+        get() = JobRepository.nextSearchBatch(
+            companies.filter { it.enabled && it.source == SourceType.CLAUDE_SEARCH },
+            settings.searchBatchSize,
+            System.currentTimeMillis()
+        )
 
     val belowThreshold: List<Job>
         get() = jobs.filter { it.isScored && it.claudeScore!! < settings.matchThreshold && it.status != JobStatus.DISMISSED }
@@ -125,7 +145,10 @@ class JobViewModel(app: Application) : AndroidViewModel(app) {
         repo.searchPrompt().also { if (it == null) say("No enabled 'Claude web search' companies. Add one in Setup → Companies.") }
 
     fun applyFoundJobs(raw: String) = runBusy {
-        repo.applyFoundJobs(raw).map { (added, updated) -> "Claude search: $added new jobs, $updated updated." }.getOrThrow()
+        repo.applyFoundJobs(raw).map { (added, updated) ->
+            if (added + updated == 0) "Claude found nothing suitable open right now -- marked as searched."
+            else "Claude search: $added new jobs, $updated updated."
+        }.getOrThrow()
     }
 
     fun profilePrompt(): String = repo.profilePrompt()

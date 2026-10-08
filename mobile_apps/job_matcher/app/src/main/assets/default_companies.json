@@ -1,3 +1,30 @@
 [
-  {"id": "google", "name": "Google", "source": "CLAUDE_SEARCH", "identifier": "https://www.google.com/about/careers/applications/jobs/results?location=India", "enabled": true}
+  {"id": "google", "name": "Google", "source": "CLAUDE_SEARCH", "priority": 1, "identifier": "https://www.google.com/about/careers/applications/jobs/results?location=India"},
+
+  {"id": "amazon", "name": "Amazon", "source": "AMAZON", "priority": 2, "identifier": ""},
+  {"id": "microsoft", "name": "Microsoft", "source": "EIGHTFOLD", "priority": 2, "identifier": "https://apply.careers.microsoft.com?domain=microsoft.com"},
+  {"id": "adobe", "name": "Adobe", "source": "WORKDAY", "priority": 2, "identifier": "https://adobe.wd5.myworkdayjobs.com/external_experienced"},
+  {"id": "target", "name": "Target", "source": "WORKDAY", "priority": 2, "identifier": "https://target.wd5.myworkdayjobs.com/targetcareers"},
+  {"id": "paypal", "name": "PayPal", "source": "WORKDAY", "priority": 2, "identifier": "https://paypal.wd1.myworkdayjobs.com/jobs"},
+  {"id": "qualcomm", "name": "Qualcomm", "source": "EIGHTFOLD", "priority": 2, "identifier": "https://careers.qualcomm.com?domain=qualcomm.com"},
+  {"id": "vmware", "name": "VMware (Broadcom)", "source": "WORKDAY", "priority": 2, "identifier": "https://broadcom.wd1.myworkdayjobs.com/External_Career"},
+  {"id": "nvidia", "name": "NVIDIA", "source": "WORKDAY", "priority": 2, "identifier": "https://nvidia.wd5.myworkdayjobs.com/NVIDIAExternalCareerSite"},
+  {"id": "nike", "name": "Nike", "source": "WORKDAY", "priority": 2, "identifier": "https://nike.wd1.myworkdayjobs.com/nke"},
+  {"id": "jpmorgan", "name": "JPMorgan Chase", "source": "ORACLE_HCM", "priority": 2, "identifier": "https://jpmc.fa.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1001"},
+  {"id": "morgan-stanley", "name": "Morgan Stanley", "source": "EIGHTFOLD", "priority": 2, "identifier": "https://morganstanley.eightfold.ai?domain=morganstanley.com"},
+  {"id": "freshworks", "name": "Freshworks", "source": "SMARTRECRUITERS", "priority": 2, "identifier": "Freshworks"},
+
+  {"id": "apple", "name": "Apple", "source": "CLAUDE_SEARCH", "priority": 2, "identifier": "https://jobs.apple.com/en-in/search?location=india-INDC"},
+  {"id": "meta", "name": "Meta (Facebook)", "source": "CLAUDE_SEARCH", "priority": 2, "identifier": "https://www.metacareers.com/jobs"},
+  {"id": "tesla", "name": "Tesla", "source": "CLAUDE_SEARCH", "priority": 2, "identifier": "https://www.tesla.com/careers/search/?country=IN"},
+  {"id": "uber", "name": "Uber", "source": "CLAUDE_SEARCH", "priority": 2, "identifier": "https://www.uber.com/in/en/careers/list/?location=IND"},
+  {"id": "linkedin", "name": "LinkedIn", "source": "CLAUDE_SEARCH", "priority": 2, "identifier": "https://careers.linkedin.com (LinkedIn's own roles are posted on linkedin.com/jobs -- those count as official)"},
+  {"id": "atlassian", "name": "Atlassian", "source": "CLAUDE_SEARCH", "priority": 2, "identifier": "https://www.atlassian.com/company/careers/all-jobs"},
+  {"id": "walmart", "name": "Walmart (Global Tech India)", "source": "CLAUDE_SEARCH", "priority": 2, "identifier": "https://careers.walmart.com"},
+  {"id": "seven-eleven", "name": "7-Eleven (Global Solution Center India)", "source": "CLAUDE_SEARCH", "priority": 2, "identifier": "https://careers.7-eleven.com"},
+  {"id": "visa", "name": "Visa", "source": "CLAUDE_SEARCH", "priority": 2, "identifier": "https://corporate.visa.com/en/jobs/"},
+  {"id": "goldman-sachs", "name": "Goldman Sachs", "source": "CLAUDE_SEARCH", "priority": 2, "identifier": "https://higher.gs.com/results"},
+  {"id": "wells-fargo", "name": "Wells Fargo", "source": "CLAUDE_SEARCH", "priority": 2, "identifier": "https://www.wellsfargojobs.com/en/jobs/"},
+  {"id": "flipkart", "name": "Flipkart", "source": "CLAUDE_SEARCH", "priority": 2, "identifier": "https://www.flipkartcareers.com"},
+  {"id": "myntra", "name": "Myntra", "source": "CLAUDE_SEARCH", "priority": 2, "identifier": "https://careers.myntra.com"}
 ]

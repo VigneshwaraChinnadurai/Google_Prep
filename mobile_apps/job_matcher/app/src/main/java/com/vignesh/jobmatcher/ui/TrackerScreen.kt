@@ -38,7 +38,7 @@ fun TrackerScreen(state: UiState, onOpenJob: (String) -> Unit) {
             if (jobs.isEmpty()) return@forEach
             item(key = "h-${status.name}") { SectionHeader("${status.emoji} ${status.label} (${jobs.size})") }
             items(jobs, key = { it.id }) { job -> Column {
-                JobCard(job, state.settings.matchThreshold) { onOpenJob(job.id) }
+                JobCard(job, state.settings.matchThreshold, state.isTopChoice(job)) { onOpenJob(job.id) }
                 val since = if (job.appliedAt > 0) "Applied ${fmt.format(Date(job.appliedAt))}" else
                     "Updated ${fmt.format(Date(job.statusUpdatedAt))}"
                 Text(

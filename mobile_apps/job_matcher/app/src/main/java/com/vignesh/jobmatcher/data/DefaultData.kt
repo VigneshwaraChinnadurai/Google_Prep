@@ -12,6 +12,9 @@ import org.json.JSONObject
  * Analysis in the app replaces it.
  */
 object DefaultData {
+    /** Bump when default_companies.json gains companies; AppStorage merges in the new ones. */
+    const val SEED_VERSION = 2
+
     private fun asset(context: Context, name: String): String =
         context.assets.open(name).bufferedReader().use { it.readText() }
 

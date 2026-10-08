@@ -11,6 +11,9 @@ enum class SourceType(val label: String, val automatic: Boolean, val identifierH
     ASHBY("Ashby", true, "Org slug, e.g. 'openai' from jobs.ashbyhq.com/openai"),
     WORKDAY("Workday", true, "Careers URL, e.g. https://nvidia.wd5.myworkdayjobs.com/NVIDIAExternalCareerSite"),
     AMAZON("Amazon Jobs", true, "Not needed -- uses amazon.jobs search"),
+    EIGHTFOLD("Eightfold", true, "Careers host + domain, e.g. https://apply.careers.microsoft.com?domain=microsoft.com"),
+    ORACLE_HCM("Oracle HCM", true, "Candidate-experience URL, e.g. https://jpmc.fa.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1001"),
+    SMARTRECRUITERS("SmartRecruiters", true, "Company id, e.g. 'Freshworks' from jobs.smartrecruiters.com/Freshworks"),
     CLAUDE_SEARCH("Claude web search", false, "Careers page URL (optional, helps Claude search)");
 
     companion object {
@@ -25,11 +28,17 @@ data class Company(
     val source: SourceType,
     /** Greenhouse board token / Lever slug / Ashby org / Workday careers URL / careers page URL. */
     val identifier: String = "",
+    /** 1 = top choice (Google), 2 = target, 3 = backup. Top-choice matches sort first. */
+    val priority: Int = 2,
     val enabled: Boolean = true,
     val lastFetchedAt: Long = 0,
     val lastFetchCount: Int = 0,
     val lastError: String = ""
-)
+) {
+    companion object {
+        val PRIORITY_LABELS = mapOf(1 to "⭐ Top choice", 2 to "🎯 Target", 3 to "Backup")
+    }
+}
 
 enum class JobStatus(val label: String, val emoji: String) {
     NEW("New", "🆕"),
@@ -120,6 +129,8 @@ data class AppSettings(
     val matchThreshold: Int = 80,
     /** On-device score a job needs before it's worth sending to Claude. */
     val prefilterThreshold: Int = 50,
+    /** Companies per Claude web-search prompt (top-choice companies always go alone). */
+    val searchBatchSize: Int = 4,
     /** Jobs per Claude scoring prompt. */
     val scoringBatchSize: Int = 12,
     /** Max description characters per job inside a scoring prompt. */

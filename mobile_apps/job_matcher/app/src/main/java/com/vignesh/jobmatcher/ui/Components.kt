@@ -84,7 +84,7 @@ fun ScorePill(label: String, score: Int, color: Color) {
 }
 
 @Composable
-fun JobCard(job: Job, threshold: Int, onClick: () -> Unit) {
+fun JobCard(job: Job, threshold: Int, topChoice: Boolean = false, onClick: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
         colors = if (job.closed) CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
@@ -105,7 +105,7 @@ fun JobCard(job: Job, threshold: Int, onClick: () -> Unit) {
                 else ScorePill("Local", job.localScore, MaterialTheme.colorScheme.outline)
             }
             Text(
-                "${job.companyName} · ${job.location}",
+                (if (topChoice) "⭐ " else "") + "${job.companyName} · ${job.location}",
                 fontSize = 12.sp,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,

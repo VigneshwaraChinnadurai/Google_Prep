@@ -11,7 +11,8 @@ provider.
 Careers APIs ──► location + title gate ──► on-device pre-filter ──► Claude scoring ──► Matches (≥ threshold)
 (Greenhouse, Lever,     (Settings)            (local score ≥ 50)     (copy/paste,          │
  Ashby, Workday,                                                       12 jobs/prompt)      ▼
- Amazon)                                                                              Tracker + tailoring
+ Eightfold, Oracle,
+ SmartRecruiters, Amazon)                                                                              Tracker + tailoring
 Companies with no API ──► Claude web-search prompt ──► pasted back, already scored ──┘
 ```
 
@@ -37,9 +38,28 @@ Companies with no API ──► Claude web-search prompt ──► pasted back, 
 | Ashby | org slug | `jobs.ashbyhq.com/<slug>` |
 | Workday | full careers URL | e.g. `https://nvidia.wd5.myworkdayjobs.com/NVIDIAExternalCareerSite` |
 | Amazon Jobs | nothing | uses amazon.jobs search, filtered to India |
+| Eightfold | careers host + `?domain=` | e.g. `https://apply.careers.microsoft.com?domain=microsoft.com` |
+| Oracle HCM | candidate-experience site URL | e.g. `https://jpmc.fa.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1001` |
+| SmartRecruiters | company id | `jobs.smartrecruiters.com/<id>` |
 | Claude web search | careers page URL (optional) | anything without a public API: Google, Microsoft, Meta, … |
 
 Use **Test fetch** on the company card to confirm the identifier works.
+
+Each company has a **priority**: ⭐ Top choice / 🎯 Target / Backup. Top-choice matches
+(Google) sort first in Matches. In Claude web search, a top-choice company gets its own,
+more thorough prompt once a day; the remaining companies rotate in batches of 4
+(configurable), least recently searched first.
+
+### Bundled list (seed v2, verified against the live APIs on 2026-10-08)
+
+| Source | Companies |
+|---|---|
+| Claude web search | ⭐ Google, Apple, Meta, Tesla, Uber, LinkedIn, Atlassian, Walmart, 7-Eleven, Visa, Goldman Sachs, Wells Fargo, Flipkart, Myntra |
+| Workday | Adobe, Target, PayPal, VMware (Broadcom), NVIDIA, Nike |
+| Eightfold | Microsoft, Qualcomm, Morgan Stanley |
+| Oracle HCM | JPMorgan Chase |
+| SmartRecruiters | Freshworks |
+| Amazon Jobs | Amazon |
 
 ## Build
 

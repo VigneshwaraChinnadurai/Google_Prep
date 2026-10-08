@@ -131,21 +131,35 @@ job's exact id attribute, nothing before or after:
         alreadyKnown: List<Job>,
         settings: AppSettings
     ): String = buildString {
+        val topChoiceSolo = companies.size == 1 && companies.single().priority == 1
+        val perCompany = if (topChoiceSolo) 25 else 15
         appendLine(header(Kind.SEARCH))
         appendLine(
             """
 Use web search to find CURRENTLY OPEN job postings at the companies below that fit this
 candidate, located in: ${settings.locationKeywords.joinToString()}.
-
+""".trim()
+        )
+        if (topChoiceSolo) {
+            appendLine(
+                "This is the candidate's #1 target company -- search its careers site thoroughly " +
+                    "(several queries: ML, applied AI, GenAI/LLM, data science, AI architecture, ML management)."
+            )
+        }
+        appendLine()
+        appendLine(
+            """
 Strict rules:
-- Only postings on the company's OFFICIAL careers site (not LinkedIn/Naukri/Indeed or other
-  aggregators), and only ones you actually found open today. Never invent or guess a URL --
-  if you can't find a direct posting URL, leave the job out.
+- Only postings on the company's OFFICIAL careers site -- not third-party job boards such as
+  Naukri, Indeed, Glassdoor or other companies' LinkedIn pages -- and only ones you actually
+  found open today. Never invent or guess a URL; if you can't find a direct posting URL,
+  leave the job out.
 - Skip junior/intern/new-grad roles and roles outside the listed locations.
-- Return at most 15 roles per company, best matches first, and only roles scoring 60+.
+- Return at most $perCompany roles per company, best matches first, and only roles scoring 60+.
 - Score each one 0-100 with this rubric: 40 core skills & domain, 25 seniority & scope,
   20 hard requirements (PhD, languages, etc.), 15 career-trajectory fit. Be strict:
   80+ means a strong, apply-today match.
+- If a company has nothing suitable open, that's a valid answer -- return fewer (or zero) jobs.
 """.trim()
         )
         appendLine()

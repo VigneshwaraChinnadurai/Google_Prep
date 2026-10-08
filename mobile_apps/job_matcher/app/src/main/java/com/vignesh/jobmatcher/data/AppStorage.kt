@@ -21,6 +21,8 @@ import java.io.File
 object AppStorage {
     private const val PREFS = "job_matcher_prefs"
     private const val KEY_SETTINGS = "settings_json"
+    private const val KEY_PENDING_SEARCH = "pending_search_ids"
+    private const val KEY_SEED_VERSION = "company_seed_version"
     private const val COMPANIES_FILE = "companies.json"
     private const val JOBS_FILE = "jobs.json"
     private const val PROFILE_FILE = "profile.json"
@@ -46,15 +48,28 @@ object AppStorage {
 
     fun loadCompanies(context: Context): List<Company> = synchronized(lock) {
         val file = File(context.filesDir, COMPANIES_FILE)
-        if (!file.exists()) {
-            val seeded = DefaultData.companies(context)
-            writeCompanies(context, seeded)
-            return seeded
-        }
-        runCatching {
+        val stored = if (!file.exists()) emptyList() else runCatching {
             val arr = JSONArray(file.readText())
             (0 until arr.length()).map { JsonCodec.companyFromJson(arr.getJSONObject(it)) }
         }.getOrDefault(emptyList())
+
+        // When the bundled list grows (new seed version), add the companies the user doesn't
+        // have yet -- never overwrite or re-add ones they edited or deleted under the same id.
+        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val seen = prefs.getInt(KEY_SEED_VERSION, 0)
+        if (!file.exists() || seen < DefaultData.SEED_VERSION) {
+            val seed = DefaultData.companies(context)
+            val have = stored.map { it.id }.toSet()
+            // Priority arrived in seed v2; carry it onto companies saved before it existed.
+            val upgraded = if (seen >= 2) stored else stored.map { c ->
+                seed.firstOrNull { it.id == c.id }?.let { c.copy(priority = it.priority) } ?: c
+            }
+            val merged = upgraded + seed.filter { it.id !in have }
+            writeCompanies(context, merged)
+            prefs.edit().putInt(KEY_SEED_VERSION, DefaultData.SEED_VERSION).apply()
+            return merged
+        }
+        stored
     }
 
     fun updateCompanies(context: Context, transform: (List<Company>) -> List<Company>): List<Company> =
@@ -69,6 +84,15 @@ object AppStorage {
         companies.forEach { arr.put(JsonCodec.companyToJson(it)) }
         atomicWrite(File(context.filesDir, COMPANIES_FILE), arr.toString())
     }
+
+    fun savePendingSearch(context: Context, companyIds: List<String>) {
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
+            .putString(KEY_PENDING_SEARCH, companyIds.joinToString("\n")).apply()
+    }
+
+    fun loadPendingSearch(context: Context): List<String> =
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(KEY_PENDING_SEARCH, "")
+            .orEmpty().split('\n').filter { it.isNotBlank() }
 
     // ---- Jobs ----------------------------------------------------------------------
 

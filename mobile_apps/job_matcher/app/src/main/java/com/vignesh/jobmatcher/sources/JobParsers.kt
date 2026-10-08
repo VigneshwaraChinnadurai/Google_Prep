@@ -181,6 +181,112 @@ object JobParsers {
         )
     }
 
+    // ---- Eightfold (Microsoft, Qualcomm, Morgan Stanley) ---------------------------
+
+    /** GET {host}/api/pcsx/search -- returns position ids (10 per page) and the total count. */
+    fun parseEightfoldSearch(json: String): Pair<List<Pair<String, String>>, Int> {
+        val data = JSONObject(json).optJSONObject("data") ?: return emptyList<Pair<String, String>>() to 0
+        val positions = data.optJSONArray("positions") ?: return emptyList<Pair<String, String>>() to 0
+        val rows = (0 until positions.length()).mapNotNull { i ->
+            val p = positions.optJSONObject(i) ?: return@mapNotNull null
+            val id = p.opt("id")?.toString()?.takeIf { it.isNotBlank() && it != "null" } ?: return@mapNotNull null
+            id to p.str("name")
+        }
+        return rows to data.optInt("count", rows.size)
+    }
+
+    /** GET {host}/api/pcsx/position_details?position_id=...&domain=... */
+    fun parseEightfoldDetail(json: String, host: String): RawPosting? {
+        val d = JSONObject(json).optJSONObject("data") ?: return null
+        val id = d.opt("id")?.toString() ?: return null
+        return RawPosting(
+            externalId = d.str("displayJobId").ifBlank { id },
+            title = d.str("name"),
+            location = joinLocations(
+                *d.optJSONArray("locations").strings().toTypedArray(),
+                *d.optJSONArray("standardizedLocations").strings().toTypedArray()
+            ),
+            url = d.str("publicUrl").ifBlank { host + d.str("positionUrl") },
+            description = HtmlText.toText(d.str("jobDescription")).capped(),
+            postedAt = epochMillisToDate(d.optLong("postedTs") * 1000)
+        )
+    }
+
+    // ---- Oracle HCM Candidate Experience (JPMorgan) --------------------------------
+
+    /** GET {host}/hcmRestApi/resources/latest/recruitingCEJobRequisitions?finder=findReqs;... */
+    fun parseOracleList(json: String): Pair<List<Pair<String, String>>, Int> {
+        val item = JSONObject(json).optJSONArray("items")?.optJSONObject(0)
+            ?: return emptyList<Pair<String, String>>() to 0
+        val reqs = item.optJSONArray("requisitionList") ?: return emptyList<Pair<String, String>>() to 0
+        val rows = (0 until reqs.length()).mapNotNull { i ->
+            val r = reqs.optJSONObject(i) ?: return@mapNotNull null
+            r.str("Id").takeIf { it.isNotBlank() }?.let { it to r.str("Title") }
+        }
+        return rows to item.optInt("TotalJobsCount", rows.size)
+    }
+
+    /** GET {host}/hcmRestApi/resources/latest/recruitingCEJobRequisitionDetails?finder=ById;... */
+    fun parseOracleDetail(json: String, publicUrl: String): RawPosting? {
+        val d = JSONObject(json).optJSONArray("items")?.optJSONObject(0) ?: return null
+        val description = listOf("ExternalDescriptionStr", "ExternalResponsibilitiesStr", "ExternalQualificationsStr")
+            .map { HtmlText.toText(d.str(it)) }
+            .filter { it.isNotBlank() }
+            .joinToString("\n\n")
+        val secondary = d.optJSONArray("secondaryLocations")
+        val secondaryNames = if (secondary == null) emptyList() else
+            (0 until secondary.length()).mapNotNull { secondary.optJSONObject(it)?.str("Name") }
+        return RawPosting(
+            externalId = d.str("Id"),
+            title = d.str("Title"),
+            location = joinLocations(d.str("PrimaryLocation"), *secondaryNames.toTypedArray()),
+            url = publicUrl,
+            description = description.ifBlank { d.str("ShortDescriptionStr") }.capped(),
+            postedAt = dateOnly(d.str("ExternalPostedStartDate"))
+        )
+    }
+
+    // ---- SmartRecruiters (Freshworks) ----------------------------------------------
+
+    /** GET api.smartrecruiters.com/v1/companies/{id}/postings -- (postingId, title) rows and total. */
+    fun parseSmartRecruitersList(json: String): Pair<List<Pair<String, String>>, Int> {
+        val o = JSONObject(json)
+        val content = o.optJSONArray("content") ?: return emptyList<Pair<String, String>>() to 0
+        val rows = (0 until content.length()).mapNotNull { i ->
+            val p = content.optJSONObject(i) ?: return@mapNotNull null
+            p.str("id").takeIf { it.isNotBlank() }?.let { it to p.str("name") }
+        }
+        return rows to o.optInt("totalFound", rows.size)
+    }
+
+    /** GET api.smartrecruiters.com/v1/companies/{id}/postings/{postingId} */
+    fun parseSmartRecruitersDetail(json: String): RawPosting? {
+        val d = JSONObject(json)
+        val id = d.str("id").takeIf { it.isNotBlank() } ?: return null
+        val loc = d.optJSONObject("location") ?: JSONObject()
+        val sections = d.optJSONObject("jobAd")?.optJSONObject("sections") ?: JSONObject()
+        val description = listOf("jobDescription", "qualifications", "additionalInformation")
+            .mapNotNull { key ->
+                sections.optJSONObject(key)?.let { s ->
+                    val body = HtmlText.toText(s.str("text"))
+                    if (body.isBlank()) null else s.str("title").let { t -> if (t.isBlank()) body else "$t\n$body" }
+                }
+            }
+            .joinToString("\n\n")
+        return RawPosting(
+            externalId = id,
+            title = d.str("name"),
+            location = joinLocations(
+                loc.str("fullLocation").ifBlank { loc.str("city") },
+                if (loc.str("country").equals("in", true)) "India" else loc.str("country"),
+                if (loc.optBoolean("remote")) "Remote" else null
+            ),
+            url = d.str("postingUrl").ifBlank { d.str("applyUrl") },
+            description = description.capped(),
+            postedAt = dateOnly(d.str("releasedDate"))
+        )
+    }
+
     /** GET www.amazon.jobs/en/search.json?base_query=...&loc_query=... */
     fun parseAmazon(json: String): List<RawPosting> {
         val jobs = JSONObject(json).optJSONArray("jobs") ?: return emptyList()

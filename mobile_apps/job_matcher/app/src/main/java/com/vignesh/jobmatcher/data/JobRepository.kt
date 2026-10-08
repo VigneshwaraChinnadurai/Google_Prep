@@ -185,20 +185,32 @@ class JobRepository(private val context: Context, private val fetcher: JobFetche
     fun searchCompanies(): List<Company> =
         AppStorage.loadCompanies(context).filter { it.enabled && it.source == SourceType.CLAUDE_SEARCH }
 
+    /**
+     * Builds the web-search prompt for the next batch (see [nextSearchBatch]) and remembers
+     * which companies it covered, so pasting the reply marks exactly those as searched.
+     */
     fun searchPrompt(): String? {
-        val companies = searchCompanies()
-        if (companies.isEmpty()) return null
-        val names = companies.map { it.id }.toSet()
-        val known = AppStorage.loadJobs(context).filter { it.companyId in names && !it.closed }
+        val batch = nextSearchBatch(searchCompanies(), AppStorage.loadSettings(context).searchBatchSize, System.currentTimeMillis())
+        if (batch.isEmpty()) return null
+        AppStorage.savePendingSearch(context, batch.map { it.id })
+        val ids = batch.map { it.id }.toSet()
+        val known = AppStorage.loadJobs(context).filter { it.companyId in ids && !it.closed }
         return PromptBuilder.searchPrompt(
-            AppStorage.loadResume(context), AppStorage.loadProfile(context), companies, known, AppStorage.loadSettings(context)
+            AppStorage.loadResume(context), AppStorage.loadProfile(context), batch, known, AppStorage.loadSettings(context)
         )
     }
 
     /** Returns (added, updated). */
     fun applyFoundJobs(raw: String): Result<Pair<Int, Int>> = ClaudeResponseParser.parseFoundJobs(raw).mapCatching { found ->
-        if (found.isEmpty()) error("Claude's reply contained no jobs with a valid URL.")
-        val companies = AppStorage.loadCompanies(context)
+        val pending = AppStorage.loadPendingSearch(context).toSet()
+        val now0 = System.currentTimeMillis()
+        // An empty result is a legitimate answer ("nothing open that fits") -- still mark the batch searched.
+        AppStorage.updateCompanies(context) { list ->
+            list.map { if (it.id in pending) it.copy(lastFetchedAt = now0, lastFetchCount = 0, lastError = "") else it }
+        }
+        if (found.isEmpty()) return@mapCatching 0 to 0
+        // Prefer the companies this prompt was for when matching Claude's company names.
+        val companies = AppStorage.loadCompanies(context).sortedBy { if (it.id in pending) 0 else 1 }
         val scorer = scorer()
         val now = System.currentTimeMillis()
         var added = 0
@@ -245,8 +257,11 @@ class JobRepository(private val context: Context, private val fetcher: JobFetche
             }
             result
         }
+        val perCompany = found.groupingBy { f ->
+            companies.firstOrNull { it.name.equals(f.company, ignoreCase = true) }?.id
+        }.eachCount()
         AppStorage.updateCompanies(context) { list ->
-            list.map { if (it.source == SourceType.CLAUDE_SEARCH && it.enabled) it.copy(lastFetchedAt = now, lastError = "") else it }
+            list.map { c -> perCompany[c.id]?.let { c.copy(lastFetchCount = it) } ?: c }
         }
         added to updated
     }
@@ -312,6 +327,23 @@ class JobRepository(private val context: Context, private val fetcher: JobFetche
     }
 
     companion object {
+        private const val DAY_MS = 24L * 3600 * 1000
+
+        /**
+         * Next Claude web-search batch. A top-choice (priority 1) company not searched in the
+         * last 24h is searched alone, so it gets Claude's full attention; otherwise the
+         * least-recently-searched other companies, [size] at a time, so the list rotates.
+         */
+        fun nextSearchBatch(companies: List<Company>, size: Int, now: Long): List<Company> {
+            val top = companies.filter { it.priority == 1 }
+                .filter { now - it.lastFetchedAt > DAY_MS }
+                .minByOrNull { it.lastFetchedAt }
+            if (top != null) return listOf(top)
+            val rest = companies.filter { it.priority != 1 }.ifEmpty { companies }
+            return rest.sortedWith(compareBy<Company>({ it.lastFetchedAt }, { it.priority }, { it.name }))
+                .take(size.coerceAtLeast(1))
+        }
+
         fun slug(name: String) = name.lowercase().replace(Regex("[^a-z0-9]+"), "-").trim('-').ifBlank { "company" }
         fun normalizeUrl(url: String) = url.trim().substringBefore('#').trimEnd('/').lowercase()
     }

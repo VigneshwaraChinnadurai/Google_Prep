@@ -163,12 +163,15 @@ private fun CompaniesTab(state: UiState, vm: JobViewModel) {
                 Text("➕ Add company")
             }
         }
-        items(state.companies, key = { it.id }) { c ->
+        items(
+            state.companies.sortedWith(compareBy<Company>({ it.priority }, { !it.source.automatic }, { it.name.lowercase() })),
+            key = { it.id }
+        ) { c ->
             Card(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
-                            Text(c.name, fontWeight = FontWeight.SemiBold)
+                            Text((if (c.priority == 1) "⭐ " else "") + c.name, fontWeight = FontWeight.SemiBold)
                             Text("${c.source.label}${if (c.identifier.isNotBlank()) " · ${c.identifier}" else ""}", fontSize = 12.sp, maxLines = 1)
                         }
                         Switch(checked = c.enabled, onCheckedChange = { vm.saveCompany(c.copy(enabled = it)) }, enabled = !state.busy)
@@ -207,6 +210,7 @@ private fun CompanyDialog(initial: Company, onDismiss: () -> Unit, onSave: (Comp
     var name by remember { mutableStateOf(initial.name) }
     var source by remember { mutableStateOf(initial.source) }
     var identifier by remember { mutableStateOf(initial.identifier) }
+    var priority by remember { mutableIntStateOf(initial.priority) }
     val needsId = source != SourceType.AMAZON
 
     AlertDialog(
@@ -215,6 +219,12 @@ private fun CompanyDialog(initial: Company, onDismiss: () -> Unit, onSave: (Comp
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.verticalScroll(rememberScrollState())) {
                 OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Company name") }, singleLine = true)
+                Text("Priority", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Company.PRIORITY_LABELS.forEach { (value, label) ->
+                        FilterChip(selected = priority == value, onClick = { priority = value }, label = { Text(label, fontSize = 11.sp) })
+                    }
+                }
                 Text("Careers source", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     SourceType.entries.forEach { s ->
@@ -234,7 +244,9 @@ private fun CompanyDialog(initial: Company, onDismiss: () -> Unit, onSave: (Comp
         },
         confirmButton = {
             TextButton(
-                onClick = { onSave(initial.copy(name = name.trim(), source = source, identifier = identifier.trim(), lastError = "")) },
+                onClick = {
+                    onSave(initial.copy(name = name.trim(), source = source, identifier = identifier.trim(), priority = priority, lastError = ""))
+                },
                 enabled = name.isNotBlank() && (!needsId || !source.automatic || identifier.isNotBlank())
             ) { Text("Save") }
         },
@@ -255,6 +267,7 @@ private fun SettingsTab(state: UiState, vm: JobViewModel) {
     var threshold by remember(s) { mutableStateOf(s.matchThreshold.toFloat()) }
     var prefilter by remember(s) { mutableStateOf(s.prefilterThreshold.toFloat()) }
     var batch by remember(s) { mutableStateOf(s.scoringBatchSize.toFloat()) }
+    var searchBatch by remember(s) { mutableStateOf(s.searchBatchSize.toFloat()) }
     var descChars by remember(s) { mutableStateOf(s.maxDescriptionChars.toFloat()) }
     var includeResume by remember(s) { mutableStateOf(s.includeResumeInScoring) }
     var locations by remember(s) { mutableStateOf(s.locationKeywords.joinToString(", ")) }
@@ -273,6 +286,7 @@ private fun SettingsTab(state: UiState, vm: JobViewModel) {
         Text("Lower pre-filter = more jobs reach Claude (more copy-paste rounds, fewer missed roles).", fontSize = 11.sp)
         LabeledSlider("Jobs per Claude scoring prompt: ${batch.roundToInt()}", batch, 3f..20f, 16) { batch = it }
         LabeledSlider("Description chars per job in prompt: ${descChars.roundToInt()}", descChars, 1000f..6000f, 9) { descChars = it }
+        LabeledSlider("Companies per Claude web-search prompt: ${searchBatch.roundToInt()}", searchBatch, 1f..8f, 6) { searchBatch = it }
         SwitchRow("Include full resume in scoring prompts", includeResume) { includeResume = it }
 
         OutlinedTextField(
@@ -296,6 +310,7 @@ private fun SettingsTab(state: UiState, vm: JobViewModel) {
                         matchThreshold = threshold.roundToInt(),
                         prefilterThreshold = prefilter.roundToInt(),
                         scoringBatchSize = batch.roundToInt(),
+                        searchBatchSize = searchBatch.roundToInt(),
                         maxDescriptionChars = (descChars / 500).roundToInt() * 500,
                         includeResumeInScoring = includeResume,
                         locationKeywords = csv(locations),

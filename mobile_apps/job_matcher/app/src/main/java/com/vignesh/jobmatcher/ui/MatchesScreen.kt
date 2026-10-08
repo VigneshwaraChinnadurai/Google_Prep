@@ -40,7 +40,7 @@ fun MatchesScreen(state: UiState, onOpenJob: (String) -> Unit) {
         if (matches.isEmpty()) {
             item { EmptyHint("No matches yet. Fetch on Discover, then score the shortlist with Claude.") }
         }
-        items(matches, key = { it.id }) { job -> JobCard(job, threshold) { onOpenJob(job.id) } }
+        items(matches, key = { it.id }) { job -> JobCard(job, threshold, state.isTopChoice(job)) { onOpenJob(job.id) } }
 
         item {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
@@ -49,7 +49,7 @@ fun MatchesScreen(state: UiState, onOpenJob: (String) -> Unit) {
             }
         }
         if (showBelow) {
-            items(below, key = { "below-" + it.id }) { job -> JobCard(job, threshold) { onOpenJob(job.id) } }
+            items(below, key = { "below-" + it.id }) { job -> JobCard(job, threshold, state.isTopChoice(job)) { onOpenJob(job.id) } }
         }
     }
 }

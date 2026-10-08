@@ -30,6 +30,7 @@ fun DiscoverScreen(state: UiState, vm: JobViewModel, onOpenJob: (String) -> Unit
     val matchCount = remember(state.jobs, state.settings) { state.matches.size }
     val autoCompanies = state.companies.count { it.enabled && it.source.automatic }
     val searchCompanies = state.companies.filter { it.enabled && !it.source.automatic }
+    val searchBatch = remember(state.companies, state.settings) { state.nextSearchBatch }
     val batch = minOf(state.settings.scoringBatchSize, shortlist.size)
 
     LazyColumn(
@@ -78,7 +79,7 @@ fun DiscoverScreen(state: UiState, vm: JobViewModel, onOpenJob: (String) -> Unit
                 description = if (shortlist.isEmpty()) "Nothing waiting. Fetch first, or lower the pre-filter in Settings."
                 else "${shortlist.size} jobs passed the on-device pre-filter. Each prompt carries the next $batch; " +
                     "jobs Claude scores ≥${state.settings.matchThreshold}% land in Matches.",
-                copyLabel = "🤖 Copy next $batch",
+                copyLabel = if (batch > 0) "🤖 Copy next $batch" else "🤖 Copy prompt",
                 enabled = !state.busy && shortlist.isNotEmpty(),
                 buildPrompt = { vm.scoringPrompt() },
                 onPaste = vm::applyScores
@@ -89,8 +90,10 @@ fun DiscoverScreen(state: UiState, vm: JobViewModel, onOpenJob: (String) -> Unit
             ClaudeRoundTripCard(
                 title = "③ Claude web search",
                 description = if (searchCompanies.isEmpty()) "No companies use Claude search. Companies without a public careers API (e.g. Google) go here."
-                else "For ${searchCompanies.joinToString { it.name }}: Claude searches their careers sites and returns already-scored jobs. Turn on web search in Claude first.",
-                copyLabel = "🌐 Copy search prompt",
+                else "${searchCompanies.size} companies have no public careers API, so Claude searches them in batches " +
+                    "(top-choice companies alone, once a day). Next: ${searchBatch.joinToString { it.name }}. " +
+                    "Turn on web search in Claude first.",
+                copyLabel = if (searchBatch.size == 1) "🌐 Search ${searchBatch.single().name}" else "🌐 Search next ${searchBatch.size}",
                 enabled = !state.busy && searchCompanies.isNotEmpty(),
                 buildPrompt = { vm.searchPrompt() },
                 onPaste = vm::applyFoundJobs
@@ -100,7 +103,7 @@ fun DiscoverScreen(state: UiState, vm: JobViewModel, onOpenJob: (String) -> Unit
         if (shortlist.isNotEmpty()) {
             item { SectionHeader("Awaiting Claude (${shortlist.size}) · highest local score first") }
             items(shortlist, key = { it.id }) { job ->
-                JobCard(job, state.settings.matchThreshold) { onOpenJob(job.id) }
+                JobCard(job, state.settings.matchThreshold, state.isTopChoice(job)) { onOpenJob(job.id) }
             }
         }
     }

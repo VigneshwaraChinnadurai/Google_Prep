@@ -34,6 +34,7 @@ object JsonCodec {
         .put("name", c.name)
         .put("source", c.source.name)
         .put("identifier", c.identifier)
+        .put("priority", c.priority)
         .put("enabled", c.enabled)
         .put("lastFetchedAt", c.lastFetchedAt)
         .put("lastFetchCount", c.lastFetchCount)
@@ -44,6 +45,7 @@ object JsonCodec {
         name = o.str("name"),
         source = SourceType.parse(o.str("source")),
         identifier = o.str("identifier"),
+        priority = o.optInt("priority", 2).coerceIn(1, 3),
         enabled = o.optBoolean("enabled", true),
         lastFetchedAt = o.optLong("lastFetchedAt"),
         lastFetchCount = o.optInt("lastFetchCount"),
@@ -177,6 +179,7 @@ object JsonCodec {
         .put("matchThreshold", s.matchThreshold)
         .put("prefilterThreshold", s.prefilterThreshold)
         .put("scoringBatchSize", s.scoringBatchSize)
+        .put("searchBatchSize", s.searchBatchSize)
         .put("maxDescriptionChars", s.maxDescriptionChars)
         .put("includeResumeInScoring", s.includeResumeInScoring)
         .put("locationKeywords", s.locationKeywords.toJsonArray())
@@ -190,6 +193,7 @@ object JsonCodec {
             matchThreshold = o.optInt("matchThreshold", d.matchThreshold),
             prefilterThreshold = o.optInt("prefilterThreshold", d.prefilterThreshold),
             scoringBatchSize = o.optInt("scoringBatchSize", d.scoringBatchSize),
+            searchBatchSize = o.optInt("searchBatchSize", d.searchBatchSize),
             maxDescriptionChars = o.optInt("maxDescriptionChars", d.maxDescriptionChars),
             includeResumeInScoring = o.optBoolean("includeResumeInScoring", d.includeResumeInScoring),
             locationKeywords = o.optJSONArray("locationKeywords")?.strings() ?: d.locationKeywords,
