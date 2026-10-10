@@ -11,6 +11,8 @@ import com.vignesh.jobmatcher.data.AppStorage
 import com.vignesh.jobmatcher.data.DefaultData
 import com.vignesh.jobmatcher.data.JobRepository
 import com.vignesh.jobmatcher.model.AppSettings
+import com.vignesh.jobmatcher.model.ApplicationFilters
+import com.vignesh.jobmatcher.model.MatchFilters
 import com.vignesh.jobmatcher.model.CandidateProfile
 import com.vignesh.jobmatcher.model.Company
 import com.vignesh.jobmatcher.model.Job
@@ -36,7 +38,10 @@ data class UiState(
     val progress: String = "",
     val message: String? = null,
     /** One-shot request to open a job's detail screen (e.g. right after adding it from a link). */
-    val openJobRequest: String? = null
+    val openJobRequest: String? = null,
+    /** Session-scoped list filters (kept until the app is closed). */
+    val matchFilters: MatchFilters = MatchFilters(),
+    val applicationFilters: ApplicationFilters = ApplicationFilters()
 ) {
     /** Your name/contact details, read from the resume (used to sign letters and messages). */
     val contact: com.vignesh.jobmatcher.data.ContactInfo
@@ -58,6 +63,31 @@ data class UiState(
                 )
         }
 
+    /** Matches tab under the current filters: (≥ threshold, below threshold), top choices first. */
+    fun filteredMatches(): Pair<List<Job>, List<Job>> {
+        val priority = priorityById
+        val scored = jobs.filter { it.isScored && matchFilters.accepts(it) }
+            .sortedWith(
+                compareBy<Job> { priority[it.companyId] ?: 2 }
+                    .thenByDescending { it.claudeScore }
+                    .thenByDescending { it.firstSeenAt }
+            )
+        return scored.partition { it.claudeScore!! >= settings.matchThreshold }
+    }
+
+    /** "✋ Manual only" view: every job you added, scored or not, filtered by status. */
+    fun filteredManual(): List<Job> =
+        jobs.filter { it.isManual && matchFilters.accepts(it) }
+            .sortedWith(compareByDescending<Job> { it.claudeScore ?: -1 }.thenByDescending { it.firstSeenAt })
+
+    /** Applications tab under the current filters (soonest upcoming date first). */
+    fun filteredApplications(now: Long = System.currentTimeMillis()): List<Job> =
+        jobs.filter { it.status in JobStatus.APPLICATION_VIEW && applicationFilters.accepts(it) }
+            .sortedWith(
+                compareBy<Job> { j -> j.events.filter { it.startMillis >= now }.minOfOrNull { it.startMillis } ?: Long.MAX_VALUE }
+                    .thenByDescending { it.statusUpdatedAt }
+            )
+
     val nextSearchBatch: List<Company>
         get() = JobRepository.nextSearchBatch(
             companies.filter { it.enabled && it.source == SourceType.CLAUDE_SEARCH },
@@ -65,23 +95,13 @@ data class UiState(
             System.currentTimeMillis()
         )
 
-    val belowThreshold: List<Job>
-        get() = jobs.filter { it.isScored && it.claudeScore!! < settings.matchThreshold && it.status != JobStatus.DISMISSED }
-            .sortedByDescending { it.claudeScore }
-
     val shortlist: List<Job>
         get() = jobs.filter { !it.isScored && !it.closed && it.status != JobStatus.DISMISSED && it.localScore >= settings.prefilterThreshold }
             .sortedByDescending { it.localScore }
 
-    val tracked: List<Job> get() = jobs.filter { it.status in JobStatus.TRACKED }
-
     /** Shortlisted -> offer: the applications you're actively working (vs. settings.shortlistLimit). */
     val activeCount: Int get() = jobs.count { it.status in JobStatus.ACTIVE }
 
-    /** Every job you added from a link, scored or not, best score first. */
-    val manualJobs: List<Job>
-        get() = jobs.filter { it.isManual && it.status != JobStatus.DISMISSED }
-            .sortedWith(compareByDescending<Job> { it.claudeScore ?: -1 }.thenByDescending { it.firstSeenAt })
 }
 
 class JobViewModel(app: Application) : AndroidViewModel(app) {
@@ -107,13 +127,22 @@ class JobViewModel(app: Application) : AndroidViewModel(app) {
                     pendingCount = repo.pendingScoring().size
                 )
             }
-            _state.update { s.copy(busy = it.busy, progress = it.progress, message = it.message, openJobRequest = it.openJobRequest) }
+            _state.update {
+                s.copy(
+                    busy = it.busy, progress = it.progress, message = it.message, openJobRequest = it.openJobRequest,
+                    matchFilters = it.matchFilters, applicationFilters = it.applicationFilters
+                )
+            }
         }
     }
 
     fun consumeMessage() = _state.update { it.copy(message = null) }
 
     fun consumeOpenJobRequest() = _state.update { it.copy(openJobRequest = null) }
+
+    fun setMatchFilters(filters: MatchFilters) = _state.update { it.copy(matchFilters = filters) }
+
+    fun setApplicationFilters(filters: ApplicationFilters) = _state.update { it.copy(applicationFilters = filters) }
 
     private fun say(msg: String) = _state.update { it.copy(message = msg) }
 

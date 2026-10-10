@@ -85,6 +85,9 @@ enum class JobStatus(val label: String, val emoji: String, val meaning: String) 
 
         /** Still in progress (counts as active work). */
         val ACTIVE = listOf(SHORTLISTED, APPLIED, INTERVIEWING, OFFER)
+
+        /** Filterable on the Applications tab: tracked applications plus the jobs you turned down. */
+        val APPLICATION_VIEW = TRACKED + DISMISSED
     }
 }
 

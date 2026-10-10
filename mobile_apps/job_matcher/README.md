@@ -1,6 +1,6 @@
 # Job Matcher
 
-**Version 1.3.1** · Android (Kotlin, Jetpack Compose) · package `com.vignesh.jobmatcher`
+**Version 1.3.2** · Android (Kotlin, Jetpack Compose) · package `com.vignesh.jobmatcher`
 
 Job Matcher watches the careers sites of a hand-picked list of companies, finds openings in
 India that fit the resume, and keeps only the ones that match at **≥80%** (configurable).
@@ -120,8 +120,11 @@ The control centre.
   to open it.
 
 ### 🎯 Matches
-- Filter chips: **All · 🤖 Automatic · ✋ Manual**, and a second row of **status** chips
-  (Any status · 🆕 New · ⭐ Shortlisted · 📨 Applied · …).
+- **Multi-select filters**: a row for origin (🤖 Automatic, ✋ Manual) and a row for status
+  (🆕 New, ⭐ Shortlisted, 📨 Applied, 🗣️ Interviewing, 🎉 Offer, ❌ Rejected, 🚫 Not interested, each
+  with a count). Select several to combine them; **✕ Clear filters** appears whenever any is on.
+  Your selection is kept while you switch tabs or open jobs, and resets only when the app is closed.
+- 🚫 Not-interested jobs are hidden unless you select that status chip.
 - **New** jobs have one-tap **⭐ Shortlist** and **🚫 Not interested** buttons right on the card. *Manual* lists **every** job you added,
   scored or not and whatever the score, since you chose them yourself. *All* and *Automatic*
   apply the threshold.
@@ -137,8 +140,11 @@ The control centre.
 ### 📋 Applications
 Your shortlisted jobs and everything after them (see §4C).
 - Header: **active applications vs. your shortlist limit** (red when over).
-- Filter chips: **Active** (default) · ⭐ Shortlisted · 📨 Applied · 🗣️ Interviewing · 🎉 Offer ·
-  ❌ Rejected · All, each with a count.
+- **Multi-select status chips**: ⭐ Shortlisted · 📨 Applied · 🗣️ Interviewing · 🎉 Offer · ❌ Rejected ·
+  🚫 Not interested, each with a count. With none selected you see your **active** applications;
+  **✕ Clear filters** returns to that view. Kept until the app is closed, like Matches.
+- **🚫 Not interested** jobs are tracked here: each shows "Not interested since <date>". Open one
+  and pick another status to change your mind. Add a note to record why you passed.
 - Each card shows the **next action** ("Next: prepare the application kit", "Next: follow up on
   Tue 15 Oct", "Next: Round 2 -- Thu 17 Oct, 10:00"…), plus the shortlisted/applied dates and the
   nearest upcoming date (📅 = already in Google Calendar). Sorted by soonest upcoming date.

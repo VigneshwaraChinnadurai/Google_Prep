@@ -132,7 +132,7 @@ private fun JobMatcherApp(vm: JobViewModel) {
                 when (tab) {
                     0 -> DiscoverScreen(state, vm, open)
                     1 -> MatchesScreen(state, vm, open)
-                    2 -> TrackerScreen(state, open)
+                    2 -> TrackerScreen(state, vm, open)
                     3 -> SetupScreen(state, vm)
                     else -> HelpScreen(state.settings)
                 }
