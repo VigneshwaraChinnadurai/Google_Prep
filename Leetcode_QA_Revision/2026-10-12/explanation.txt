@@ -1,0 +1,49 @@
+Date: 2026-10-12
+Title: Apply Operations on Array to Maximize Sum of Squares
+URL: https://leetcode.com/problems/apply-operations-on-array-to-maximize-sum-of-squares/
+
+LLM Explanation:
+KEY INSIGHT: The AND+OR operation preserves the count of 1-bits at each bit position
+across all numbers. (AND clears bits, OR sets them, but combined: if a bit is 1 in
+either number, it ends up in the OR result; AND result gets what both had. Total 1s
+at each bit = unchanged.) So we can freely redistribute bits among numbers.
+
+To maximise sum of squares of k chosen elements: concentrate bits into fewer numbers.
+For each bit position b, we have `cnt` ones to distribute. Assign them greedily to
+the k "slots" from index 0 upward — this packs bits into the same elements, maximising
+large values.
+
+The result_bits array represents the k optimal elements after optimal operations.
+
+COMPLEXITY: O(n * 30) = O(n) for bit counting + O(30 * k) for assignment.
+Total: O(30n). Very fast.
+
+EDGE CASES:
+  cnt > k: cap at k (can only use k elements, extra 1s are lost in non-chosen elements).
+  All same bits: concentrated into first element(s).
+  k = 1: entire bit pool concentrated into one number.
+
+LLM Testcase Validation:
+Test 1: nums=[2,6,5,8], k=2
+Bits: 2=010, 6=110, 5=101, 8=1000
+bit_count: b0=1(from5), b1=2(from2,6), b2=1(from6), b3=1(from8) (Wait: 5=101→b0=1,b2=1; 2=010→b1=1; 6=110→b1=1,b2=1; 8=1000→b3=1)
+bit_count: b0=1, b1=2, b2=2, b3=1
+
+Process high to low:
+b3(cnt=1): result_bits[0]|=8 → [8,0]
+b2(cnt=2): result_bits[0]|=4,result_bits[1]|=4 → [12,4]
+b1(cnt=2): result_bits[0]|=2,result_bits[1]|=2 → [14,6]  (Wait: 12|2=14, 4|2=6)
+b0(cnt=1): result_bits[0]|=1 → [15,6]
+
+Sum = 15²+6²=225+36=261 ✓
+
+Test 2: nums=[4,5,4,7], k=3
+4=100, 5=101, 4=100, 7=111
+bit_count: b0=2(5,7), b1=1(7), b2=4(4,5,4,7)
+
+Process:
+b2(cnt=4,k=3): assign to all 3 → [4,4,4]
+b1(cnt=1): result_bits[0]|=2 → [6,4,4]
+b0(cnt=2): result_bits[0]|=1,result_bits[1]|=1 → [7,5,4]
+
+Sum = 49+25+16=90 ✓
