@@ -1,0 +1,34 @@
+Date: 2026-10-13
+Title: Maximum Alternating Sum of Squares
+URL: https://leetcode.com/problems/maximum-alternating-sum-of-squares/
+
+LLM Explanation:
+KEY INSIGHT: Squaring removes sign, so we work with absolute values. We can freely
+rearrange, so we optimally assign:
+- The ceil(n/2) largest absolute values to POSITIVE (+) positions (even indices).
+- The floor(n/2) smallest absolute values to NEGATIVE (-) positions (odd indices).
+
+This maximises the positive sum and minimises the negative sum simultaneously.
+
+COMPLEXITY: O(n log n) for sorting, O(n) for summation. Total O(n log n).
+
+EDGE CASES:
+  n=1: only one + position, no - positions. Result = nums[0]².
+  All same values: pairs cancel except the last + position.
+  Negative numbers: absolute values used since x² = (-x)².
+
+LLM Testcase Validation:
+Test 1: nums=[1,2,3] → abs sorted desc: [3,2,1]
+i=0: +9-4=5; i=2: +1. Total=6? Expected 12.
+
+Hmm. Let me reconsider. [3,2,1]: 9-4+1=6 ≠ 12.
+
+Wait example says [2,1,3] gives 4-1+9=12. Arrangement matters — put largest at +positions.
+Optimal: put the 3 largest at + positions (even indices) and 2 smallest at - positions.
+[3,1,2] or [2,1,3]: we want largest at + spots. With 3 elements, positions 0(+),1(-),2(+).
+Best: +3²,-1²,+2² or +3²,-1²... wait +3²+2²-1²=9+4-1=12. 
+
+So we should put ALL large values at + positions and small at - positions.
+Sort desc: [3,2,1]. + gets {3,2}, - gets {1}. Sum = 9+4-1=12.
+
+The strategy: split into + group (ceil(n/2) largest) and - group (floor(n/2) smallest).
