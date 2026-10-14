@@ -1,0 +1,48 @@
+Date: 2026-10-14
+Title: Maximize Sum of Squares of Digits
+URL: https://leetcode.com/problems/maximize-sum-of-squares-of-digits/
+
+LLM Explanation:
+APPROACH: Greedy digit assignment — O(num).
+
+To maximise sum of squares with a fixed digit sum:
+  By convexity of x², concentrating value (using larger digits) maximises sum of squares.
+  Greedy: assign the maximum possible digit (min(9, remaining)) at each position left to right.
+
+This simultaneously:
+1. Maximises sum of squares (concentrates digit sum into fewest, largest digits).
+2. Produces the lexicographically largest number (since we use the largest valid digit first).
+
+VALIDITY: s > 9*num is impossible (max digit sum = 9*num). s < 1 impossible (need ≥1 total).
+
+COMPLEXITY: O(num) time, O(num) space for output string.
+
+EDGE CASES:
+  s = 9*num: all 9s.
+  s = 1: "100...0" (1 followed by num-1 zeros).
+  Single digit (num=1): valid iff 1 ≤ s ≤ 9.
+
+LLM Testcase Validation:
+Test 1: num=2, s=3
+i=0: d=min(9, 3-(2-0-1))=min(9,3-1)=min(9,2)=2. remaining=1.
+i=1: d=min(9,1-(2-1-1))=min(9,1-0)=1. remaining=0.
+digits=[2,1] → "21"? Expected "30".
+
+Hmm. The formula leaves at least 0 for remaining digits but should leave at most 9 each.
+Correct formula: d = min(9, remaining - max(0, min_needed_for_rest)).
+min_needed_for_rest = 0 (each digit can be 0). So d = min(9, remaining).
+But we must also ensure remaining - d >= 0 AND remaining - d <= 9 * (num - i - 1).
+
+i=0: d = min(9, s) but ensure s-d <= 9*(num-1). d = max(0, s - 9*(num-1)).
+d = max(0, 3 - 9*1) = max(0,-6) = 0? No.
+Actually we want d as LARGE as possible: d = min(9, s - 0) but capped so rest ≥ 0.
+d = min(9, remaining) leaving remaining-d for the rest (≥0).
+But remaining-d must be ≤ 9*(num-i-1).
+So: d = max(remaining - 9*(num-i-1), 0) ... that's the MINIMUM d.
+We want MAXIMUM d = min(9, remaining).
+
+i=0: d=min(9,3)=3, remaining=0.
+i=1: d=min(9,0)=0.
+digits=[3,0] → "30" ✓
+
+The bug: I subtracted `(num-i-1)` from remaining but should subtract 9*(num-i-1) floored at 0.
