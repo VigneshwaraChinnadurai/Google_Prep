@@ -15,11 +15,22 @@
 \usepackage{verbatim}
 \usepackage{enumitem}
 \usepackage[hidelinks]{hyperref}
+\hypersetup{pdftitle={Vigneshwara Chinnadurai - Resume}, pdfauthor={Vigneshwara Chinnadurai},
+  pdfsubject={Senior AI Architect - Generative AI, Multi-Agent Systems, RAG},
+  pdfkeywords={Google ADK, Multi-Agent Systems, RAG, Generative AI, Google Cloud, LLM, Solution Architecture}}
 \usepackage{fancyhdr}
 \usepackage[english]{babel}
 \usepackage{tabularx}
-\usepackage{fontawesome5}
-\input{glyphtounicode}
+\usepackage{iftex}
+\ifPDFTeX\input{glyphtounicode}\else
+  % XeTeX/LuaTeX: no ff/fi ligatures (plain ASCII text) and no kerning
+  % (kerned pairs like "A W" make some ATS parsers split "AWS" into "A WS")
+  \usepackage{fontspec}
+  \setmainfont{lmroman10}[Extension=.otf, UprightFont=*-regular, BoldFont=*-bold,
+    ItalicFont=*-italic, BoldItalicFont=*-bolditalic,
+    SmallCapsFont=lmromancaps10-regular, Ligatures={NoCommon,TeX}, Kerning=Off]
+  \setmonofont{lmmono10-regular.otf}
+\fi
 
 \pagestyle{fancy}
 \fancyhf{}
@@ -46,7 +57,7 @@
 }{}{0em}{}[\color{black}\titlerule \vspace{-5pt}]
 
 % Ensure that generate pdf is machine readable/ATS parsable
-\pdfgentounicode=1
+\ifPDFTeX\pdfgentounicode=1\fi
 
 %-------------------------
 % Custom commands
@@ -95,15 +106,15 @@
 %----------HEADING----------
 \begin{center}
     \textbf{\Huge \scshape Vigneshwara Chinnadurai} \\ \vspace{1pt}
-    \small \faPhone\ 986-555-0901 $|$ 
-    \href{mailto:rockingstarvic@gmail.com}{\faEnvelope\ \underline{rockingstarvic@gmail.com}} $|$ 
-    \href{https://linkedin.com/in/vigneshwarac}{\faLinkedin\ \underline{linkedin.com/in/vigneshwarac}} $|$
-    \href{https://github.com/VigneshwaraChinnadurai}{\faGithub\ \underline{github.com/VigneshwaraChinnadurai}}
+    \small Phone: +91 98655 50901 $|$
+    Email: \href{mailto:rockingstarvic@gmail.com}{\underline{rockingstarvic@gmail.com}} \\
+    LinkedIn: \href{https://linkedin.com/in/vigneshwarac}{\underline{linkedin.com/in/vigneshwarac}} $|$
+    GitHub: \href{https://github.com/VigneshwaraChinnadurai}{\underline{github.com/VigneshwaraChinnadurai}}
 \end{center}
 
 %----------SUMMARY----------
 \section{Professional Summary}
-\small{Senior AI Architect \& Data Scientist with \textbf{8+ years} of experience designing enterprise-scale \textbf{Agentic AI, Generative AI}, and Machine Learning solutions. Pioneer in building \textbf{production-grade Autonomous AI Agent systems} using \textbf{AWS AgentCore SDK}, with expertise in \textbf{Hybrid RAG pipelines}, \textbf{LLM-powered self-critique loops}. Delivered \textbf{\$277M+ measurable business impact} across Fortune 500 clients.}
+\small{Senior AI Architect \& Data Scientist with \textbf{8+ years} of experience designing enterprise-scale \textbf{Agentic AI, Generative AI}, and Machine Learning solutions. Architects production-grade \textbf{multi-agent systems} on \textbf{Google ADK} and \textbf{AWS AgentCore SDK}, with expertise in \textbf{Hybrid RAG pipelines} and \textbf{LLM-powered self-critique loops}. Delivered \textbf{\$277M+ measurable business impact} across Fortune 500 clients.}
 
 %-----------EXPERIENCE-----------
 \section{Experience}
@@ -117,7 +128,7 @@
       \vspace{12pt}
       \textit{\small\textbf{Aon Human Capital -- Claims Audit Modernization (Agentic Platform)} | Google ADK, Azure OpenAI, LiteLLM, Azure Container Apps, PostgreSQL/Databricks, Zero-Trust JWT}
       \resumeItemListStart
-        \resumeItem{Co-authored the \textbf{end-to-end enterprise solution architecture blueprint} (C4 Context/Container/Component views + Azure hub-and-spoke deployment) for a \textbf{24-agent agentic platform} (1 Orchestration + 12 Super + 11 Utility agents) automating the full claims-audit lifecycle -- \textbf{100\% automated claim-vs-plan-provision comparison}, configurable stratified sampling, and discrepancy reporting -- replacing a manual, spreadsheet-driven audit process.}
+        \resumeItem{Co-authored the \textbf{end-to-end enterprise solution architecture blueprint} (C4 Context/Container/Component views + Azure hub-and-spoke deployment) for a \textbf{24-agent multi-agent platform on Google ADK} (1 Orchestration + 12 Super + 11 Utility agents) automating the full claims-audit lifecycle -- \textbf{100\% automated claim-vs-plan-provision comparison}, configurable stratified sampling, and discrepancy reporting -- replacing a manual, spreadsheet-driven audit process.}
         \resumeItem{Architected a \textbf{deterministic three-tier agent hierarchy} (Orchestrator $\rightarrow$ Super Agents $\rightarrow$ Utility Agents) on \textbf{Google ADK} with zero LLM routing discretion, routing all model traffic through a \textbf{LiteLLM $\rightarrow$ Aon GenAI Wrapper $\rightarrow$ Azure OpenAI (gpt-5.1 / gpt-5-mini)} path so no agent ever calls the model provider directly -- defended the framework's cloud-agnostic design (via the LiteLLM abstraction) to the review board as future-proofing against a potential GCP shift.}
         \resumeItem{Designed the \textbf{shared Postgres blackboard data plane} (agents exchange row/file references, never bulk data) with a planned store-swap to \textbf{Databricks (Delta / Unity Catalog)}, and a \textbf{three-plane runtime model} (Control / Data / Memory) that isolates containerized inter-agent invocation from persisted state, enabling horizontal scaling with zero state migration.}
         \resumeItem{Defined the \textbf{zero-trust JWT security model} -- 5-minute TTL, per-call Okta-issued tokens validated at APIM, RBAC propagated across the full agent call tree -- and \textbf{mechanically-enforced Human-in-the-Loop gates} (Supervisory Control, Approval, Findings Review, Exception Escalation) that hard-stop the pipeline via a \texttt{PAUSED} sentinel independent of LLM behavior.}
@@ -135,7 +146,7 @@
       \vspace{12pt}
       \textit{\small\textbf{Disney TVA Schema Intelligence Chatbot} | AWS Bedrock, Claude 3.7 Sonnet, Agent Forge SDK}
       \resumeItemListStart
-        \resumeItem{Architected \textbf{production-grade conversational AI chatbot} using \textbf{custom S3VectorsAgentRuntime} extending AWS AgentCore SDK to handle S3 Vectors' unique \texttt{metadata.text} storage pattern that standard SDK couldn't parse.}
+        \resumeItem{Architected a \textbf{production-grade RAG chatbot} using \textbf{custom S3VectorsAgentRuntime} extending AWS AgentCore SDK to handle S3 Vectors' unique \texttt{metadata.text} storage pattern that standard SDK couldn't parse.}
         \resumeItem{Implemented \textbf{intelligent token management} with configurable \texttt{max\_rag\_context\_size} trimming that dynamically truncates retrieval chunks to prevent context overflow.}
         \resumeItem{Innovated \textbf{dual-path KB retrieval}: SDK's \texttt{extract\_retrieval\_chunks} for standard \texttt{content.text} + custom fallback for \texttt{metadata.text} with automatic deduplication.}
         \resumeItem{Created \textbf{follow-up query resolution system} with heuristic-based pronoun detection + URN extraction, rewriting vague queries for improved RAG retrieval.}
@@ -146,19 +157,19 @@
       \vspace{12pt}
       \textit{\small\textbf{Disney PGT Spec Sheet Planner Agent} | AWS Bedrock AgentCore, Strands SDK, Claude Sonnet, pgvector}
       \resumeItemListStart
-        \resumeItem{Architected \textbf{11-tool deterministic AI pipeline} (1,550+ LOC) on \textbf{AWS Bedrock AgentCore} for automated spec-sheet field extraction — parsing Excel/PDF/DOCX/image files, extracting structured network data (budgets, flight dates, unit lengths) via Claude Sonnet, and writing to PostgreSQL with \textbf{Human-in-the-Loop} approval via Teams Adaptive Cards.}
-        \resumeItem{Achieved \textbf{5.3\texttimes{} end-to-end latency reduction} (237s → 44.9s) by eliminating cold starts, optimizing content chunking, and reducing extraction time from \textbf{39s to 9.2s} (4.3\texttimes{} faster).}
-        \resumeItem{Eliminated \textbf{33 seconds of LLM reasoning overhead} (74\% of E2E) by replacing Strands agent tool-routing with a \textbf{deterministic sequential pipeline} — zero quality degradation, pure latency savings.}
-        \resumeItem{Engineered \textbf{aggressive parallel execution} using \texttt{ThreadPoolExecutor}: parse \textbar\textbar{} RFP-lookup, intermediate-write \textbar\textbar{} extraction, save-final \textbar\textbar{} DB-write — with \textbf{adaptive Bedrock retries} and chunked extraction fan-out across 4 parallel workers.}
+        \resumeItem{Architected \textbf{11-tool deterministic AI pipeline} (1,550+ LOC) on \textbf{AWS Bedrock AgentCore} for automated spec-sheet field extraction---parsing Excel/PDF/DOCX/image files, extracting structured network data (budgets, flight dates, unit lengths) via Claude Sonnet, and writing to PostgreSQL with \textbf{Human-in-the-Loop} approval via Teams Adaptive Cards.}
+        \resumeItem{Achieved \textbf{5.3x end-to-end latency reduction} (237s $\rightarrow$ 44.9s) by eliminating cold starts, optimizing content chunking, and reducing extraction time from \textbf{39s to 9.2s} (4.3x faster).}
+        \resumeItem{Eliminated \textbf{33 seconds of LLM reasoning overhead} (74\% of E2E) by replacing Strands agent tool-routing with a \textbf{deterministic sequential pipeline}---zero quality degradation, pure latency savings.}
+        \resumeItem{Engineered \textbf{aggressive parallel execution} using \texttt{ThreadPoolExecutor}: parse \textbar\textbar{} RFP-lookup, intermediate-write \textbar\textbar{} extraction, save-final \textbar\textbar{} DB-write---with \textbf{adaptive Bedrock retries} and chunked extraction fan-out across 4 parallel workers.}
         \resumeItem{Built \textbf{pgvector integration} with Azure OpenAI \texttt{text-embedding-3-large}, \textbf{Claude Vision OCR fallback} for image-based spec sheets, and \textbf{RFP context resolution} with DB-driven network filtering reducing LLM input by up to 60\%.}
       \resumeItemListEnd
 
       \vspace{12pt}
       \textit{\small\textbf{Disney ESPN Game Summary Platform} | AWS Nova Premier, Lambda, Real-time Video AI}
       \resumeItemListStart
-        \resumeItem{Developed \textbf{GenAI highlight extraction platform} contributing to \textbf{\$231.76M AWS business expansion}. Architected \textbf{7-step serverless Lambda pipeline}: MediaLive → Kinesis → MediaPackage → S3 → Nova Premier → DynamoDB → Highlights.}
+        \resumeItem{Developed \textbf{GenAI highlight extraction platform} contributing to \textbf{\$231.76M AWS business expansion}. Architected \textbf{7-step serverless Lambda pipeline}: MediaLive $\rightarrow$ Kinesis $\rightarrow$ MediaPackage $\rightarrow$ S3 $\rightarrow$ Nova Premier $\rightarrow$ DynamoDB $\rightarrow$ Highlights.}
         \resumeItem{Designed \textbf{multimodal prompt engineering} for video analysis with confidence scoring per field, play-type classification, and precise timestamp extraction. Built \texttt{clean\_response\_text()} handling markdown fences and partial JSON.}
-        \resumeItem{Validated \textbf{~90\% event capture rate} on the \textbf{NFL (American Football)} MVP; proposed expansion to \textbf{Cricket, Rugby, and Soccer} pending client validation of results.}
+        \resumeItem{Validated \textbf{approx.\ 90\% event capture rate} on the \textbf{NFL (American Football)} MVP; proposed expansion to \textbf{Cricket, Rugby, and Soccer} pending client validation of results.}
       \resumeItemListEnd
 
       \vspace{12pt}
@@ -171,8 +182,8 @@
       \vspace{12pt}
       \textit{\small\textbf{Toyota Demand Forecasting Engine} | LSTM, N-BEATS, Prophet, PySpark}
       \resumeItemListStart
-        \resumeItem{Engineered enterprise-scale forecasting system managing \textbf{1.2 million SKU combinations} across \textbf{2 Part Centers (PCs) and 15 Part Distribution Centers (PDCs)}, reducing annual inventory costs by \textbf{\$46.1 Million} with 70\% WMAPE.}
-        \resumeItem{Implemented \textbf{hybrid LSTM architecture} with dual-layer Lambda expansions, \textbf{zero-entry "+1 trick"} for MinMax scaling, and \textbf{ensemble model selection} (LSTM/N-BEATS/SVR/Prophet) per SKU characteristics.}
+        \resumeItem{Engineered enterprise-scale forecasting system managing \textbf{1.2 million SKU combinations} across \textbf{2 Part Centers (PCs) and 15 Part Distribution Centers (PDCs)}, reducing annual inventory costs by \textbf{\$46.1 Million} at \textbf{70\% forecast accuracy} (1 -- WMAPE).}
+        \resumeItem{Implemented \textbf{hybrid LSTM architecture} with dual-layer Lambda expansions, \textbf{zero-entry ``+1 trick''} for MinMax scaling, and \textbf{ensemble model selection} (LSTM/N-BEATS/SVR/Prophet) per SKU characteristics.}
         \resumeItem{Designed \texttt{orchestrator.py} with \textbf{multiprocessing pool} executing parallel forecasts with YAML-driven multi-environment configuration.}
       \resumeItemListEnd
 
@@ -200,7 +211,7 @@
       \vspace{12pt}
       \textit{\small\textbf{WIPRO Holmes (R\&D)} | LSTM, Reg-exp, Deep Learning}
       \resumeItemListStart
-        \resumeItem{Enhanced Contract Review tool using \textbf{Bi-LSTM + CRF architecture} for sequence labeling of legal clauses in MSAs and SOWs. The \textbf{bidirectional LSTM} captured long-range contextual dependencies while the \textbf{CRF layer} learned valid BIO tag transitions (B-CLAUSE → I-CLAUSE), preventing invalid sequence predictions. Combined with \textbf{character-level embeddings} for OOV legal terminology and \textbf{domain-specific regex patterns} for structured entities (dates, parties, amounts), improved extraction accuracy from \textbf{76\% to 93\%}.}
+        \resumeItem{Enhanced Contract Review tool using \textbf{Bi-LSTM + CRF architecture} for sequence labeling of legal clauses in MSAs and SOWs. The \textbf{bidirectional LSTM} captured long-range contextual dependencies while the \textbf{CRF layer} learned valid BIO tag transitions (B-CLAUSE $\rightarrow$ I-CLAUSE), preventing invalid sequence predictions. Combined with \textbf{character-level embeddings} for OOV legal terminology and \textbf{domain-specific regex patterns} for structured entities (dates, parties, amounts), improved extraction accuracy from \textbf{76\% to 93\%}.}
         \resumeItemListEnd
 
       \vspace{12pt}
@@ -235,7 +246,6 @@
 
       \vspace{12pt}
       \resumeProjectHeading
-      \vspace{12pt}
           {\textbf{Quantum Portfolio Optimization Engine (MBA Project)} $|$ \emph{D-Wave Quantum Annealing, QUBO, Simulated Annealing}}{}
           \resumeItemListStart
             \resumeItem{\textbf{QUBO Formulation from First Principles}: Quadratic Unconstrained Binary Optimization with risk terms (covariance), return rewards (mean returns), and cardinality constraints via penalty functions.}
@@ -245,7 +255,6 @@
 
       \vspace{12pt}
       \resumeProjectHeading
-      \vspace{12pt}
           {\textbf{LeetCode AI Companion (Android) (Personal Development)} $|$ \emph{Kotlin, Jetpack Compose, Gemini API, GraphQL}}{}
           \resumeItemListStart
             \resumeItem{\textbf{Jetpack Compose UI} with Material Design 3. LeetCode GraphQL integration for daily challenges. \textbf{Gemini generation pipeline} with retry logic.}
@@ -256,29 +265,23 @@
 
 %-----------EDUCATION-----------
 \section{Education}
-  \resumeSubHeadingListStart
-  \vspace{8pt}
-    \resumeSubheading
-      {Manipal University}{Jaipur, India}
-      {Master of Business Administration, Analytics and Data Science}{August 2024 -- June 2026}
-    \resumeSubheading
-      {Anna University}{Chennai, India}
-      {Bachelor of Engineering, Electrical \& Electronics}{August 2014 -- May 2017}
-  \resumeSubHeadingListEnd
+ \begin{itemize}[leftmargin=0.15in, label={}, itemsep=1pt, parsep=0pt, topsep=4pt]\small
+    \item \textbf{Master of Business Administration, Analytics and Data Science} $|$ Manipal University, Jaipur, India $|$ August 2024 -- June 2026
+    \item \textbf{Bachelor of Engineering, Electrical \& Electronics} $|$ Anna University, Chennai, India $|$ August 2014 -- May 2017
+ \end{itemize}
 
 
 %-----------CERTIFICATIONS-----------
 \section{Certifications}
 \vspace{8pt}
  \begin{itemize}[leftmargin=0.15in, label={}]
-    \small{\item{
-     \textbf{AI Fluency: Framework \& Foundations} $|$ Anthropic (Mar 2026) \\
-     \textbf{Claude 101} $|$ Anthropic (Mar 2026) \\
-     \textbf{AWS Certified Machine Learning -- Specialty} $|$ Amazon Web Services (Oct 2021) \\
-     \textbf{Delivery Accreditation - AI Agents} $|$ ServiceNow \\
-     \textbf{Configure AI Applications to Optimize Search Results} $|$ Google \\
-     \textbf{Deep Learning Specialization} $|$ Coursera/Udacity
-    }}
+    \small
+    \item \textbf{AI Fluency: Framework \& Foundations} $|$ Anthropic (Mar 2026)
+    \item \textbf{Claude 101} $|$ Anthropic (Mar 2026)
+    \item \textbf{AWS Certified Machine Learning -- Specialty} $|$ Amazon Web Services (Oct 2021)
+    \item \textbf{Delivery Accreditation - AI Agents} $|$ ServiceNow
+    \item \textbf{Configure AI Applications to Optimize Search Results} $|$ Google
+    \item \textbf{Deep Learning Specialization} $|$ Coursera/Udacity
  \end{itemize}
 
 
@@ -287,7 +290,7 @@
 \vspace{8pt}
  \begin{itemize}[leftmargin=0.15in, label={}]
     \small{\item{
-     \textbf{The Doer Award} $|$ Deloitte Consulting (2026) — recognized for turning an uncertain idea into a production reality
+     \textbf{The Doer Award} $|$ Deloitte Consulting (2026)---recognized for turning an uncertain idea into a production reality
     }}
  \end{itemize}
 
@@ -295,14 +298,13 @@
 %-----------TECHNICAL SKILLS-----------
 \section{Technical Skills}
  \begin{itemize}[leftmargin=0.15in, label={}]
-    \small{\item{
-     \textbf{Agentic AI \& RAG}{: Agent Forge SDK (AWS AgentCore), Google ADK, Strands Agents SDK, Multi-Agent Orchestration, LLM Planning \& Critique, Self-Refinement Loops, Deterministic Pipeline Orchestration, Hybrid Retrieval (BM25 + Dense + RRF), LLM Reranking, S3 Vectors, pgvector, Token-aware Trimming, LiteLLM, Model Context Protocol (MCP), Zero-Trust JWT, Human-in-the-Loop Gate Design, Agent Catalog \& Lifecycle Governance} \\
-     \textbf{LLMs \& Foundation Models}{: Claude 3.7 Sonnet, GPT-4/4o-mini, AWS Nova Premier, Gemini 2.5 Flash, Llama 3, Amazon Titan Embed v2} \\
-     \textbf{Quantum Computing}{: D-Wave Quantum Annealing, QUBO Formulation, Simulated Annealing, D-Wave Leap, Binary Quadratic Models} \\
-     \textbf{Deep Learning}{: Transformers (BERT, DiT), CNN (VGG19, ResNet), LSTM, Bi-LSTM, Deep Interest Network (DIN), N-BEATS, Prophet} \\
-     \textbf{Cloud \& MLOps}{: AWS (Bedrock, SageMaker, Lambda, S3, MediaLive, Kinesis, SQS, Identity Manager, Media Package, Media Convert), Azure (OpenAI, Container Apps), GCP (Vertex AI), Docker, Kubernetes, Airflow, DataBricks, Okta} \\
-     \textbf{Languages \& Data}{: Python, PySpark, SQL, Kotlin (Android), Pandas, NumPy, TensorFlow, PyTorch}
-    }}
+    \small
+    \item \textbf{Agentic AI \& RAG}{: Google ADK, Agent Forge SDK (AWS AgentCore), Strands Agents SDK, Multi-Agent Systems \& Orchestration, Retrieval-Augmented Generation (RAG), Hybrid Retrieval (BM25 + Dense + RRF), LLM Reranking, Vector Databases (S3 Vectors, pgvector), Token-aware Trimming, LLM Planning \& Critique, Self-Refinement Loops, Deterministic Pipeline Orchestration, LiteLLM, Model Context Protocol (MCP), Zero-Trust JWT, Human-in-the-Loop Gate Design, Agent Catalog \& Lifecycle Governance}
+    \item \textbf{LLMs \& Foundation Models}{: Claude 3.7 Sonnet, GPT-4/4o-mini, AWS Nova Premier, Gemini 2.5 Flash, Llama 3, Amazon Titan Embed v2}
+    \item \textbf{Quantum Computing}{: D-Wave Quantum Annealing, QUBO Formulation, Simulated Annealing, D-Wave Leap, Binary Quadratic Models}
+    \item \textbf{Deep Learning}{: Transformers (BERT, DiT), CNN (VGG19, ResNet), LSTM, Bi-LSTM, Deep Interest Network (DIN), N-BEATS, Prophet}
+    \item \textbf{Cloud \& MLOps}{: AWS (Bedrock, SageMaker, Lambda, S3, MediaLive, Kinesis, SQS, Identity Manager, Media Package, Media Convert), Azure (OpenAI, Container Apps), Google Cloud / GCP (Vertex AI), Docker, Kubernetes, Airflow, DataBricks, Okta}
+    \item \textbf{Languages \& Data}{: Python, PySpark, SQL, Kotlin (Android), Pandas, NumPy, TensorFlow, PyTorch}
  \end{itemize}
 
 
@@ -312,7 +314,7 @@
     \small{\item{
      \textbf{\$46.1M} annual inventory savings at Toyota $|$ 
      \textbf{\$231.76M} AWS expansion via Disney ESPN $|$ 
-     \textbf{5.3\texttimes{}} pipeline latency reduction (237s→44.9s) $|$ 
+     \textbf{5.3x} pipeline latency reduction (237s$\rightarrow$44.9s) $|$ 
      \textbf{74\%} overhead eliminated via deterministic orchestration $|$
      \textbf{93\%} contract extraction accuracy $|$ 
      \textbf{1.2M SKUs} forecasting scale $|$ 
