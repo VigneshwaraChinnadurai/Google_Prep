@@ -1,0 +1,10 @@
+Date: 2026-10-15
+Title: Subarrays Distinct Element Sum of Squares I
+URL: https://leetcode.com/problems/subarrays-distinct-element-sum-of-squares-i/
+
+LLM Explanation:
+Brute force O(n²). For each starting index i, expand right tracking distinct elements via a set. Add len(seen)² at each step. With n≤100, O(n²)=10000 ops is trivial.
+
+LLM Testcase Validation:
+Test 1: [1,2,1] → 1+1+1+4+4+4=15 ✓
+Test 2: [1,1] → 1+1+1=3 ✓
