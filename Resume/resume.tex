@@ -114,7 +114,7 @@
 
 %----------SUMMARY----------
 \section{Professional Summary}
-\small{Senior AI Architect \& Data Scientist with \textbf{8+ years} of experience designing enterprise-scale \textbf{Agentic AI, Generative AI}, and Machine Learning solutions. Architects production-grade \textbf{multi-agent systems} on \textbf{Google ADK} and \textbf{AWS AgentCore SDK}, with expertise in \textbf{Hybrid RAG pipelines} and \textbf{LLM-powered self-critique loops}. Delivered \textbf{\$277M+ measurable business impact} across Fortune 500 clients.}
+\small{Senior AI Architect \& Data Scientist with \textbf{8+ years} of experience designing enterprise-scale \textbf{Agentic AI, Generative AI}, and Machine Learning solutions. Architects production-grade \textbf{multi-agent systems} on \textbf{Google ADK} and \textbf{AWS AgentCore SDK}, with expertise in \textbf{Hybrid RAG pipelines}, \textbf{vector databases}, and \textbf{LLM self-reflection (self-critique) loops}. Delivered \textbf{\$277M+ measurable business impact} across Fortune 500 clients.}
 
 %-----------EXPERIENCE-----------
 \section{Experience}
@@ -129,7 +129,7 @@
       \textit{\small\textbf{Aon Human Capital -- Claims Audit Modernization (Agentic Platform)} | Google ADK, Azure OpenAI, LiteLLM, Azure Container Apps, PostgreSQL/Databricks, Zero-Trust JWT}
       \resumeItemListStart
         \resumeItem{Co-authored the \textbf{end-to-end enterprise solution architecture blueprint} (C4 Context/Container/Component views + Azure hub-and-spoke deployment) for a \textbf{24-agent multi-agent platform on Google ADK} (1 Orchestration + 12 Super + 11 Utility agents) automating the full claims-audit lifecycle -- \textbf{100\% automated claim-vs-plan-provision comparison}, configurable stratified sampling, and discrepancy reporting -- replacing a manual, spreadsheet-driven audit process.}
-        \resumeItem{Architected a \textbf{deterministic three-tier agent hierarchy} (Orchestrator $\rightarrow$ Super Agents $\rightarrow$ Utility Agents) on \textbf{Google ADK} with zero LLM routing discretion, routing all model traffic through a \textbf{LiteLLM $\rightarrow$ Aon GenAI Wrapper $\rightarrow$ Azure OpenAI (gpt-5.1 / gpt-5-mini)} path so no agent ever calls the model provider directly -- defended the framework's cloud-agnostic design (via the LiteLLM abstraction) to the review board as future-proofing against a potential GCP shift.}
+        \resumeItem{Architected a \textbf{deterministic three-tier hierarchical delegation model} (Orchestrator $\rightarrow$ Super Agents $\rightarrow$ Utility Agents) on \textbf{Google ADK} with zero LLM routing discretion, routing all model traffic through a \textbf{LiteLLM $\rightarrow$ Aon GenAI Wrapper $\rightarrow$ Azure OpenAI (gpt-5.1 / gpt-5-mini)} path so no agent ever calls the model provider directly -- defended the framework's cloud-agnostic design (via the LiteLLM abstraction) to the review board as future-proofing against a potential GCP shift.}
         \resumeItem{Designed the \textbf{shared Postgres blackboard data plane} (agents exchange row/file references, never bulk data) with a planned store-swap to \textbf{Databricks (Delta / Unity Catalog)}, and a \textbf{three-plane runtime model} (Control / Data / Memory) that isolates containerized inter-agent invocation from persisted state, enabling horizontal scaling with zero state migration.}
         \resumeItem{Defined the \textbf{zero-trust JWT security model} -- 5-minute TTL, per-call Okta-issued tokens validated at APIM, RBAC propagated across the full agent call tree -- and \textbf{mechanically-enforced Human-in-the-Loop gates} (Supervisory Control, Approval, Findings Review, Exception Escalation) that hard-stop the pipeline via a \texttt{PAUSED} sentinel independent of LLM behavior.}
         \resumeItem{Established the \textbf{MCP (Model Context Protocol) integration pattern} behind APIM for 6 line-of-business systems (SharePoint, MOVEit, Outlook, Rules Engine, Claims Datastore, DocuSign) eliminating point-to-point integrations, plus the \textbf{Agent Catalog governance model} (Agent Signature metadata schema, semantic versioning, lifecycle states, automated stewardship for idle/orphaned agents) across Aon's Human Capital Azure subscription.}
@@ -148,7 +148,7 @@
       \resumeItemListStart
         \resumeItem{Architected a \textbf{production-grade RAG chatbot} using \textbf{custom S3VectorsAgentRuntime} extending AWS AgentCore SDK to handle S3 Vectors' unique \texttt{metadata.text} storage pattern that standard SDK couldn't parse.}
         \resumeItem{Implemented \textbf{intelligent token management} with configurable \texttt{max\_rag\_context\_size} trimming that dynamically truncates retrieval chunks to prevent context overflow.}
-        \resumeItem{Innovated \textbf{dual-path KB retrieval}: SDK's \texttt{extract\_retrieval\_chunks} for standard \texttt{content.text} + custom fallback for \texttt{metadata.text} with automatic deduplication.}
+        \resumeItem{Built \textbf{dual-path KB retrieval}: SDK's \texttt{extract\_retrieval\_chunks} for standard \texttt{content.text} + custom fallback for \texttt{metadata.text} with automatic deduplication.}
         \resumeItem{Created \textbf{follow-up query resolution system} with heuristic-based pronoun detection + URN extraction, rewriting vague queries for improved RAG retrieval.}
         \resumeItem{Optimized memory retrieval latency from \textbf{17+ seconds to under 5 seconds} through memory hook optimization and session stashing before RAG augmentation.}
         \resumeItem{Built \textbf{KB write-back pipeline} with deterministic vector keys enabling immediate queryability of agent-generated summaries without sync delays.}
@@ -158,10 +158,10 @@
       \textit{\small\textbf{Disney PGT Spec Sheet Planner Agent} | AWS Bedrock AgentCore, Strands SDK, Claude Sonnet, pgvector}
       \resumeItemListStart
         \resumeItem{Architected \textbf{11-tool deterministic AI pipeline} (1,550+ LOC) on \textbf{AWS Bedrock AgentCore} for automated spec-sheet field extraction---parsing Excel/PDF/DOCX/image files, extracting structured network data (budgets, flight dates, unit lengths) via Claude Sonnet, and writing to PostgreSQL with \textbf{Human-in-the-Loop} approval via Teams Adaptive Cards.}
-        \resumeItem{Achieved \textbf{5.3x end-to-end latency reduction} (237s $\rightarrow$ 44.9s) by eliminating cold starts, optimizing content chunking, and reducing extraction time from \textbf{39s to 9.2s} (4.3x faster).}
+        \resumeItem{Achieved \textbf{5.3x end-to-end latency reduction} (237s to 44.9s) by eliminating cold starts, optimizing content chunking, and reducing extraction time from \textbf{39s to 9.2s} (4.3x faster).}
         \resumeItem{Eliminated \textbf{33 seconds of LLM reasoning overhead} (74\% of E2E) by replacing Strands agent tool-routing with a \textbf{deterministic sequential pipeline}---zero quality degradation, pure latency savings.}
         \resumeItem{Engineered \textbf{aggressive parallel execution} using \texttt{ThreadPoolExecutor}: parse \textbar\textbar{} RFP-lookup, intermediate-write \textbar\textbar{} extraction, save-final \textbar\textbar{} DB-write---with \textbf{adaptive Bedrock retries} and chunked extraction fan-out across 4 parallel workers.}
-        \resumeItem{Built \textbf{pgvector integration} with Azure OpenAI \texttt{text-embedding-3-large}, \textbf{Claude Vision OCR fallback} for image-based spec sheets, and \textbf{RFP context resolution} with DB-driven network filtering reducing LLM input by up to 60\%.}
+        \resumeItem{Built \textbf{pgvector (vector DB) integration} with Azure OpenAI \texttt{text-embedding-3-large}, \textbf{Claude Vision OCR fallback} for image-based spec sheets, and \textbf{RFP context resolution} with DB-driven network filtering reducing LLM input by up to 60\%.}
       \resumeItemListEnd
 
       \vspace{12pt}
@@ -175,7 +175,7 @@
       \vspace{12pt}
       \textit{\small\textbf{HP Enterprise - CXO Talk to Data Platform} | Databricks Genie, Azure OpenAI GPT-4o-mini}
       \resumeItemListStart
-        \resumeItem{Built \textbf{AI-powered conversational analytics platform} replacing traditional BI dashboards for executive decision-making. First implementation of \textbf{Databricks Genie's NL-to-SQL} capabilities with user token forwarding.}
+        \resumeItem{Built \textbf{AI-powered conversational analytics platform} replacing traditional BI dashboards for executive decision-making. Implemented \textbf{Databricks Genie NL-to-SQL} with user token forwarding.}
         \resumeItem{Architected \textbf{multi-table semantic layer} (2 Fact + 11 Dimension tables) with YAML-based semantic definitions. Implemented \textbf{hallucination reduction} through output validation against schema definitions.}
       \resumeItemListEnd
 
@@ -197,7 +197,7 @@
       \vspace{12pt}
       \textit{\small\textbf{Firm Initiatives: Agentic AI \& MLOps Estimation Frameworks}}
       \resumeItemListStart
-        \resumeItem{Created \textbf{industry-first estimation frameworks} for Agentic AI and MLOps project sizing with 24+ iterations, \textbf{adopted across multiple Deloitte practices} for consistent project scoping.}
+        \resumeItem{Created \textbf{estimation frameworks} for Agentic AI and MLOps project sizing, refined over 24+ iterations and \textbf{adopted across multiple Deloitte practices} for consistent project scoping.}
       \resumeItemListEnd
 
       \vspace{12pt}
@@ -237,9 +237,9 @@
           {\textbf{Autonomous Multi-Agent Strategic Analysis Engine} $|$ \emph{Gemini 2.5 Flash, Hybrid RAG, Self-Refinement}}{}
           \vspace{12pt}
           \resumeItemListStart
-            \resumeItem{\textbf{Genuinely Agentic Architecture}: LLM-powered planning where \texttt{AnalystAgent} autonomously decomposes complex prompts into executable multi-step plans without predefined workflows.}
+            \resumeItem{\textbf{LLM-driven Task Planning}: \texttt{AnalystAgent} decomposes complex prompts into executable multi-step plans at runtime, with no hardcoded workflows.}
             \resumeItem{\textbf{Hybrid Retrieval Pipeline}: Custom BM25 sparse + Gemini dense embeddings with \textbf{Reciprocal Rank Fusion (RRF)} + \textbf{LLM-powered reranking} (0-1 relevance scoring).}
-            \resumeItem{\textbf{Self-Critique \& Refinement Loop}: Rubric-based critique (Depth/Evidence/Causality/Actionability) with automatic \texttt{NEEDS\_REFINEMENT} detection triggering re-retrieval cycles.}
+            \resumeItem{\textbf{Self-Reflection \& Refinement Loop}: Rubric-based self-critique (Depth/Evidence/Causality/Actionability) with automatic \texttt{NEEDS\_REFINEMENT} detection triggering re-retrieval cycles.}
             \resumeItem{\textbf{Dynamic Tool Generation}: Runtime code synthesis creating callable Python functions from LLM output. \textbf{Graph Memory} with semantic triple extraction for persistent knowledge.}
             \resumeItem{\textbf{Real data integration}: SEC EDGAR XBRL, Google News RSS, Gemini Search Grounding. \textbf{Cost Guard System} with budget caps and aggressive caching.}
           \resumeItemListEnd
@@ -297,9 +297,9 @@
 
 %-----------TECHNICAL SKILLS-----------
 \section{Technical Skills}
- \begin{itemize}[leftmargin=0.15in, label={}]
+ \begin{itemize}[leftmargin=0.15in, label={}, itemsep=4pt]
     \small
-    \item \textbf{Agentic AI \& RAG}{: Google ADK, Agent Forge SDK (AWS AgentCore), Strands Agents SDK, Multi-Agent Systems \& Orchestration, Retrieval-Augmented Generation (RAG), Hybrid Retrieval (BM25 + Dense + RRF), LLM Reranking, Vector Databases (S3 Vectors, pgvector), Token-aware Trimming, LLM Planning \& Critique, Self-Refinement Loops, Deterministic Pipeline Orchestration, LiteLLM, Model Context Protocol (MCP), Zero-Trust JWT, Human-in-the-Loop Gate Design, Agent Catalog \& Lifecycle Governance}
+    \item \textbf{Agentic AI \& RAG}{: Google ADK, Agent Forge SDK (AWS AgentCore), Strands Agents SDK, Multi-Agent Systems \& Orchestration, Retrieval-Augmented Generation (RAG), Hybrid Retrieval (BM25 + Dense + RRF), LLM Reranking, Vector Databases (S3 Vectors, pgvector, Milvus), Token-aware Trimming, LLM Planning \& Critique, Self-Reflection Loops, Hierarchical Agent Delegation, Deterministic Pipeline Orchestration, LiteLLM, Model Context Protocol (MCP), Zero-Trust JWT, Human-in-the-Loop Gate Design, Agent Catalog \& Lifecycle Governance}
     \item \textbf{LLMs \& Foundation Models}{: Claude 3.7 Sonnet, GPT-4/4o-mini, AWS Nova Premier, Gemini 2.5 Flash, Llama 3, Amazon Titan Embed v2}
     \item \textbf{Quantum Computing}{: D-Wave Quantum Annealing, QUBO Formulation, Simulated Annealing, D-Wave Leap, Binary Quadratic Models}
     \item \textbf{Deep Learning}{: Transformers (BERT, DiT), CNN (VGG19, ResNet), LSTM, Bi-LSTM, Deep Interest Network (DIN), N-BEATS, Prophet}
@@ -314,7 +314,7 @@
     \small{\item{
      \textbf{\$46.1M} annual inventory savings at Toyota $|$ 
      \textbf{\$231.76M} AWS expansion via Disney ESPN $|$ 
-     \textbf{5.3x} pipeline latency reduction (237s$\rightarrow$44.9s) $|$ 
+     \textbf{5.3x} pipeline latency reduction (237s to 44.9s) $|$ 
      \textbf{74\%} overhead eliminated via deterministic orchestration $|$
      \textbf{93\%} contract extraction accuracy $|$ 
      \textbf{1.2M SKUs} forecasting scale $|$ 
