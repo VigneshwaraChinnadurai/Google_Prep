@@ -1,0 +1,40 @@
+Date: 2026-10-16
+Title: Subarrays Distinct Element Sum of Squares II
+URL: https://leetcode.com/problems/subarrays-distinct-element-sum-of-squares-ii/
+
+LLM Explanation:
+KEY IDENTITY: d(i,j)² = d(i,j-1)² + 2·d(i,j-1)·new(i,j) + new(i,j)
+where new(i,j)=1 iff nums[j] is new to subarray [i,j], i.e., i > prev[j].
+
+Define A_j = Σ_{i=0}^{j} d(i,j)², B_j = Σ d(i,j), p = last occurrence of nums[j] before j.
+
+A_j = A_{j-1} + 2·C_j + (j−p)   where C_j = Σ_{i=p+1}^{j-1} d(i,j-1) = B_{j-1} − prefix_sum(p)
+B_j = B_{j-1} + (j−p)
+
+CHALLENGE: Computing prefix_sum(p) = Σ_{i=0}^{p} d(i,j-1) efficiently.
+
+SOLUTION: Maintain a Fenwick tree supporting range-add [l,r] and prefix-sum queries.
+The range update d[i]+=1 for i in [p+1,j] (new-element subarrays for position j) is applied
+each step. Using the identity:
+
+  prefix_sum(p) = (p+1)·BIT_delta.query(p) − BIT_kdelta.query(p)
+
+with two BITs for the difference-array decomposition, each step is O(log n).
+
+COMPLEXITY: O(n log n) time, O(n) space.
+
+LLM Testcase Validation:
+Example 1: nums=[1,2,1]
+
+j=0, p=-1, delta=1. C=0. A=1. B=1. total=1. d[0]=1.
+j=1, p=-1, delta=2. B=prefix_sum(1)... wait B=1 going in.
+  prefix_sum(-1)=0. C=1-0=1.
+  A=1+2+2=5. B=3. total=6. d[0..1] each +1 → d[0]=2,d[1]=1.
+j=2, p=0, delta=2. prefix_sum(0)=2. C=3-2=1.
+  A=5+2+2=9. B=5. total=6+9=15 ✓
+
+Example 2: nums=[2,2]
+
+j=0, p=-1, delta=1. C=0. A=1. B=1. total=1.
+j=1, p=0, delta=1. prefix_sum(0)=1. C=1-1=0.
+  A=1+0+1=2. B=2. total=3 ✓
