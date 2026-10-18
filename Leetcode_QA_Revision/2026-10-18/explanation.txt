@@ -1,0 +1,33 @@
+Date: 2026-10-18
+Title: Number of Ways to Reorder Array to Get Same BST
+URL: https://leetcode.com/problems/number-of-ways-to-reorder-array-to-get-same-bst/
+
+LLM Explanation:
+APPROACH: Divide-and-conquer with combinatorics — O(n²).
+
+For a BST rooted at arr[0]:
+- Left subtree values: elements < arr[0] (must appear before any right subtree element that would "belong" after them in the relative order).
+- Right subtree values: elements > arr[0].
+
+The root must come first. The left and right elements can be interleaved in any valid way. The number of valid interleavings of l left elements and r right elements is C(l+r, l) (choose which positions the left elements occupy). The internal orderings of each subtree are counted recursively.
+
+Total orderings = C(l+r, l) × count(left) × count(right).
+Subtract 1 for the original ordering.
+
+Python's math.comb gives exact binomial coefficients. Apply mod at each step.
+
+COMPLEXITY: O(n²) — each recursion splits the array, with O(n) work per level.
+With n≤1000, this is fast.
+
+LLM Testcase Validation:
+Test 1: nums=[2,1,3]. root=2, left=[1], right=[3].
+count([1])=1, count([3])=1. C(2,1)=2. count([2,1,3])=2. Return 2-1=1 ✓
+
+Test 2: nums=[3,4,5,1,2]. root=3, left=[1,2], right=[4,5].
+count([1,2]): root=1, left=[], right=[2]. C(1,0)*1*1=1.
+count([4,5]): root=4, left=[], right=[5]. C(1,0)*1*1=1.
+count=C(4,2)*1*1=6. Return 6-1=5 ✓
+
+Test 3: nums=[1,2,3]. root=1, left=[], right=[2,3].
+count([2,3]): root=2, left=[], right=[3]. C(1,0)*1*1=1.
+count=C(3,0)*1*1=1. Return 1-1=0 ✓
