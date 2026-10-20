@@ -1,0 +1,37 @@
+Date: 2026-10-20
+Title: Sum of Sortable Integers
+URL: https://leetcode.com/problems/sum-of-sortable-integers/
+
+LLM Explanation:
+APPROACH: For each divisor k of n, check if partitioning into blocks of k and cyclically rotating each block can produce the globally sorted array.
+
+KEY INSIGHT: Block b (positions [bk, bk+k)) must contain exactly the elements s[bk..bk+k) (the globally sorted elements at those positions). Additionally, each block must be a cyclic rotation of its sorted version.
+
+A cyclic rotation of a sorted array has at most one "descent" (position where a[i] > a[i+1]). Also, if there IS a descent, the wrap-around must be consistent: block[-1] ≤ block[0].
+
+ALGORITHM:
+1. Sort nums to get reference.
+2. For each divisor k: check each block's multiset matches reference AND block is a valid rotation (≤1 descent, wrap check).
+
+COMPLEXITY: O(d(n) * n) where d(n) = number of divisors of n ≤ ~100 for n≤10^5.
+Total: O(n log n) for sort + O(n * d(n)) for checks ≈ O(n * 100) = O(10^7). Fast.
+
+EDGE CASES:
+  Already sorted array: all divisors k are sortable (0 descents in every block).
+  k=1: only sortable if array is already sorted (each block is single element, no rotation possible).
+  Descending array: no k works unless k=n and it's a rotation.
+
+LLM Testcase Validation:
+Test 1: nums=[3,1,2], s=[1,2,3]
+k=1: blocks [3],[1],[2]. sorted([3])=[3]≠[1]. Fail.
+k=3: block=[3,1,2], ref=[1,2,3]. sorted match ✓. descents: 3>1→1 descent. block[-1]=2>block[0]=3? 2>3? No. Valid! total=3 ✓
+
+Test 2: nums=[7,6,5], s=[5,6,7]
+k=1: [7]≠[5]. Fail.
+k=3: block=[7,6,5], ref=[5,6,7]. sorted([7,6,5])=[5,6,7] ✓. descents: 7>6 and 6>5 → 2 descents. Fail.
+total=0 ✓
+
+Test 3: nums=[5,8], s=[5,8]
+k=1: [5]=[5]✓ 0 descents ✓; [8]=[8]✓ 0 descents ✓. total+=1.
+k=2: block=[5,8], ref=[5,8]. match ✓. descents=0 ✓. total+=2.
+total=3 ✓
