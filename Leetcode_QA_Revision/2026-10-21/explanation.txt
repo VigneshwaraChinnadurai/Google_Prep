@@ -1,0 +1,29 @@
+Date: 2026-10-21
+Title: Minimum Operations to Sort a String
+URL: https://leetcode.com/problems/minimum-operations-to-sort-a-string/
+
+LLM Explanation:
+CASE ANALYSIS:
+0 ops: Already sorted.
+-1: n=2 and unsorted (the only proper substrings are single chars, sorting them is no-op).
+1 op: Mismatched region [L,R] doesn't span the whole string (L>0 or R<n-1). Sort s[L..R].
+3 ops: Mismatches span [0,n-1] AND the globally largest char appears uniquely at s[0] AND globally smallest appears uniquely at s[n-1]. Both are "stuck" — each operation leaves one stranded.
+2 ops: All other full-span mismatch cases.
+
+WHY 3 ops for the stuck case: 
+Op1 can fix the right side (sort s[1..n-1]) but s[0]=max remains wrong.
+Op2 can fix the left side but now something else is wrong.
+The unique max at position 0 and unique min at n-1 creates an inescapable 3-step sequence.
+When either has duplicates, a 2-step solution exists by using a duplicate as a bridge.
+
+COMPLEXITY: O(n log n) for sorting, O(n) for scan. Overall O(n log n).
+
+LLM Testcase Validation:
+Test 1: "dog" → target="dgo". L=1>0 → return 1 ✓
+Test 2: "card" → target="acdr". L=0, R=3. max_c='r',s[0]='c'≠'r' → return 2 ✓
+Test 3: "gf" → not sorted, n=2 → return -1 ✓
+
+Extra: "dcba" → target="abcd". L=0,R=3. max='d'(unique,s[0]='d'✓), min='a'(unique,s[-1]='a'✓) → return 3.
+Verify: can't do in 2: any proper substring sort moves elements within but leaves 'd' at start or 'a' at end stuck.
+
+Extra: "cabd" → target="abcd". L=0,R=2(s[3]='d'=target[3]). R=2<3 → return 1.
