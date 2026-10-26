@@ -1,0 +1,18 @@
+Date: 2026-10-26
+Title: Count Islands With Total Value Divisible by K
+URL: https://leetcode.com/problems/count-islands-with-total-value-divisible-by-k/
+
+LLM Explanation:
+Scan the grid, and from each unvisited positive cell run an iterative DFS that sums the island's values and sets visited cells to 0 on a copy of the grid. After the island is fully explored, count it if its total is divisible by k. Iterative DFS avoids recursion depth problems when a single island can span up to 10^5 cells. Python integers do not overflow, so large sums (up to 10^11) are safe.
+
+Time complexity: O(m*n), since each cell is pushed and processed at most once. Space complexity: O(m*n) for the grid copy and the stack.
+
+Edge cases:
+- An all-zero grid has no islands, so the answer is 0.
+- A zero cell is water, so it never joins an island. Island values are positive by definition.
+- A single-cell island counts if its value is divisible by k. For k=1, every island counts.
+- Diagonal neighbors do not connect, only 4-directional moves do.
+
+LLM Testcase Validation:
+Test 1, k=5: Island A is (0,1)=2, (0,2)=1, (1,1)=5 with (2,2)=1 reached via (0,2)? (0,2) is above (1,2), which is 0, so (2,2) is not connected to it. So A = 2+1+5 = 8, not divisible by 5. Island B is (1,4)=5, alone, sum 5, divisible. Island C is (2,2)=1, (3,2)=4, (3,1)=1, (3,3)=7, (4,1)=2, sum 15, divisible. Island D is (4,4)=8, sum 8, not divisible. Total 2. Expected 2. PASS
+Test 2, k=3: The six land cells (0,0), (0,2), (1,1), (1,3), (2,0), (2,2) are all separated diagonally, so there are 6 islands each with sum 3, all divisible by 3. Total 6. Expected 6. PASS
