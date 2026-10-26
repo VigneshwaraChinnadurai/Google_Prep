@@ -1,0 +1,24 @@
+Date: 2026-10-26
+Question ID: 3619
+Title: Count Islands With Total Value Divisible by K
+Difficulty: Medium
+Tags: Array, Depth-First Search, Breadth-First Search, Union-Find, Matrix
+URL: https://leetcode.com/problems/count-islands-with-total-value-divisible-by-k/
+
+Question:
+You are given an m x n matrix grid and a positive integer k . An island is a group of positive integers (representing land) that are 4-directionally connected (horizontally or vertically). The total value of an island is the sum of the values of all cells in the island. Return the number of islands with a total value divisible by k . Example 1: Input: grid = [[0,2,1,0,0],[0,5,0,0,5],[0,0,1,0,0],[0,1,4,7,0],[0,2,0,0,8]], k = 5 Output: 2 Explanation: The grid contains four islands. The islands highlighted in blue have a total value that is divisible by 5, while the islands highlighted in red do not. Example 2: Input: grid = [[3,0,3,0], [0,3,0,3], [3,0,3,0]], k = 3 Output: 6 Explanation: The grid contains six islands, each with a total value that is divisible by 3. Constraints: m == grid.length n == grid[i].length 1 &lt;= m, n &lt;= 1000 1 &lt;= m * n &lt;= 10 5 0 &lt;= grid[i][j] &lt;= 10 6 1 &lt;= k &lt;= 10 6
+
+Starter Code (Python3):
+class Solution:
+    def countIslands(self, grid: List[List[int]], k: int) -> int:
+        
+
+Testcases:
+[[0,2,1,0,0],[0,5,0,0,5],[0,0,1,0,0],[0,1,4,7,0],[0,2,0,0,8]]
+5
+[[3,0,3,0],[0,3,0,3],[3,0,3,0]]
+3
+
+Expected Output / Validation:
+Test 1, k=5: Island A is (0,1)=2, (0,2)=1, (1,1)=5 with (2,2)=1 reached via (0,2)? (0,2) is above (1,2), which is 0, so (2,2) is not connected to it. So A = 2+1+5 = 8, not divisible by 5. Island B is (1,4)=5, alone, sum 5, divisible. Island C is (2,2)=1, (3,2)=4, (3,1)=1, (3,3)=7, (4,1)=2, sum 15, divisible. Island D is (4,4)=8, sum 8, not divisible. Total 2. Expected 2. PASS
+Test 2, k=3: The six land cells (0,0), (0,2), (1,1), (1,3), (2,0), (2,2) are all separated diagonally, so there are 6 islands each with sum 3, all divisible by 3. Total 6. Expected 6. PASS
