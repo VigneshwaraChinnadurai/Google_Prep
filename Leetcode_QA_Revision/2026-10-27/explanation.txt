@@ -1,0 +1,18 @@
+Date: 2026-10-27
+Title: Create Grid With Exactly One Path
+URL: https://leetcode.com/problems/create-grid-with-exactly-one-path/
+
+LLM Explanation:
+Make the top row and the rightmost column free and fill everything else with obstacles. Any valid path starts at (0,0). Going down from a cell (0,j) with j < n-1 lands on an obstacle, so the path must run right along row 0 until column n-1. From there, the only free cells are in the last column, so the path must go straight down to (m-1, n-1). This gives exactly one path.
+
+Time complexity: O(m*n) to build the output. Space complexity: O(m*n) for the output.
+
+Edge cases:
+- m=1: only the top row exists, so the grid is a single row of '.'.
+- n=1: the top row and last column coincide, so the grid is a column of '.'.
+- m=1, n=1: the grid is ["."], one trivial path.
+
+LLM Testcase Validation:
+m=2, n=3 -> ["...", "##."]. From (0,0), the only route is right, right to (0,2), then down to (1,2). Moving down from (0,0) or (0,1) hits '#'. Exactly 1 path. PASS (differs from the sample output, but any valid grid is accepted)
+m=3, n=3 -> ["...", "##.", "##."]. The only route is (0,0), (0,1), (0,2), (1,2), (2,2). Every other down move from row 0 hits '#'. Exactly 1 path. PASS
+m=1, n=4 -> ["...."]. A single row allows only the rightward path. Exactly 1 path. PASS (matches the sample)
