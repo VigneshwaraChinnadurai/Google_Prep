@@ -1,0 +1,21 @@
+Date: 2026-10-28
+Title: Minimum XOR Path in a Grid
+URL: https://leetcode.com/problems/minimum-xor-path-in-a-grid/
+
+LLM Explanation:
+Since every value is at most 1023, any path XOR is also at most 1023 (it fits in 10 bits). So for each cell we track the set of achievable XOR values as a 1024-bit integer bitmask, where bit x is set if some path to that cell has XOR equal to x. For a cell with value v, the reachable set is the union of the sets from the top and left neighbors, with every element x mapped to x ^ v. The answer is the lowest set bit in the bottom-right cell's mask.
+
+Only one row of masks is kept, with dp[j] holding the current row's value at column j and, before it is overwritten, the previous row's value (the top neighbor). dp[j-1] has already been updated to the current row (the left neighbor).
+
+Time complexity: O(m * n * 1024), which is about 10^6 operations at most since m*n <= 1000. Space complexity: O(n) big-integer masks of 1024 bits each.
+
+Edge cases:
+- A 1x1 grid returns grid[0][0], since the path is just that cell.
+- A single row or single column has exactly one path, so the answer is the XOR of all its values.
+- If all values are 0, the answer is 0.
+- Values up to 1023 keep every path XOR below 1024, so the 1024-bit mask is sufficient.
+
+LLM Testcase Validation:
+[[1,2],[3,4]]: (0,0) -> {1}. (0,1) -> {1^2=3}. (1,0) -> {1^3=2}. (1,1) comes from {3} and {2}, so XORing with 4 gives {7, 6}. The minimum is 6. Expected 6. PASS
+[[6,7],[5,8]]: (0,0) -> {6}. (0,1) -> {6^7=1}. (1,0) -> {6^5=3}. (1,1) comes from {1} and {3}, so XORing with 8 gives {9, 11}. The minimum is 9. Expected 9. PASS
+[[2,7,5]]: Single row, so there is one path with 2^7^5 = 0. Minimum is 0. Expected 0. PASS
