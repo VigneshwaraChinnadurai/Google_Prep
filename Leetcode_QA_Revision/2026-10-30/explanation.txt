@@ -1,0 +1,23 @@
+Date: 2026-10-30
+Title: Shortest Path With At Most K Consecutive Identical Characters
+URL: https://leetcode.com/problems/shortest-path-with-at-most-k-consecutive-identical-characters/
+
+LLM Explanation:
+The validity of a path depends on the current node and the length of the run of identical labels ending at it, so the Dijkstra state is (node, run), with run in 1..k. That gives at most n*k states, about 2.5 million.
+
+From state (u, r), take edge u->v with weight w. If labels[v] equals labels[u], the new run is r+1, and the move is skipped if it exceeds k. Otherwise the run resets to 1. Since all weights are positive, Dijkstra applies. The first time any state with node n-1 is popped from the heap, its cost is the minimum over all run lengths, so we return it immediately. If the heap empties first, return -1.
+
+The start state is (0, 1) with cost 0. Because k >= 1, a single node never violates the limit. The state is encoded as node*(k+1)+run in a flat array for speed.
+
+Time complexity: O((n + E) * k * log(n * k)) in the worst case, since each edge can be relaxed once per run value. Space complexity: O(n * k) for the distance array plus the heap.
+
+Edge cases:
+- n=1: the start state is already node n-1, so the answer is 0.
+- No edges, or n-1 unreachable: returns -1.
+- k=1: any edge between two nodes with the same label is forbidden.
+- Parallel edges and cycles are handled by the standard Dijkstra distance check.
+
+LLM Testcase Validation:
+Test 1 (labels "aab", k=1): Start at (node 0, run 1) with cost 0. Edge 0->1 has the same label, so the run would be 2 > 1, which is invalid. Edge 0->2 changes the label to b, so run resets to 1 at cost 3. Node 2 is reached with cost 3. Output 3. Expected 3. PASS
+Test 2 (labels "aab", k=2): Edge 0->1 gives run 2 (allowed) at cost 1. Edge 1->2 changes the label, so run 1 at cost 2. The direct edge 0->2 costs 3. Dijkstra pops the cost-2 state first at node 2. Output 2. Expected 2. PASS
+Test 3 (labels "aaa", k=2): 0->1 gives run 2 at cost 1. 1->2 would make run 3 > 2, which is invalid. No other edges exist, so node 2 is unreachable. Output -1. Expected -1. PASS
