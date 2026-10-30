@@ -1,0 +1,33 @@
+Date: 2026-10-30
+Question ID: 3970
+Title: Shortest Path With At Most K Consecutive Identical Characters
+Difficulty: Medium
+Tags: String, Graph Theory, Heap (Priority Queue), Shortest Path
+URL: https://leetcode.com/problems/shortest-path-with-at-most-k-consecutive-identical-characters/
+
+Question:
+You are given an integer n representing the number of nodes in a directed weighted graph, numbered from 0 to n - 1 . This is represented by a 2D integer array edges , where edges[i] = [u i , v i , w i ] represents a directed edge from node u i to node v i with weight w i . You are also given a string labels of length n , where labels[i] is the character assigned to node i , and an integer k . Return the minimum total edge weight of a path from node 0 to node n - 1 such that the concatenation of the labels of the nodes along the path contains at most k consecutive identical characters. If no valid path exists, return -1. Example 1: Input: n = 3, edges = [[0,1,1],[1,2,1],[0,2,3]], labels = &quot;aab&quot;, k = 1 Output: 3 Explanation: The optimal valid path from node 0 to node 2 is as follows: Use edges[2] = [0, 2, 3] to reach node 2 with a weight w i = 3 . The corresponding concatenation of labels is &quot;ab&quot; , which satisfies at most k = 1 consecutive identical characters. Thus, the answer is 3. Example 2: Input: n = 3, edges = [[0,1,1],[1,2,1],[0,2,3]], labels = &quot;aab&quot;, k = 2 Output: 2 Explanation: The optimal valid path from node 0 to node 2 is as follows: Use edges[0] = [0, 1, 1] to reach node 1 with weight w i = 1 . Use edges[1] = [1, 2, 1] to reach node 2 with weight w i = 1 . The corresponding concatenation of labels is &quot;aab&quot; , which satisfies at most k = 2 consecutive identical characters. Thus, the answer is 2. Example 3: Input: n = 3, edges = [[0,1,1],[1,2,1]], labels = &quot;aaa&quot;, k = 2 Output: -1 Explanation: There is no valid path from node 0 to node 2 that satisfies at most k = 2 consecutive identical characters. Thus, the answer is -1. Constraints: 1 &lt;= n == labels.length &lt;= 5 * 10 4 0 &lt;= edges.length &lt;= 5 * 10 4 edges[i] == [u i , v i , w i ] 0 &lt;= u i , v i &lt;= n - 1 u i != v i 1 &lt;= w i &lt;= 10 4 labels consists of lowercase English letters 1 &lt;= k &lt;= 50
+
+Starter Code (Python3):
+class Solution:
+    def shortestPath(self, n: int, edges: List[List[int]], labels: str, k: int) -> int:
+        
+
+Testcases:
+3
+[[0,1,1],[1,2,1],[0,2,3]]
+"aab"
+1
+3
+[[0,1,1],[1,2,1],[0,2,3]]
+"aab"
+2
+3
+[[0,1,1],[1,2,1]]
+"aaa"
+2
+
+Expected Output / Validation:
+Test 1 (labels "aab", k=1): Start at (node 0, run 1) with cost 0. Edge 0->1 has the same label, so the run would be 2 > 1, which is invalid. Edge 0->2 changes the label to b, so run resets to 1 at cost 3. Node 2 is reached with cost 3. Output 3. Expected 3. PASS
+Test 2 (labels "aab", k=2): Edge 0->1 gives run 2 (allowed) at cost 1. Edge 1->2 changes the label, so run 1 at cost 2. The direct edge 0->2 costs 3. Dijkstra pops the cost-2 state first at node 2. Output 2. Expected 2. PASS
+Test 3 (labels "aaa", k=2): 0->1 gives run 2 at cost 1. 1->2 would make run 3 > 2, which is invalid. No other edges exist, so node 2 is unreachable. Output -1. Expected -1. PASS
