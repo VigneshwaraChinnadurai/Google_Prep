@@ -1,0 +1,26 @@
+Date: 2026-10-31
+Title: Twisted Mirror Path Count
+URL: https://leetcode.com/problems/twisted-mirror-path-count/
+
+LLM Explanation:
+Let dp[i][j] be the number of ways the robot lands on the non-mirror cell (i,j). Mirror cells have dp 0, since the robot never stays on one. A non-mirror cell (i,j) can be reached in four ways:
+
+- Directly from the left, dp[i][j-1].
+- Directly from above, dp[i-1][j].
+- By moving right into a mirror and being pushed down a column of consecutive mirrors that ends just above (i,j). If the run of L mirrors directly above (i,j) is in column j, the robot could have started from any cell (a, j-1) in those L rows, so we add the sum of dp[a][j-1] for a from i-L to i-1.
+- By moving down into a mirror and being pushed right along a row of L' consecutive mirrors that ends just left of (i,j). We add the sum of dp[i-1][b] for b from j-L' to j-1.
+
+The two sums use column prefix sums and row prefix sums of dp, so each cell is computed in O(1). A reflection that leaves the grid has no non-mirror landing cell, so it adds nothing.
+
+Time complexity: O(m*n). Space complexity: O(m*n).
+
+Edge cases:
+- Reflections that leave the grid are dropped naturally, because there is no landing cell to receive them.
+- Chains of consecutive mirrors are handled by the run lengths L and L'.
+- Start and end cells are guaranteed to be 0, so dp[0][0]=1 is valid and the answer is dp[m-1][n-1].
+- Results are reduced modulo 10^9+7, and prefix-sum differences are normalized by the final modulo.
+
+LLM Testcase Validation:
+Test 1: grid [[0,1,0],[0,0,1],[1,0,0]]. Row 0: dp[0][0]=1, (0,1) is a mirror so 0, and dp[0][2]=0 (it can only be reached through the mirror, which would need a row above). Row 1: dp[1][0]=1 (down from start). dp[1][1] = left 1 + up 0 + reflection down the mirror at (0,1) from (0,0) giving 1, total 2. (1,2) is a mirror. Row 2: (2,0) is a mirror. dp[2][1] = left 0 + up 2 + reflection right off the mirror at (2,0) from (1,0) giving 1, total 3. dp[2][2] = left 3 + up 0 + reflection down off the mirror at (1,2) from (1,1) giving 2, total 5. Expected 5. PASS
+Test 2: grid [[0,0],[0,0]]. dp[0][1]=1, dp[1][0]=1, dp[1][1]=1+1=2. Expected 2. PASS
+Test 3: grid [[0,1,1],[1,1,0]]. Only (0,0) and (1,2) are non-mirror. dp[1][2] gets 0 from the left, 0 from above, 0 from a downward reflection (the column run above starts at (0,2) and the robot at (0,1) is a mirror cell with dp 0). It gets 1 from the rightward reflection chain (1,0) and (1,1) entered from (0,0) going down, which is the sum of dp[0][0..1] = 1. Total 1. Expected 1. PASS
