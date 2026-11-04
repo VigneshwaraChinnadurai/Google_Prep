@@ -1,0 +1,23 @@
+Date: 2026-11-04
+Title: Minimum Operations to Make Elements Within K Subarrays Equal
+URL: https://leetcode.com/problems/minimum-operations-to-make-elements-within-k-subarrays-equal/
+
+LLM Explanation:
+Step 1: the cost to make a window of size x all equal is the sum of absolute deviations from the window's median.
+
+Step 2: compute that cost for every window with a sliding window. Values are coordinate-compressed, and a Fenwick tree stores the count and the sum per value. For each window, a binary descent on the Fenwick tree finds the lower median (the ceil(x/2)-th smallest) and the sum of the smallest half, including any duplicates of the median. Then cost = (med*half - leftSum) + (rightSum - med*(x-half)), where rightSum = windowTotal - leftSum.
+
+Step 3: choose k non-overlapping windows with a DP. Let dp[j][i] be the minimum cost using j windows within the first i elements. Then dp[j][i] = min(dp[j][i-1], dp[j-1][i-x] + cost[i-x]), where cost[s] is the cost of the window starting at s. Rows are rolled, so only two arrays are kept.
+
+Time complexity: O(n log n + n*k). Space complexity: O(n).
+
+Edge cases:
+- k*x == n forces a tiling of the whole array, and the DP handles it since every window is used.
+- Windows with duplicate values are handled by the (rem * med) term, so the median's multiplicity is counted correctly.
+- Negative values are fine, since only the compressed ranks and the actual sums are used.
+- Already-equal windows cost 0.
+- Values are up to 1e6 and n up to 1e5, so sums reach about 1e11, which Python integers handle without overflow.
+
+LLM Testcase Validation:
+Test 1: nums=[5,-2,1,3,7,3,6,4,-1], x=3, k=2. Window costs by start index: 0:9, 1:5, 2:6, 3:4, 4:4, 5:3, 6:7. The best two non-overlapping starts (differing by at least 3) are 1 and 5, giving 5+3=8. Expected 8. PASS
+Test 2: nums=[9,-2,-2,-2,1,5], x=2, k=2. Window costs: 0:11, 1:0, 2:0, 3:3, 4:4. Starts 1 and 3 give 0+3=3 (starts 1 and 2 overlap, and starts 2 and 4 give 4). Expected 3. PASS
