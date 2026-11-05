@@ -1,0 +1,19 @@
+Date: 2026-11-05
+Title: Find the Distance Value Between Two Arrays
+URL: https://leetcode.com/problems/find-the-distance-value-between-two-arrays/
+
+LLM Explanation:
+An element a of arr1 fails the condition if any element of arr2 lies within distance d, and the only candidates that need checking are the nearest elements of arr2 on each side of a. Sort arr2, use bisect_left to find the first element >= a, and check that element and its predecessor. If neither is within d, a counts toward the distance value.
+
+Time complexity: O((n + m) log m), covering the sort of arr2 and one binary search per element of arr1. Space complexity: O(m) for the sorted copy. With the given limits (at most 500 elements each), a brute-force O(n*m) check would also pass, but this is faster.
+
+Edge cases:
+- d=0 means only exact matches disqualify an element.
+- An element of arr1 smaller than everything in arr2 has no predecessor, which is handled by the i > 0 check.
+- An element larger than everything in arr2 has no successor, which is handled by the i < m check.
+- Duplicates in either array are fine, since each arr1 element is judged independently.
+
+LLM Testcase Validation:
+Test 1: arr1=[4,5,8], arr2=[10,9,1,8], d=2. Sorted arr2 is [1,8,9,10]. For 4, the nearest neighbors are 1 (distance 3) and 8 (distance 4), both greater than 2, so it counts. For 5, the nearest are 1 (distance 4) and 8 (distance 3), so it counts. For 8, the element 8 is at distance 0, so it does not count. Total 2. Expected 2. PASS
+Test 2: arr1=[1,4,2,3], arr2=[-4,-3,6,10,20,30], d=3. For 1, the nearest are -3 (distance 4) and 6 (distance 5), so it counts. For 4, the nearest are -3 (distance 7) and 6 (distance 2), so it does not count. For 2, the nearest are -3 (distance 5) and 6 (distance 4), so it counts. For 3, 6 is at distance 3, so it does not count. Total 2. Expected 2. PASS
+Test 3: arr1=[2,1,100,3], arr2=[-5,-2,10,-3,7], d=6. Sorted arr2 is [-5,-3,-2,7,10]. For 2, -2 is at distance 4, so it does not count. For 1, -2 is at distance 3, so it does not count. For 100, the nearest is 10 (distance 90), so it counts. For 3, -2 is at distance 5, so it does not count. Total 1. Expected 1. PASS
