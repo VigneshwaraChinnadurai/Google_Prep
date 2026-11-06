@@ -1,0 +1,18 @@
+Date: 2026-11-06
+Title: Count Zero Request Servers
+URL: https://leetcode.com/problems/count-zero-request-servers/
+
+LLM Explanation:
+Process the queries offline in increasing order of time while sliding a window over the logs sorted by time. For a query q, the window must contain exactly the logs with time in [q - x, q]. Because both ends of the window only move forward as q grows, we keep two pointers: hi adds logs with time <= q, and lo removes logs with time < q - x. A per-server counter tracks how many logs of each server are in the window, and a running count of servers with a nonzero counter gives the number of active servers. The answer for the query is n minus that count, written back to the query's original index.
+
+Time complexity: O(L log L + Q log Q) for the two sorts, plus O(L + Q) for the sweep. Space complexity: O(n + Q) for the counters and the result.
+
+Edge cases:
+- Multiple logs for the same server are handled by the per-server counter, which only changes the active count when it crosses zero.
+- Queries with no logs in range return n.
+- Duplicate query times work, since the pointers simply do not move.
+- Since x < q for every query, the window start q - x is always positive.
+
+LLM Testcase Validation:
+Test 1: n=3, logs sorted by time: [1,3],[1,5],[2,6], x=5, queries [10,11]. For q=10, add all three logs, then remove logs with time < 5, which removes [1,3]. Server 1 still has the log at time 5 and server 2 has time 6, so active = 2 and the answer is 3-2 = 1. For q=11, remove logs with time < 6, which removes [1,5]. Only server 2 remains active, so the answer is 3-1 = 2. Output [1,2]. Expected [1,2]. PASS
+Test 2: n=3, logs sorted by time: [2,1],[3,1],[1,2],[2,4], x=2, queries [3,4]. For q=3, add the logs with time <= 3, which are the first three. Remove logs with time < 1, which removes nothing. All three servers are active, so the answer is 0. For q=4, add [2,4], then remove logs with time < 2, which removes [2,1] and [3,1]. Server 2 still has the log at time 4 and server 1 has time 2, so active = 2 and the answer is 3-2 = 1. Output [0,1]. Expected [0,1]. PASS
