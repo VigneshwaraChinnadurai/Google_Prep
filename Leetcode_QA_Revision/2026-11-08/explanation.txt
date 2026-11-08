@@ -1,0 +1,19 @@
+Date: 2026-11-08
+Title: Count Servers that Communicate
+URL: https://leetcode.com/problems/count-servers-that-communicate/
+
+LLM Explanation:
+A server can communicate with another server exactly when it shares its row or its column with at least one other server. So count the servers in each row and in each column, then count every server whose row total or column total is greater than 1. No graph traversal is needed, because the question is only whether a server has any neighbor, not about connected components.
+
+Time complexity: O(m*n), from two passes over the grid. Space complexity: O(m + n) for the row and column counters.
+
+Edge cases:
+- A grid with no servers returns 0.
+- A single server returns 0, since it has nobody to talk to.
+- A full row or column of servers counts all of them.
+- A 1xN or Nx1 grid counts all servers if there are at least two.
+
+LLM Testcase Validation:
+Test 1: [[1,0],[0,1]]. Row counts are [1,1] and column counts are [1,1]. Each server is alone in its row and column, so none communicate. Output 0. Expected 0. PASS
+Test 2: [[1,0],[1,1]]. Row counts are [1,2] and column counts are [2,1]. Server (0,0) has column count 2, server (1,0) has row count 2 and column count 2, and server (1,1) has row count 2. All three count. Output 3. Expected 3. PASS
+Test 3: [[1,1,0,0],[0,0,1,0],[0,0,1,0],[0,0,0,1]]. Row counts are [2,1,1,1] and column counts are [1,1,2,1]. Servers (0,0) and (0,1) count because row 0 has 2. Servers (1,2) and (2,2) count because column 2 has 2. Server (3,3) has row count 1 and column count 1, so it does not count. Output 4. Expected 4. PASS
