@@ -1,0 +1,24 @@
+Date: 2026-11-08
+Question ID: 1267
+Title: Count Servers that Communicate
+Difficulty: Medium
+Tags: Array, Depth-First Search, Breadth-First Search, Union-Find, Matrix, Counting
+URL: https://leetcode.com/problems/count-servers-that-communicate/
+
+Question:
+You are given a map of a server center, represented as a m * n integer matrix grid , where 1 means that on that cell there is a server and 0 means that it is no server. Two servers are said to communicate if they are on the same row or on the same column. Return the number of servers that communicate with any other server. Example 1: Input: grid = [[1,0],[0,1]] Output: 0 Explanation: No servers can communicate with others. Example 2: Input: grid = [[1,0],[1,1]] Output: 3 Explanation: All three servers can communicate with at least one other server. Example 3: Input: grid = [[1,1,0,0],[0,0,1,0],[0,0,1,0],[0,0,0,1]] Output: 4 Explanation: The two servers in the first row can communicate with each other. The two servers in the third column can communicate with each other. The server at right bottom corner can&#39;t communicate with any other server. Constraints: m == grid.length n == grid[i].length 1 &lt;= m &lt;= 250 1 &lt;= n &lt;= 250 grid[i][j] == 0 or 1
+
+Starter Code (Python3):
+class Solution:
+    def countServers(self, grid: list[list[int]]) -> int:
+        
+
+Testcases:
+[[1,0],[0,1]]
+[[1,0],[1,1]]
+[[1,1,0,0],[0,0,1,0],[0,0,1,0],[0,0,0,1]]
+
+Expected Output / Validation:
+Test 1: [[1,0],[0,1]]. Row counts are [1,1] and column counts are [1,1]. Each server is alone in its row and column, so none communicate. Output 0. Expected 0. PASS
+Test 2: [[1,0],[1,1]]. Row counts are [1,2] and column counts are [2,1]. Server (0,0) has column count 2, server (1,0) has row count 2 and column count 2, and server (1,1) has row count 2. All three count. Output 3. Expected 3. PASS
+Test 3: [[1,1,0,0],[0,0,1,0],[0,0,1,0],[0,0,0,1]]. Row counts are [2,1,1,1] and column counts are [1,1,2,1]. Servers (0,0) and (0,1) count because row 0 has 2. Servers (1,2) and (2,2) count because column 2 has 2. Server (3,3) has row count 1 and column count 1, so it does not count. Output 4. Expected 4. PASS
