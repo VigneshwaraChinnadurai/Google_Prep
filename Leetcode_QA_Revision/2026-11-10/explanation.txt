@@ -1,0 +1,18 @@
+Date: 2026-11-10
+Title: Climbing Stairs II
+URL: https://leetcode.com/problems/climbing-stairs-ii/
+
+LLM Explanation:
+Let dp[j] be the minimum total cost to reach step j, with dp[0] = 0. A jump into step j comes from step j-1, j-2, or j-3, and a jump of length d adds costs[j] + d^2. So dp[j] = costs[j] + min over d in {1,2,3} of (dp[j-d] + d^2), considering only j-d >= 0. The costs array is 1-indexed in the statement, so costs[j] in the statement is costs[j-1] in the 0-indexed Python list. The answer is dp[n].
+
+Time complexity: O(n), since each step checks at most 3 predecessors. Space complexity: O(n) for the dp array, which could be reduced to O(1) by keeping only the last three values.
+
+Edge cases:
+- n=1: only the jump 0 -> 1 exists, so the answer is costs[1] + 1.
+- n=2: only jumps of length 1 or 2 from the valid earlier steps are considered, since predecessors below 0 are skipped.
+- Large n (up to 10^5): the loop is linear and the values stay well within Python integer range.
+
+LLM Testcase Validation:
+Test 1: n=4, costs=[1,2,3,4]. dp[0]=0. dp[1]=0+1+1=2. dp[2]=min(dp[1]+1, dp[0]+4)+2=min(3,4)+2=5. dp[3]=min(dp[2]+1, dp[1]+4, dp[0]+9)+3=min(6,6,9)+3=9. dp[4]=min(dp[3]+1, dp[2]+4, dp[1]+9)+4=min(10,9,11)+4=13. Expected 13. PASS
+Test 2: n=4, costs=[5,1,6,2]. dp[1]=1+5=6. dp[2]=min(dp[1]+1, dp[0]+4)+1=min(7,4)+1=5. dp[3]=min(dp[2]+1, dp[1]+4, dp[0]+9)+6=min(6,10,9)+6=12. dp[4]=min(dp[3]+1, dp[2]+4, dp[1]+9)+2=min(13,9,15)+2=11. Expected 11. PASS
+Test 3: n=3, costs=[9,8,3]. dp[1]=1+9=10. dp[2]=min(dp[1]+1, dp[0]+4)+8=min(11,4)+8=12. dp[3]=min(dp[2]+1, dp[1]+4, dp[0]+9)+3=min(13,14,9)+3=12. Expected 12. PASS
