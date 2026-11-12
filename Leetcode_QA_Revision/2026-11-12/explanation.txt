@@ -1,0 +1,19 @@
+Date: 2026-11-12
+Title: Longest Strictly Increasing or Strictly Decreasing Subarray
+URL: https://leetcode.com/problems/longest-strictly-increasing-or-strictly-decreasing-subarray/
+
+LLM Explanation:
+Scan once while tracking the length of the current strictly increasing run (inc) and the current strictly decreasing run (dec). If the next element is larger, extend inc and reset dec. If it is smaller, extend dec and reset inc. If it is equal, reset both to 1. The answer is the largest value either counter reaches, starting from 1 since any single element is a valid subarray.
+
+Time complexity: O(n). Space complexity: O(1).
+
+Edge cases:
+- n=1 returns 1.
+- All elements equal returns 1.
+- A fully increasing or fully decreasing array returns n.
+- A change of direction restarts the run at length 2 only through the reset, since the shared element is counted again in the new run on the next step.
+
+LLM Testcase Validation:
+[1,4,3,3,2]: i=1 (4>1) inc=2, dec=1, best=2. i=2 (3<4) dec=2, inc=1, best=2. i=3 (3==3) both reset to 1. i=4 (2<3) dec=2, best stays 2. Output 2. Expected 2. PASS
+[3,3,3,3]: every adjacent pair is equal, so inc and dec reset to 1 each time. Output 1. Expected 1. PASS
+[3,2,1]: i=1 (2<3) dec=2, i=2 (1<2) dec=3, best=3. Output 3. Expected 3. PASS
