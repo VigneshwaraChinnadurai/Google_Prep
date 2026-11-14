@@ -1,0 +1,19 @@
+Date: 2026-11-14
+Title: Minimum Positive Sum Subarray 
+URL: https://leetcode.com/problems/minimum-positive-sum-subarray/
+
+LLM Explanation:
+With n <= 100, check every subarray whose length is in [l, r] using prefix sums, so each sum costs O(1). Track the smallest sum that is strictly greater than 0, and return -1 if none was found.
+
+Time complexity: O(n * (r - l + 1)), at most O(n^2) = 10^4 operations. Space complexity: O(n) for the prefix array.
+
+Edge cases:
+- Sums equal to 0 are not positive and are skipped.
+- l == r checks a single fixed length.
+- If l or r exceeds the remaining elements from a start index, the inner loop breaks.
+- All-negative arrays return -1.
+
+LLM Testcase Validation:
+[3,-2,1,4], l=2, r=3: prefix sums are [0,3,1,2,6]. From i=0: length 2 gives 1 (best=1), length 3 gives 2. From i=1: length 2 gives -1 (skipped), length 3 gives 3. From i=2: length 2 gives 5. Minimum positive is 1. Expected 1. PASS
+[-2,2,-3,1], l=2, r=3: prefix sums are [0,-2,0,-3,-2]. Subarray sums: 0, -1, -3 (i=0), -2... all are <= 0: [-2,2]=0, [2,-3]=-1, [-3,1]=-2, [-2,2,-3]=-3, [2,-3,1]=0. No positive sum, so -1. Expected -1. PASS
+[1,2,3,4], l=2, r=4: length 2 sums are 3, 5, 7, and longer windows are larger. Minimum is 3. Expected 3. PASS
