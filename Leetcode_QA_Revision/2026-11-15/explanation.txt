@@ -1,0 +1,18 @@
+Date: 2026-11-15
+Title: Number of Sub-arrays With Odd Sum
+URL: https://leetcode.com/problems/number-of-sub-arrays-with-odd-sum/
+
+LLM Explanation:
+A subarray (i, j] has an odd sum exactly when the prefix sums at i and j have different parity. Scan once while tracking the parity of the running prefix sum and how many earlier prefixes (including the empty prefix) had even or odd parity. If the current prefix is odd, it pairs with every earlier even prefix. If it is even, it pairs with every earlier odd prefix. Add that count to the answer, then record the current prefix in its parity bucket. The modulo is applied once at the end, since Python integers do not overflow. The total is at most about 5*10^9, so this is safe.
+
+Time complexity: O(n). Space complexity: O(1).
+
+Edge cases:
+- n=1 with an odd value returns 1, and with an even value returns 0.
+- An all-even array returns 0.
+- An all-odd array alternates the prefix parity, giving about half of all subarrays.
+
+LLM Testcase Validation:
+[1,3,5]: Start even=1, odd=0. x=1 gives parity 1, ans += even(1) = 1, odd=1. x=3 gives parity 0, ans += odd(1) = 2, even=2. x=5 gives parity 1, ans += even(2) = 4, odd=2. Output 4. Expected 4. PASS
+[2,4,6]: Every element is even, so parity stays 0. Each step adds odd(0) to ans. Output 0. Expected 0. PASS
+[1,2,3,4,5,6,7]: Prefix parities after each element are 1,1,0,0,1,1,0. Step by step: parity 1 adds even(1) = 1 (odd=1); parity 1 adds even(1) = 2 (odd=2); parity 0 adds odd(2) = 4 (even=2); parity 0 adds odd(2) = 6 (even=3); parity 1 adds even(3) = 9 (odd=3); parity 1 adds even(3) = 12 (odd=4); parity 0 adds odd(4) = 16 (even=4). Output 16. Expected 16. PASS
