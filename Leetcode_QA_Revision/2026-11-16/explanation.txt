@@ -1,0 +1,20 @@
+Date: 2026-11-16
+Title: Calculate Digit Sum of a String
+URL: https://leetcode.com/problems/calculate-digit-sum-of-a-string/
+
+LLM Explanation:
+Simulate the rounds as described. While the string is longer than k, split it into consecutive chunks of size k (the last chunk may be shorter), replace each chunk with the string form of its digit sum, and join the results. Stop once the length is at most k.
+
+Each round never makes the string longer when k >= 2: a chunk of k digits has a sum of at most 9k, which has at most as many digits as the chunk itself for k >= 2, and in practice the length shrinks, so the loop terminates.
+
+Time complexity: O(n) per round, with n <= 100, so the total is tiny. Space complexity: O(n).
+
+Edge cases:
+- len(s) <= k at the start returns s unchanged.
+- A final chunk shorter than k is summed as is.
+- Chunk sums can have multiple digits, such as 13, and are concatenated as strings, not added together.
+- Leading zeros are kept, since the result is a string, as in "000".
+
+LLM Testcase Validation:
+"11111222223", k=3: length 11 > 3. Groups are 111, 112, 222, 23 with sums 3, 4, 6, 5, so s becomes "3465". Length 4 > 3. Groups are 346 and 5 with sums 13 and 5, so s becomes "135". Length 3 <= 3, so return "135". Expected "135". PASS
+"00000000", k=3: length 8 > 3. Groups are 000, 000, 00 with sums 0, 0, 0, so s becomes "000". Length 3 <= 3, so return "000". Expected "000". PASS
