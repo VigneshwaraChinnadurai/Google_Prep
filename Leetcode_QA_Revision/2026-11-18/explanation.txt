@@ -1,0 +1,18 @@
+Date: 2026-11-18
+Title: Minimum Number of Changes to Make Binary String Beautiful
+URL: https://leetcode.com/problems/minimum-number-of-changes-to-make-binary-string-beautiful/
+
+LLM Explanation:
+Any partition into even-length blocks of identical characters can be refined into blocks of length 2, since splitting an even-length uniform block into pairs keeps every pair uniform. So the string is beautiful exactly when every aligned pair (s[0], s[1]), (s[2], s[3]), and so on, has two equal characters. Each mismatched pair needs exactly one change, and pairs do not affect each other, so the answer is the number of mismatched aligned pairs.
+
+Time complexity: O(n). Space complexity: O(1).
+
+Edge cases:
+- n=2 checks a single pair.
+- An already uniform string returns 0.
+- An alternating string such as "1010" returns n/2.
+
+LLM Testcase Validation:
+"1001": pairs are "10" and "01". Both have mismatched characters, so the count is 2. Expected 2. PASS
+"10": the single pair "10" is mismatched, so the count is 1. Expected 1. PASS
+"0000": pairs are "00" and "00", both matched, so the count is 0. Expected 0. PASS
