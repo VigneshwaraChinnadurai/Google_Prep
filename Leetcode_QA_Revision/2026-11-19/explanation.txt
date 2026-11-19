@@ -1,0 +1,24 @@
+Date: 2026-11-19
+Title: Minimum Score by Changing Two Elements
+URL: https://leetcode.com/problems/minimum-score-by-changing-two-elements/
+
+LLM Explanation:
+The low score can always be made 0, because we change two elements and can set both to the same value as another element (or as each other), creating a duplicate pair. So only the high score, max - min, matters after the changes.
+
+To minimize max - min, we remove two elements from the extremes of the sorted array and set them to a value inside the remaining range, which does not widen it. There are three ways to choose the two removed elements: the two smallest, the smallest and the largest, or the two largest. The remaining ranges are:
+- remove the two smallest: nums[n-1] - nums[2]
+- remove the smallest and the largest: nums[n-2] - nums[1]
+- remove the two largest: nums[n-3] - nums[0]
+
+The answer is the minimum of these three.
+
+Time complexity: O(n log n) for sorting; it can be O(n) by tracking the three smallest and three largest values. Space complexity: O(n) for the sorted copy.
+
+Edge cases:
+- n=3: all three ranges are 0, since a single element remains, so the answer is 0.
+- Arrays with duplicates are fine, since the low score is already 0 or becomes 0 by the changes.
+- Values up to 10^9 pose no overflow issues in Python.
+
+LLM Testcase Validation:
+[1,4,7,8,5]: sorted is [1,4,5,7,8], n=5. Options are nums[4]-nums[2] = 8-5 = 3, nums[3]-nums[1] = 7-4 = 3, nums[2]-nums[0] = 5-1 = 4. Minimum is 3. Expected 3. PASS
+[1,4,3]: sorted is [1,3,4], n=3. Options are nums[2]-nums[2] = 0, nums[1]-nums[1] = 0, nums[0]-nums[0] = 0. Minimum is 0. Expected 0. PASS
