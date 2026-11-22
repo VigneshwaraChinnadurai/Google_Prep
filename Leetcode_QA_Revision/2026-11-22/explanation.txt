@@ -1,0 +1,18 @@
+Date: 2026-11-22
+Title: Check if All A's Appears Before All B's
+URL: https://leetcode.com/problems/check-if-all-as-appears-before-all-bs/
+
+LLM Explanation:
+Every 'a' appears before every 'b' exactly when the string has the form a...ab...b. If some 'b' came before some 'a', then somewhere in the string a 'b' would be immediately followed by an 'a', because the string only has two letters, so the substring "ba" would exist. Conversely, if "ba" never occurs, no 'b' can be followed by an 'a' later either, so all the a's come first. Checking that "ba" is not in s answers the question in one pass.
+
+Time complexity: O(n). Space complexity: O(1).
+
+Edge cases:
+- A string with only a's or only b's returns true.
+- n=1 returns true.
+- A single "ba" anywhere makes the answer false.
+
+LLM Testcase Validation:
+"aaabbb": there is no "ba" substring, so return true. Expected true. PASS
+"abab": the substring "ba" appears at index 1, so return false. Expected false. PASS
+"bbb": there is no "ba" substring, so return true. Expected true. PASS
