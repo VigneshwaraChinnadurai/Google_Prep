@@ -1,0 +1,18 @@
+Date: 2026-11-24
+Title: Maximum Subarray With Equal Products
+URL: https://leetcode.com/problems/maximum-subarray-with-equal-products/
+
+LLM Explanation:
+Since n <= 100 and every value is at most 10, check every subarray directly. For each start index i, extend j to the right while keeping a running product p, running gcd g, and running lcm l. A subarray is product equivalent when p == l * g, and the answer is the longest such length. A single element always qualifies, since x == x * x only holds for x=1, but the answer is at least 2 for n >= 2 because any adjacent pair of coprime values or any pair with a 1 satisfies the condition. The initial best of 1 is only a safe lower bound.
+
+Time complexity: O(n^2 * log(maxValue)). Space complexity: O(1). The product is at most 10^100, which Python handles with big integers.
+
+Edge cases:
+- Arrays of all 1s return n, since p=g=l=1 always holds.
+- Adjacent equal values above 1, such as [2,2], give p=4, g=2, l=2, so p == l*g holds as well.
+- Pairs like [2,4] give p=8, g=2, l=4, which also holds, so shared factors do not always break the condition.
+
+LLM Testcase Validation:
+[1,2,1,2,1,1,1]: the subarray [1,2,1,1,1] at indices 2..6 has p=2, g=1, l=2, so p == l*g. Wait, that subarray starts at index 2 and holds 1,2,1,1,1, which is length 5. Extending it to include index 1 gives [2,1,2,1,1,1] with p=4, g=1, l=2, so p != l*g. Length 5 is the longest. Expected 5. PASS
+[2,3,4,5,6]: [3,4,5] has p=60, g=1, l=60, so it is valid at length 3. [2,3,4] has p=24, g=1, l=12, invalid. [4,5,6] has p=120, g=1, l=60, invalid. [3,4,5,6] has p=360, g=1, l=60, invalid. Longest is 3. Expected 3. PASS
+[1,2,3,1,4,5,1]: the subarray [2,3,1,4,5] at indices 1..5 has p=120, g=1, l=60, invalid. [3,1,4,5,1] at indices 2..6 has p=60, g=1, l=60, valid at length 5. Length 6 windows such as [1,2,3,1,4,5] have p=120, g=1, l=60, invalid. Longest is 5. Expected 5. PASS
