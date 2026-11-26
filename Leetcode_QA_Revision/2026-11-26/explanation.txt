@@ -1,0 +1,17 @@
+Date: 2026-11-26
+Title: Stone Removal Game
+URL: https://leetcode.com/problems/stone-removal-game/
+
+LLM Explanation:
+Simulate the game. The required amount starts at 10 and drops by 1 each turn. On each turn the current player must have at least that many stones. The flag alice flips after each successful move, so it is True exactly when the last player to move was Alice. When a player cannot move, that player loses, so the last mover wins. The loop also stops if take reaches 0, which cannot happen for n <= 50, since the moves 10+9+...+1 total 55 stones.
+
+Time complexity: O(1), since there are at most 10 turns. Space complexity: O(1).
+
+Edge cases:
+- n < 10 means Alice cannot move, so the answer is false.
+- n = 10 means Alice moves, Bob cannot take 9 from 0, so true.
+- n = 19 means Bob moves 9 and Alice cannot take 8 from 0, so false.
+
+LLM Testcase Validation:
+n=12: take=10, n>=10, so n=2, take=9, alice=True (Alice made one move). Next, n=2 < 9, so the loop ends. Bob could not move, so return True. Expected true. PASS
+n=1: n=1 < 10, so no one moves and alice stays False. Alice cannot make her first move, so return False. Expected false. PASS
