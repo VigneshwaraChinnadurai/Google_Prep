@@ -1,0 +1,20 @@
+Date: 2026-11-27
+Title: Maximum Number of Items From Sale I
+URL: https://leetcode.com/problems/maximum-number-of-items-from-sale-i/
+
+LLM Explanation:
+Buying an item for the first time pays its price and gives one copy of it plus one free copy of every other item whose factor is a multiple of its factor. So the first copy of item i is worth 1 + g_i, where g_i is the number of j != i with factor_j % factor_i == 0. Any additional copy of any item is worth exactly 1, so extra spending is best put on the cheapest item (price pmin). Free copies are counted only once per bought item type, so extra copies never add bonuses.
+
+This is a knapsack. Each item is a 0/1 choice with weight price_i and value 1 + g_i. After that, an unbounded item of weight pmin and value 1 models the extra copies. A dp solution may use an unbounded copy without the 0/1 bonus, which only undercounts and never exceeds a real purchase plan, so the maximum is correct. Every real plan, meaning a set of first copies plus extra copies, is representable, because any extra copy can be swapped for a cheapest-item copy at no greater cost.
+
+Time complexity: O(n^2 + n * budget), about 2.5 million operations at most. Space complexity: O(budget).
+
+Edge cases:
+- Duplicate factors count as free copies for each other, since only j != i is required.
+- An item priced above the budget never enters the 0/1 loop.
+- If no item has any multiple, the answer is the cheapest-item count, budget // pmin or better via the knapsack.
+- n=1 gives g=0, so the answer is budget // price.
+
+LLM Testcase Validation:
+Test 1: items=[[6,2],[2,6],[3,4]], budget=9. The free-copy counts are g0=0 (no factor is a multiple of 6), g1=1 (factor 6), g2=1 (factor 6). First-copy values and costs: item0 gives 1 for cost 2, item1 gives 2 for cost 6, item2 gives 2 for cost 4. The cheapest price is 2. The best plan is item2 (cost 4, value 2) plus two extra copies priced 2 each (cost 4, value 2), for cost 8 and value 4. Item1 plus item2 costs 10, which is over budget. Item1 plus one extra copy gives 3. Output 4. Expected 4. PASS
+Test 2: items=[[2,4],[3,2],[4,1],[6,4],[12,4]], budget=8. The free-copy counts are g0=3 (factors 4, 6, 12), g1=2 (6, 12), g2=1 (12), g3=1 (12), g4=0. First-copy values and costs: item0 gives 4 for cost 4, item1 gives 3 for cost 2, item2 gives 2 for cost 1, item3 gives 2 for cost 4, item4 gives 1 for cost 4. The cheapest price is 1. Taking items 0, 1 and 2 costs 7 and gives 4+3+2 = 9, and one extra copy of item 2 costs 1 and adds 1. Total cost 8, value 10. Output 10. Expected 10. PASS
