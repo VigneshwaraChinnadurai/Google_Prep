@@ -1,0 +1,24 @@
+Date: 2026-11-27
+Question ID: 3946
+Title: Maximum Number of Items From Sale I
+Difficulty: Medium
+Tags: Array, Dynamic Programming, Greedy
+URL: https://leetcode.com/problems/maximum-number-of-items-from-sale-i/
+
+Question:
+You are given a 2D integer array items , where items[i] = [factor i , price i ] represents the i th item. You are also given an integer budget . There are unlimited copies of each item available for purchase.You may buy any number of copies of any items such that the total cost of the purchased copies is at most budget . After buying items, you may receive free copies according to the following rules: For each item i that you bought at least one copy of, you receive one free copy of every item j such that j != i and factor i divides factor j . Buying multiple copies of the same item i does not give additional free copies through item i . The same item j can be received multiple times for free if it is received from purchases of different item types. Return the maximum total number of item copies you can obtain, including both purchased copies and free copies, while spending at most budget on purchased items. Example 1: Input: items = [[6,2],[2,6],[3,4]], budget = 9 Output: 4 Explanation: You can buy 2 copies of item 0 and 1 copy of item 2 for a total cost of 2 * 2 + 4 = 8 , which is not greater than budget = 9 . Buying item 2 gives 1 free copy of item 0, because factor 2 = 3 divides factor 0 = 6 . You leave with 3 purchased copies and 1 free copy, for a total of 4 item copies. Example 2: Input: items = [[2,4],[3,2],[4,1],[6,4],[12,4]], budget = 8 Output: 10 Explanation: You can buy 1 copy of item 0, 1 copy of item 1, and 2 copies of item 2 for a total cost of 4 + 2 + 2 * 1 = 8 . Buying item 0 gives 1 free copy of items 2, 3, and 4. Buying item 1 gives 1 free copy of items 3 and 4. Buying item 2 gives 1 free copy of item 4. Thus, you receive 6 free copies. You leave with 4 purchased copies and 6 free copies, for a total of 10 item copies. Constraints: 1 &lt;= items.length &lt;= 1000 items[i] = [factor i , price i ] 1 &lt;= factor i , price i &lt;= 1500 1 &lt;= budget &lt;= 1500
+
+Starter Code (Python3):
+class Solution:
+    def maximumSaleItems(self, items: List[List[int]], budget: int) -> int:
+        
+
+Testcases:
+[[6,2],[2,6],[3,4]]
+9
+[[2,4],[3,2],[4,1],[6,4],[12,4]]
+8
+
+Expected Output / Validation:
+Test 1: items=[[6,2],[2,6],[3,4]], budget=9. The free-copy counts are g0=0 (no factor is a multiple of 6), g1=1 (factor 6), g2=1 (factor 6). First-copy values and costs: item0 gives 1 for cost 2, item1 gives 2 for cost 6, item2 gives 2 for cost 4. The cheapest price is 2. The best plan is item2 (cost 4, value 2) plus two extra copies priced 2 each (cost 4, value 2), for cost 8 and value 4. Item1 plus item2 costs 10, which is over budget. Item1 plus one extra copy gives 3. Output 4. Expected 4. PASS
+Test 2: items=[[2,4],[3,2],[4,1],[6,4],[12,4]], budget=8. The free-copy counts are g0=3 (factors 4, 6, 12), g1=2 (6, 12), g2=1 (12), g3=1 (12), g4=0. First-copy values and costs: item0 gives 4 for cost 4, item1 gives 3 for cost 2, item2 gives 2 for cost 1, item3 gives 2 for cost 4, item4 gives 1 for cost 4. The cheapest price is 1. Taking items 0, 1 and 2 costs 7 and gives 4+3+2 = 9, and one extra copy of item 2 costs 1 and adds 1. Total cost 8, value 10. Output 10. Expected 10. PASS
