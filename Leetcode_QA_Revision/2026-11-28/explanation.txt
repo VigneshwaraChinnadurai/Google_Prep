@@ -1,0 +1,25 @@
+Date: 2026-11-28
+Title: Maximum Number of Items From Sale II
+URL: https://leetcode.com/problems/maximum-number-of-items-from-sale-ii/
+
+LLM Explanation:
+Buying c copies of item i yields c + min(c, g_i) copies, where g_i is the number of other items j whose factor is a multiple of factor_i. So the first g_i copies of item i are worth 2 each at price p_i, and every later copy is worth 1 at price p_i. Extra single-value copies are best bought from the cheapest item, at price pmin.
+
+The task becomes choosing how many double-value units to buy, then spending the rest on pmin copies. A double-value unit at price p beats the two pmin copies that value 2 would otherwise need only when p <= 2*pmin. The marginal gain of such a unit is never negative while affordable, and any unit with p > 2*pmin never gains. For a fixed number of units the cheapest ones are best. So:
+- Compute g_i from multiple counts, using a harmonic-sum sieve over factors (each item's multiples count minus itself).
+- Go through items by ascending price, skip those with g_i = 0, stop once p > 2*pmin.
+- Buy as many double-value units as the budget allows, and stop at the first item that cannot be fully bought.
+- Spend what remains on pmin copies and add r // pmin.
+
+Time complexity: O(n log n) for the sieve and the sort. Space complexity: O(n).
+
+Edge cases:
+- Duplicate factors count as free copies for each other (the j != i rule only excludes the item itself).
+- If every g_i is 0, the answer is budget // pmin.
+- Items priced above 2*pmin never contribute double-value units.
+- Budget below every price returns 0.
+- Counts can reach about 10^9, which Python integers handle.
+
+LLM Testcase Validation:
+Test 1: items=[[1,6],[2,4],[3,5]], budget=19. The factor multiples give g0=2 (factors 2 and 3 are multiples of 1), g1=0, g2=0. pmin=4, so only prices up to 8 are used. Sorted by price: item1 (g=0, skipped), item2 (g=0, skipped), item0 (price 6, g=2). Buy t=min(2, 19//6=3)=2 double-value units, so r=19-12=7 and units=2. The leftover buys 7//4=1 extra copy of the cheapest item. Total 2*2+1 = 5. Expected 5. PASS
+Test 2: items=[[2,8],[1,10],[6,6],[4,12],[5,20],[5,17]], budget=35. Free-copy capacities are g0=2, g1=5, g2=0, g3=0, g4=1, g5=1. pmin=6, so only prices up to 12 are used. Sorted by price: item2 (g=0, skipped), item0 (price 8) takes 2 units, so r=19. Item1 (price 10) can afford only 19//10=1 of its 5 units, so r=9, units=3, and we stop. Total 2*3 + 9//6 = 7. Expected 7. PASS
